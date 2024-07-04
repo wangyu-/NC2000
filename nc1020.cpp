@@ -31,7 +31,7 @@ namespace wqx {
     using std::string;
     
     // cpu cycles per second (cpu freq).
-    const uint32_t CYCLES_SECOND = 5120000;
+    const uint32_t CYCLES_SECOND = 5120000*10; //multiple by 10, tmp solution to fix speed
     const uint32_t TIMER0_FREQ = 2;
     const uint32_t TIMER1_FREQ = 0x100;
     // cpu cycles per timer0 period (1/2 s).
@@ -1266,7 +1266,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 
 	while (cycles < end_cycles) {
 		tick++;
-		if(tick%1000000==0) printf("tick=%lld\n",tick);
+		if(tick%10000000==0) printf("tick=%lld\n",tick);
 //#ifdef DEBUG
 //		if (executed_insts == 2792170) {
 //			printf("debug start!\n");
