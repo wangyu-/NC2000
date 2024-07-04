@@ -20,7 +20,7 @@ const uint32_t num_nor_pages =0x10+uint32_t(nc1020)*0x10;
 const uint32_t num_rom_pages =0x300;
 
 const bool enable_debug_switch=false;
- bool enable_debug_pc=false;
+bool enable_debug_pc=false;
 const bool enable_oops=false;
 bool do_inject=false;
 
@@ -71,7 +71,7 @@ typedef struct {
 	cpu_states_t cpu;
 	uint8_t ram[0x8000];
 	uint8_t ext_ram[0x8000];
-	uint8_t ext_ram2[0x8000];
+	//uint8_t ext_ram2[0x8000];
 
 	uint8_t bak_40[0x40];
 
@@ -420,12 +420,12 @@ uint8_t IO_API ReadXX(uint8_t addr){
 				}
 				printf("<%x;%x,%x:%x,%d>\n", final, pos, low,cmd,nand_read_cnt);
 			}
-
 			char *p=&nand[0][0];
 			uint8_t result=p[final];
 			//if(final<0) return 0x00;
 			//uint8_t result=nand[pos][low+off+nand_read_cnt];
 			nand_read_cnt++;
+            //printf("<<%02x>>",result);
 			return result;
 		}
 
@@ -829,6 +829,10 @@ void LoadRom(){
 void LoadNor(){
 	uint8_t* temp_buff = (uint8_t*)malloc(NOR_SIZE);
 	FILE* file = fopen(nc1020_rom.norFlashPath.c_str(), "rb");
+	if(nc2000 && file==0){
+		printf("2600nor.bin not exist!\n");
+		exit(-1);
+	}
 	fread(temp_buff, 1, NOR_SIZE, file);
 	ProcessBinary(nor_buff, temp_buff, NOR_SIZE);
 	free(temp_buff);
@@ -1021,21 +1025,44 @@ inline void Store(uint16_t addr, uint8_t value) {
 
 void Initialize(WqxRom rom) {
 
-	std::ifstream inject_bin("shoot.bin");
-	std::stringstream buffer;
-	buffer << inject_bin.rdbuf();
-	printf("<size=%lu>\n",buffer.str().size());
-	inject_code=buffer.str();
+	if(do_inject){
+		std::ifstream inject_bin("shoot.bin");
+		std::stringstream buffer;
+		buffer << inject_bin.rdbuf();
+		printf("<inject_size=%lu>\n",buffer.str().size());
+		inject_code=buffer.str();
+	}
 
-
+	/*
+	// doens't read full nand on windows
 	std::ifstream nand_bin("2600nand.bin");
 	std::stringstream nand_buffer;
 	nand_buffer << nand_bin.rdbuf();
-	printf("<size=%lu>\n",nand_buffer.str().size());
+	printf("<size=%lu>\n",nand_buffer.str().size());*/
+
+	memset(&nc1020_states,0,sizeof(nc1020_states_t));
+	memset(&nor_buff,0,sizeof(nor_buff));
+	memset(&rom_buff,0,sizeof(rom_buff));
 
 	memset(nand_ori,0,sizeof(nand_ori));
 	char *p0= &nand_ori[0][0];
-	memcpy(p0,&nand_buffer.str()[0],nand_buffer.str().size());
+
+	FILE *f = fopen("./2600nand.bin", "rb");
+	//assert(f!=0);
+	if(f==0) {
+		printf("file ./2600nand.bin not exist!\n");
+		exit(-1);
+	}
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+	fread(p0, fsize, 1, f);
+	fclose(f);
+
+	printf("<nand_file_size=%lu>\n",fsize);
+
+	//memcpy(p0,&nand_str[0],nand_str.size());
 
 
 	srand(0);
@@ -1047,7 +1074,7 @@ void Initialize(WqxRom rom) {
 		}
 	}
 
-	printf("<nand_ori_size=%lu>\n",sizeof(nand_ori));
+	printf("<nand_full_size=%lu>\n",sizeof(nand_ori));
 	memset(nand[0],0xff,64*528);
 	//memset(nand_ori,0xff,sizeof(nand_ori));
 	char *p=&nand[0][0];
@@ -1255,14 +1282,15 @@ bool CopyLcdBuffer(uint8_t* buffer){
 bool injected=false;
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
+	
 	/*
-	register uint32_t cycles = wqx::cycles;
-	register uint16_t reg_pc = wqx::reg_pc;
-	register uint8_t reg_a = wqx::reg_a;
-	register uint8_t reg_ps = wqx::reg_ps;
-	register uint8_t reg_x = wqx::reg_x;
-	register uint8_t reg_y = wqx::reg_y;
-	register uint8_t reg_sp = wqx::reg_sp;*/
+	uint32_t cycles = wqx::cycles;
+	uint16_t reg_pc = wqx::reg_pc;
+	uint8_t reg_a = wqx::reg_a;
+	uint8_t reg_ps = wqx::reg_ps;
+	uint8_t reg_x = wqx::reg_x;
+	uint8_t reg_y = wqx::reg_y;
+	uint8_t reg_sp = wqx::reg_sp;*/
 
 	while (cycles < end_cycles) {
 		tick++;
@@ -3129,12 +3157,13 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	timer0_cycles -= end_cycles;
 	timer1_cycles -= end_cycles;
 
+	/*
 	wqx::reg_pc = reg_pc;
 	wqx::reg_a = reg_a;
 	wqx::reg_ps = reg_ps;
 	wqx::reg_x = reg_x;
 	wqx::reg_y = reg_y;
-	wqx::reg_sp = reg_sp;
+	wqx::reg_sp = reg_sp;*/
 }
 
 }
