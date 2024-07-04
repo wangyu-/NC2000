@@ -1100,7 +1100,7 @@ void Initialize(WqxRom rom) {
 	io_write[0x23] = Write23;
 	io_write[0x3F] = Write3F;
 
-	LoadRom();
+	//LoadRom();
 //#ifdef DEBUG
 //	FILE* file = fopen((nc1020_dir + "/wqxsimlogs.bin").c_str(), "rb");
 //	fseek(file, 0L, SEEK_END);
