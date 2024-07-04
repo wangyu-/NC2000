@@ -25,7 +25,7 @@ nor命名为：`2600nor.bin`
 
 1改： https://github.com/hackwaly/jswqx   （用js重写，nc1020支持）
 
-2改：https://github.com/hackwaly/NC1020  (上面版本用c++重写) （不确定是否是原作者repo） 
+2改：https://github.com/hackwaly/NC1020  (上面版本用c++重写) （仅猜测，不确定，也有可能上一版本是参考这个。另外不确定URL是否是原作者repo） 
 
 3改：https://github.com/Wang-Yue/NC1020 （上面版本移植到sdl） 
 
