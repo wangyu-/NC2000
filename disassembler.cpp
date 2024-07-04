@@ -1,0 +1,137 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <string>
+using namespace std;
+#include "disassembler.h"
+//adapted from https://gist.github.com/slembcke/4b746cb71d435f16c4763ae2de3201f3
+
+
+// 6502 instruction tables.
+enum OPCODE {
+	OP_LDA, OP_LDX, OP_LDY, OP_STA, OP_STX, OP_STY, OP_ADC, OP_SBC,
+	OP_INC, OP_INX, OP_INY, OP_DEC, OP_DEX, OP_DEY, OP_ASL, OP_LSR,
+	OP_ROL, OP_ROR, OP_AND, OP_ORA, OP_EOR, OP_CMP, OP_CPX, OP_CPY,
+	OP_BIT, OP_BPL, OP_BMI, OP_BVC, OP_BVS, OP_BCC, OP_BCS, OP_BNE,
+	OP_BEQ, OP_TAX, OP_TXA, OP_TAY, OP_TYA, OP_TSX, OP_TXS, OP_PHA,
+	OP_PLA, OP_PHP, OP_PLP, OP_JMP, OP_JSR, OP_RTS, OP_RTI, OP_SEC,
+	OP_SED, OP_SEI, OP_CLC, OP_CLD, OP_CLI, OP_CLV, OP_NOP, OP_BRK,
+	OP_XXX,
+};
+
+// Convert an opcode to an mnemonic.
+static const char OPCODE_MNEMONICS[][4] = {
+	"LDA", "LDX", "LDY", "STA", "STX", "STY", "ADC", "SBC",
+	"INC", "INX", "INY", "DEC", "DEX", "DEY", "ASL", "LSR",
+	"ROL", "ROR", "AND", "ORA", "EOR", "CMP", "CPX", "CPY",
+	"BIT", "BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE",
+	"BEQ", "TAX", "TXA", "TAY", "TYA", "TSX", "TXS", "PHA",
+	"PLA", "PHP", "PLP", "JMP", "JSR", "RTS", "RTI", "SEC",
+	"SED", "SEI", "CLC", "CLD", "CLI", "CLV", "NOP", "BRK",
+	"???",
+};
+
+enum ADDR_MODE {AM_ACC, AM_IMP, AM_IMM, AM_ABS, AM_IND, AM_ZPG, AM_REL, AM_AXI, AM_AYI, AM_ZXI, AM_ZYI, AM_XII, AM_YII, AM_XXX};
+
+// Get a printf format string for a given address mode.
+static const char *ADDR_MODE_FORMATS[] = {
+	"%04X: %.3s", // AADR_MODE_ACCUMULATOR
+	"%04X: %.3s", // AADR_MODE_IMPLIED
+	"%04X: %.3s #$%02X", // AADR_MODE_IMMEDIATE
+	"%04X: %.3s $%04X", // AADR_MODE_ABSOLUTE,
+	"%04X: %.3s ($%04X)", // Indirect
+	"%04X: %.3s $%02X", // AADR_MODE_ZERO_PAGE,
+	"%04X: %.3s $%02X", // AADR_MODE_RELATIVE,
+	"%04X: %.3s $%04X,X", // AADR_MODE_ABSOLUTE_X_INDEXED,
+	"%04X: %.3s $%04X,Y", // AADR_MODE_ABSOLUTE_Y_INDEXED,
+	"%04X: %.3s $%02X,X", // AADR_MODE_ZERO_PAGE_X_INDEXED,
+	"%04X: %.3s $%02X,Y", // AADR_MODE_ZERO_PAGE_Y_INDEXED,
+	"%04X: %.3s ($%02X,X)", // AADR_MODE_ZERO_PAGE_X_INDEXED_INDIRECT,
+	"%04X: %.3s ($%02X),Y", // AADR_MODE_ZERO_PAGE_Y_INDIRECT_INDEXED,
+	"      BAD INSTRUCTION",
+};
+
+// Get the instruction length for a given address mode.
+static const uint8_t ADDR_MODE_LENGTHS[] = {
+	1, // AADR_MODE_ACCUMULATOR
+	1, // AADR_MODE_IMPLIED
+	2, // AADR_MODE_IMMEDIATE
+	3, // AADR_MODE_ABSOLUTE,
+	3, // Indirect
+	2, // AADR_MODE_ZERO_PAGE,
+	2, // AADR_MODE_RELATIVE,
+	3, // AADR_MODE_ABSOLUTE_X_INDEXED,
+	3, // AADR_MODE_ABSOLUTE_Y_INDEXED,
+	2, // AADR_MODE_ZERO_PAGE_X_INDEXED,
+	2, // AADR_MODE_ZERO_PAGE_Y_INDEXED,
+	2, // AADR_MODE_ZERO_PAGE_X_INDEXED_INDIRECT,
+	2, // AADR_MODE_ZERO_PAGE_Y_INDIRECT_INDEXED,
+	1,
+};
+
+// Get the opcode for a given instruction.
+static const uint8_t INSTRUCTION_OPCODES[] = {
+	OP_BRK, OP_ORA, OP_XXX, OP_XXX, OP_XXX, OP_ORA, OP_ASL, OP_XXX, OP_PHP, OP_ORA, OP_ASL, OP_XXX, OP_XXX, OP_ORA, OP_ASL, OP_XXX,
+	OP_BPL, OP_ORA, OP_XXX, OP_XXX, OP_XXX, OP_ORA, OP_ASL, OP_XXX, OP_CLC, OP_ORA, OP_XXX, OP_XXX, OP_XXX, OP_ORA, OP_ASL, OP_XXX,
+	OP_JSR, OP_AND, OP_XXX, OP_XXX, OP_BIT, OP_AND, OP_ROL, OP_XXX, OP_PLP, OP_AND, OP_ROL, OP_XXX, OP_BIT, OP_AND, OP_ROL, OP_XXX,
+	OP_BMI, OP_AND, OP_XXX, OP_XXX, OP_XXX, OP_AND, OP_ROL, OP_XXX, OP_SEC, OP_AND, OP_XXX, OP_XXX, OP_XXX, OP_AND, OP_ROL, OP_XXX,
+	OP_RTI, OP_EOR, OP_XXX, OP_XXX, OP_XXX, OP_EOR, OP_LSR, OP_XXX, OP_PHA, OP_EOR, OP_LSR, OP_XXX, OP_JMP, OP_EOR, OP_LSR, OP_XXX,
+	OP_BVC, OP_EOR, OP_XXX, OP_XXX, OP_XXX, OP_EOR, OP_LSR, OP_XXX, OP_CLI, OP_EOR, OP_XXX, OP_XXX, OP_XXX, OP_EOR, OP_LSR, OP_XXX,
+	OP_RTS, OP_ADC, OP_XXX, OP_XXX, OP_XXX, OP_ADC, OP_ROR, OP_XXX, OP_PLA, OP_ADC, OP_ROR, OP_XXX, OP_JMP, OP_ADC, OP_ROR, OP_XXX,
+	OP_BVS, OP_ADC, OP_XXX, OP_XXX, OP_XXX, OP_ADC, OP_ROR, OP_XXX, OP_SEI, OP_ADC, OP_XXX, OP_XXX, OP_XXX, OP_ADC, OP_ROR, OP_XXX,
+	OP_XXX, OP_STA, OP_XXX, OP_XXX, OP_STY, OP_STA, OP_STX, OP_XXX, OP_DEY, OP_XXX, OP_TXA, OP_XXX, OP_STY, OP_STA, OP_STX, OP_XXX,
+	OP_BCC, OP_STA, OP_XXX, OP_XXX, OP_STY, OP_STA, OP_STX, OP_XXX, OP_TYA, OP_STA, OP_TXS, OP_XXX, OP_XXX, OP_STA, OP_XXX, OP_XXX,
+	OP_LDY, OP_LDA, OP_LDX, OP_XXX, OP_LDY, OP_LDA, OP_LDX, OP_XXX, OP_TAY, OP_LDA, OP_TAX, OP_XXX, OP_LDY, OP_LDA, OP_LDX, OP_XXX,
+	OP_BCS, OP_LDA, OP_XXX, OP_XXX, OP_CPY, OP_CMP, OP_DEC, OP_XXX, OP_INY, OP_CMP, OP_DEX, OP_XXX, OP_LDY, OP_LDA, OP_LDX, OP_XXX,
+	OP_CPY, OP_CMP, OP_XXX, OP_XXX, OP_CPY, OP_CMP, OP_DEC, OP_XXX, OP_INY, OP_CMP, OP_DEX, OP_XXX, OP_CPY, OP_CMP, OP_DEC, OP_XXX,
+	OP_BNE, OP_CMP, OP_XXX, OP_XXX, OP_XXX, OP_CMP, OP_DEC, OP_XXX, OP_CLD, OP_CMP, OP_XXX, OP_XXX, OP_XXX, OP_CMP, OP_DEC, OP_XXX,
+	OP_CPX, OP_SBC, OP_XXX, OP_XXX, OP_CPX, OP_SBC, OP_INC, OP_XXX, OP_INX, OP_SBC, OP_NOP, OP_XXX, OP_CPX, OP_SBC, OP_INC, OP_XXX,
+	OP_BEQ, OP_SBC, OP_XXX, OP_XXX, OP_XXX, OP_SBC, OP_INC, OP_XXX, OP_SED, OP_SBC, OP_XXX, OP_XXX, OP_XXX, OP_SBC, OP_INC, OP_XXX,
+};
+
+// Get the addressing mode for a given instruction.
+static const uint8_t INSTRUCTION_ADDRESS_MODES[] = {
+	AM_IMP, AM_XII, AM_XXX, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_ACC, AM_XXX, AM_XXX, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_XXX, AM_IMP, AM_AYI, AM_XXX, AM_XXX, AM_XXX, AM_AXI, AM_AXI, AM_XXX,
+	AM_ABS, AM_XII, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_ACC, AM_XXX, AM_ABS, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_XXX, AM_IMP, AM_AYI, AM_XXX, AM_XXX, AM_XXX, AM_AXI, AM_AXI, AM_XXX,
+	AM_IMP, AM_XII, AM_XXX, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_ACC, AM_XXX, AM_ABS, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_XXX, AM_IMP, AM_AYI, AM_XXX, AM_XXX, AM_XXX, AM_AXI, AM_AXI, AM_XXX,
+	AM_IMP, AM_XII, AM_XXX, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_ACC, AM_XXX, AM_IND, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_XXX, AM_IMP, AM_AYI, AM_XXX, AM_XXX, AM_XXX, AM_AXI, AM_AXI, AM_XXX,
+	AM_XXX, AM_XII, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_XXX, AM_IMP, AM_XXX, AM_ABS, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_ZYI, AM_XXX, AM_IMP, AM_AYI, AM_IMP, AM_XXX, AM_XXX, AM_AXI, AM_XXX, AM_XXX,
+	AM_IMM, AM_XII, AM_IMM, AM_XXX, AM_ZPG, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_IMP, AM_XXX, AM_ABS, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_ZYI, AM_XXX, AM_IMP, AM_AYI, AM_IMP, AM_XXX, AM_AXI, AM_AXI, AM_AYI, AM_XXX,
+	AM_IMM, AM_XII, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_IMP, AM_XXX, AM_ABS, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_XXX, AM_IMP, AM_AYI, AM_XXX, AM_XXX, AM_XXX, AM_AXI, AM_AXI, AM_XXX,
+	AM_IMM, AM_XII, AM_XXX, AM_XXX, AM_ZPG, AM_ZPG, AM_ZPG, AM_XXX, AM_IMP, AM_IMM, AM_IMP, AM_XXX, AM_ABS, AM_ABS, AM_ABS, AM_XXX,
+	AM_REL, AM_YII, AM_XXX, AM_XXX, AM_XXX, AM_ZXI, AM_ZXI, AM_XXX, AM_IMP, AM_AYI, AM_XXX, AM_XXX, AM_XXX, AM_AXI, AM_AXI, AM_XXX,
+};
+
+//struct disassembler_context disassembler;
+namespace wqx{
+uint8_t & Peek16(uint16_t addr);
+}
+// The assembly of this is not pretty and could be massively improved if it wasn't a toy.
+// Compare with the Apple II monitor utility at half the size and *way* more functionality.
+string disassemble_next(unsigned char *c,uint16_t pc){
+	uint8_t instruction = c[0];
+	uint8_t opcode = INSTRUCTION_OPCODES[instruction];
+	uint8_t addr_mode = INSTRUCTION_ADDRESS_MODES[instruction];
+	uint8_t instruction_length = ADDR_MODE_LENGTHS[addr_mode];
+	uint16_t value = c[1];
+	
+	if(instruction_length == 3){
+		value |= (c[2] << 8);
+	}
+	char output[100];
+	snprintf(output, sizeof(output), ADDR_MODE_FORMATS[addr_mode],pc, OPCODE_MNEMONICS[opcode], value);
+    string res=output;
+    while(res.size()<20) res.push_back(' ');
+    output[0]=0;
+    if(instruction_length >=2){
+        snprintf(output,sizeof(output), "; %04X -> %02X %02X", value, wqx::Peek16(value),wqx::Peek16(value+1));
+    }
+    res+=output;
+    return res;
+}
