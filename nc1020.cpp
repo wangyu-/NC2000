@@ -334,7 +334,7 @@ uint8_t* GetPtr40(uint8_t index){
 
 uint8_t & Peek16(uint16_t addr);
 
-deque<char> nand_cmd;
+deque<uint8_t> nand_cmd;
 int nand_read_cnt=0;
 char nand_ori[65536][528];
 char nand[65536+64][528];
@@ -546,7 +546,17 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
 				if(nand_read_cnt!=0&& enable_debug_nand) {
 					printf("<nand reads %d>\n",nand_read_cnt);
 				}
-				assert(nand_cmd.size()<10);
+				/*
+				for(int i=0;i<nand_cmd.size();i++){
+					printf("<%02x>",(unsigned char)nand_cmd[i]);
+				}
+				printf("\n");*/
+
+
+				// robust check: what we dumped is indeed as expected
+				if(nand_cmd.size()==7) assert(nand_cmd[6]==0xff);
+				else assert(nand_cmd.size()<=6);
+
 				nand_cmd.clear();
 				nand_read_cnt=0;
 				if(value==0xff) goto out;
