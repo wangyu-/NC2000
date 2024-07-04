@@ -39,7 +39,7 @@ bool InitEverything() {
   };
 
   if(nc2000){
-     rom.norFlashPath= "./2600flash.bin";
+     rom.norFlashPath= "./2600nor.bin";
   }
   wqx::Initialize(rom);
   wqx::LoadNC1020();
