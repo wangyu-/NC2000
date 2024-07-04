@@ -332,7 +332,7 @@ uint8_t* GetPtr40(uint8_t index){
     }
 }*/
 
-inline uint8_t & Peek16(uint16_t addr);
+uint8_t & Peek16(uint16_t addr);
 
 deque<char> nand_cmd;
 int nand_read_cnt=0;
@@ -542,7 +542,7 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
 		
 		{
 			//if(tick-last_tick>=9) {
-			if(tick-last_tick>=30) {
+			if(tick-last_tick>=40) {    // some magic timeout,  which should be removed after the 018h IO is emulated
 				if(nand_read_cnt!=0&& enable_debug_nand) {
 					printf("<nand reads %d>\n",nand_read_cnt);
 				}

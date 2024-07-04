@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "-O0 -g3 -fsanitize=address -I/opt/homebrew/include")
-#set(CMAKE_CXX_FLAGS "-O2 -g ")
+#set(CMAKE_CXX_FLAGS "-O2 -g3 -fsanitize=address -I/opt/homebrew/include")
+set(CMAKE_CXX_FLAGS "-O2 -g3 -I/opt/homebrew/include")
 include_directories(include /usr/local/include/)
 project(a.out LANGUAGES CXX)
 
