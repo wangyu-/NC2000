@@ -121,11 +121,38 @@ void RunGame() {
             wqx::SetKey(0x3B, key_down);
             break;
           case SDLK_MINUS: 
-            wqx::SetKey(0x39, key_down);
-            break;
-          case SDLK_EQUALS: 
             wqx::SetKey(0x38, key_down);
             break;
+          case SDLK_EQUALS: 
+            wqx::SetKey(0x3E, key_down);
+            break;
+
+          case SDLK_LEFTBRACKET:
+            wqx::SetKey(0x38, key_down); 
+            break;
+          case SDLK_RIGHTBRACKET:
+            wqx::SetKey(0x39, key_down); 
+            break;
+          case SDLK_BACKSLASH:
+            wqx::SetKey(0x3A, key_down); 
+            break;
+
+          case SDLK_COMMA:
+            wqx::SetKey(0x37, key_down); 
+            break;
+          case SDLK_SLASH:
+            wqx::SetKey(0x1E, key_down); 
+            break;
+
+          case SDLK_DELETE:
+            wqx::SetKey(0x3F, key_down); 
+            break;
+
+          /*case SDLK_TAB:
+            wqx::SetKey(0x3A, key_down); 
+            break;*/
+
+
 
     
           case SDLK_0: 
