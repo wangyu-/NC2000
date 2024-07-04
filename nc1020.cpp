@@ -381,12 +381,17 @@ uint8_t IO_API ReadXX(uint8_t addr){
 		if(cmd ==0 ||cmd==1||cmd==0x50){
 			if(nand_cmd.size()!=5 ){
 				printf("oops cmd size!=5\n");
-				assert(false);
 				for(int i=0;i<nand_cmd.size();i++){
 					printf("<%x>",(unsigned char)nand_cmd[i]);
 				}
 				printf("\n");
-				return 0;
+
+				if(nand_cmd.size()==1 && nand_cmd[0]==0x0){
+					printf("oops!! nand_cmd=[0] but trying to read\n");
+					return 0xff;
+				}
+				assert(false);
+				return 0xff;
 			}
 
 			unsigned char low=nand_cmd[1];
