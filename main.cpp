@@ -6,10 +6,13 @@
 using namespace std;
 const uint32_t FRAME_RATE=30;
 const uint32_t FRAME_INTERVAL= (1000u/FRAME_RATE);
-const int enable_debug_key_shoot=false;
+
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 80
 #define LINE_SIZE 2
+
+const int enable_debug_key_shoot=false;
+//const int enable_debug_cycles=false;
 
 SDL_Renderer* renderer;
 

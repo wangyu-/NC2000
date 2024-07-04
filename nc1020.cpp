@@ -1137,7 +1137,9 @@ void Initialize(WqxRom rom) {
 	io_write[0x23] = Write23;
 	io_write[0x3F] = Write3F;
 
-	//LoadRom();
+	if(nc1020){
+		LoadRom();
+	}
 //#ifdef DEBUG
 //	FILE* file = fopen((nc1020_dir + "/wqxsimlogs.bin").c_str(), "rb");
 //	fseek(file, 0L, SEEK_END);
@@ -1292,7 +1294,6 @@ bool CopyLcdBuffer(uint8_t* buffer){
 bool injected=false;
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
-	
 	/*
 	uint32_t cycles = wqx::cycles;
 	uint16_t reg_pc = wqx::reg_pc;
@@ -1302,6 +1303,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint8_t reg_y = wqx::reg_y;
 	uint8_t reg_sp = wqx::reg_sp;*/
 
+	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (cycles < end_cycles) {
 		tick++;
 		if(tick%10000000==0) printf("tick=%lld\n",tick);
