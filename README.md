@@ -7,7 +7,7 @@
 <img width="327" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/f05a426f-d5e5-4190-880e-9fe40570d58f">
 <img width="323" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/ce8f6dea-a2ab-46ac-bdc0-6a93b821640e">
 
-代码刚刚调通，非常乱，暂时不要尝试阅读。后面会整理。
+代码刚刚调通，非常乱，暂时不要尝试阅读，后面会整理。 nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
 
 后面会做下载和发音。
 
