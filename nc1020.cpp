@@ -31,7 +31,7 @@ namespace wqx {
     using std::string;
     
     // cpu cycles per second (cpu freq).
-    const uint32_t CYCLES_SECOND = 5120000*10; //multiple by 10, tmp solution to fix speed
+    const uint32_t CYCLES_SECOND = 5120000*(nc2000?10:1); //multiple by 10, tmp solution to fix speed
     const uint32_t TIMER0_FREQ = 2;
     const uint32_t TIMER1_FREQ = 0x100;
     // cpu cycles per timer0 period (1/2 s).
