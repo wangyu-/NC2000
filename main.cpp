@@ -2,10 +2,11 @@
 #include "nc1020.h"
 #include <SDL_keycode.h>
 #include <iostream>
-
-#define FRAME_RATE 30
-#define FRAME_INTERVAL (1000/FRAME_RATE)
-
+#include <map>
+using namespace std;
+const uint32_t FRAME_RATE=30;
+const uint32_t FRAME_INTERVAL= (1000u/FRAME_RATE);
+const int enable_debug_key_shoot=false;
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 80
 #define LINE_SIZE 2
@@ -75,24 +76,11 @@ void Render() {
 }
 
 
-void RunGame() {
-  bool loop = true;
-
-  while (loop) {
-    uint32_t tick = SDL_GetTicks();
-
-    wqx::RunTimeSlice(FRAME_INTERVAL, false);
-
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      if ( event.type == SDL_QUIT ) {
-        loop = false;
-      } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
-        bool key_down = event.type == SDL_KEYDOWN;
-        switch ( event.key.keysym.sym ) {
-
-
-
+void handle_key(signed int sym, bool key_down){
+        if(enable_debug_key_shoot){
+          printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
+        }
+        switch ( sym) {
           case SDLK_RIGHT: // Right
             wqx::SetKey(0x1F, key_down);
             break;
@@ -105,8 +93,6 @@ void RunGame() {
           case SDLK_UP:  // Up
             wqx::SetKey(0x1A, key_down);
             break;
-
-
 
           case SDLK_RETURN:
             wqx::SetKey(0x1D, key_down);
@@ -316,14 +302,44 @@ void RunGame() {
           default :  // unsupported
             break;
         }
+}
+void RunGame() {
+  bool loop = true;
+
+  uint64_t start_tick = SDL_GetTicks64();
+  uint64_t expected_tick = 0;
+
+  while (loop) {
+
+
+    wqx::RunTimeSlice(FRAME_INTERVAL, false);
+
+    SDL_Event event;
+    map<signed int, bool> mp;
+    while (SDL_PollEvent(&event)) {
+      if ( event.type == SDL_QUIT ) {
+        loop = false;
+      } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+        bool key_down = (event.type == SDL_KEYDOWN);
+
+        //try to consolidate multiple key shoot into one
+        //not sure if necessary. But it's helpful for debug
+        mp[event.key.keysym.sym]= key_down;
+        for(auto it=mp.begin();it!=mp.end();it++){
+          handle_key(it->first,it->second);
+        }
       }
     }
     if (!wqx::CopyLcdBuffer(lcd_buf)) {
       std::cout << "Failed to copy buffer renderer." << std::endl;
     }
     Render();
-    tick = SDL_GetTicks() - tick;
-    SDL_Delay(FRAME_INTERVAL < tick ? 0 : FRAME_INTERVAL - tick);
+    expected_tick+=FRAME_INTERVAL;
+    uint64_t actual_tick= SDL_GetTicks64() - start_tick;
+
+    if(actual_tick <expected_tick) SDL_Delay(expected_tick-actual_tick);
+
+    //SDL_Delay(FRAME_INTERVAL < tick ? 0 : FRAME_INTERVAL - tick);
   }
 }
 
