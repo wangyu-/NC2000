@@ -16,7 +16,7 @@
 
 nand命名为：`2600nand.bin`
 
-nor命名为：`2600nand.bin`
+nor命名为：`2600nor.bin`
 
 
 # 代码基于以下项目
