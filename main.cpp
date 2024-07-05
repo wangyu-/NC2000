@@ -300,7 +300,7 @@ void handle_key(signed int sym, bool key_down){
 
           case SDLK_BACKQUOTE:
             if(key_down==1){
-              enable_dyn_debug^= 0x1;
+              //enable_dyn_debug^= 0x1;
             }
             break;
 
