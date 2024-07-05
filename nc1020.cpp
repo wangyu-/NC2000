@@ -386,10 +386,10 @@ uint8_t IO_API ReadXX(uint8_t addr){
 				}
 				printf("\n");
 
-				if(nand_cmd.size()==1 && nand_cmd[0]==0x0){
+				/*if(nand_cmd.size()==1 && nand_cmd[0]==0x0){
 					printf("oops!! nand_cmd=[0] but trying to read\n");
 					return 0xff;
-				}
+				}*/
 				assert(false);
 				return 0xff;
 			}
@@ -519,7 +519,7 @@ void inject(){
 bool wanna_inject=false;
 
 
-unsigned long last_tick=0;
+uint64_t last_tick=0;
 void IO_API WriteXX(uint8_t addr, uint8_t value){
 	if(addr==0x29) {
 		//printf("tick=%lld, write %x  %02x\n",tick, addr, value);
@@ -1311,7 +1311,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (cycles < end_cycles) {
 		tick++;
-		if(tick%10000000==0) printf("tick=%lld\n",tick);
+		if(tick%100000000==0) printf("tick=%lld\n",tick);
 //#ifdef DEBUG
 //		if (executed_insts == 2792170) {
 //			printf("debug start!\n");
