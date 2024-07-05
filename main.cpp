@@ -7,11 +7,13 @@ using namespace std;
 const uint32_t FRAME_RATE=30;
 const uint32_t FRAME_INTERVAL= (1000u/FRAME_RATE);
 
+
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 80
 #define LINE_SIZE 2
 
-const int enable_debug_key_shoot=false;
+const int enable_debug_key_shoot=true;
+bool fast_forward=false;
 //const int enable_debug_cycles=false;
 
 SDL_Renderer* renderer;
@@ -110,7 +112,7 @@ void handle_key(signed int sym, bool key_down){
             wqx::SetKey(0x3B, key_down);
             break;
           case SDLK_MINUS: 
-            wqx::SetKey(0x38, key_down);
+            wqx::SetKey(0x0E, key_down);
             break;
           case SDLK_EQUALS: 
             wqx::SetKey(0x3E, key_down);
@@ -298,7 +300,13 @@ void handle_key(signed int sym, bool key_down){
 
           case SDLK_BACKQUOTE:
             if(key_down==1){
-              enable_dyn_debug^=1;
+              enable_dyn_debug^= 0x1;
+            }
+            break;
+
+          case SDLK_TAB:
+            if(key_down==1){
+                fast_forward^= 0x1;
             }
             break;
 
@@ -340,8 +348,12 @@ void RunGame() {
     expected_tick+=FRAME_INTERVAL;
     uint64_t actual_tick= SDL_GetTicks64() - start_tick;
 
-    if(actual_tick <expected_tick) SDL_Delay(expected_tick-actual_tick);
-
+  if(fast_forward) {
+      expected_tick =actual_tick;
+  }
+  if(actual_tick <expected_tick) {
+    {SDL_Delay(expected_tick-actual_tick);}
+  }
     //SDL_Delay(FRAME_INTERVAL < tick ? 0 : FRAME_INTERVAL - tick);
   }
 }
