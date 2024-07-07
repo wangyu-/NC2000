@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include "comm.h"
 #include "nc1020.h"
 #include <SDL_keycode.h>
 #include <iostream>
@@ -209,6 +210,10 @@ void RunGame() {
 }
 
 int main(int argc, char* args[]) {
+
+  if(argc>1){
+    sscanf(args[1],"%d",&listen_port);
+  }
   if (!InitEverything())
     return -1;
   

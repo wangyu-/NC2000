@@ -34,6 +34,8 @@ extern bool enable_inject;
 extern bool wanna_inject;
 extern bool injected;
 
+extern int listen_port;
+
 /*
 ===================
 global switch

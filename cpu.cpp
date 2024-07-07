@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "comm.h"
 #include "disassembler.h"
 #include "mem.h"
 #include "state.h"
@@ -64,7 +65,7 @@ void init_udp_server(){
 	memset((char *)&myaddr, 0, sizeof(myaddr));
 	myaddr.sin_family = AF_INET;
 	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	myaddr.sin_port = htons(9000);
+	myaddr.sin_port = htons(listen_port);
 
 	if (bind(udp_fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
 		perror("bind failed");
@@ -73,7 +74,7 @@ void init_udp_server(){
 	}
 	printf("bind socket done\n");
 
-	printf("udp all good!!!\n");
+	printf("udp listening at %d!!!\n",listen_port);
 	std::thread task1(read_loop, "hi");
 	task1.detach();
 	return ;
