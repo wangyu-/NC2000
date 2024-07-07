@@ -326,6 +326,7 @@ void handle_cmd(string & str){
 			return;
 	}
 	printf("unknow command <%s>\n",cmds[0].c_str());
+	fflush(stdout);
 }
 
 
