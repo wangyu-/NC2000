@@ -72,6 +72,7 @@ void init_udp_server(){
 		close(udp_fd);
 		return ;
 	}
+	
 	printf("bind socket done\n");
 
 	printf("udp listening at %d!!!\n",listen_port);
@@ -148,16 +149,58 @@ void inject(){
 	reg_pc=0x4018;
 }
 
-void handle_cmd(string & cmd){
-	while(!cmd.empty() &&(cmd.back()=='\n'||cmd.back()=='\r'||cmd.back()==' ')){
-		cmd.pop_back();
+vector<string> split_s(const string &str, const string &sp) {
+    vector<string> res;
+    size_t i = 0, pos;
+    for (;; i = pos + sp.length()) {
+        pos = str.find(sp, i);
+        if (pos == string::npos) {
+			string s=str.substr(i, pos);
+            if(!s.empty()) res.push_back(s);
+            break;
+        } else {
+			string s=str.substr(i, pos - i);
+            if(!s.empty()) res.push_back(s);
+        }
+    }
+    return res;
+}
+
+void handle_cmd(string & str){
+	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
+		str.pop_back();
 	} 
-	printf("received %s from udp\n",cmd.c_str());
-	if(cmd=="save_flash"){
+	printf("received %s from udp\n",str.c_str());
+	auto cmds=split_s(str," ");
+	for(int i=0;i<cmds.size();i++){
+		printf("<%s>",cmds[i].c_str());
+	}
+	printf("\n");
+	if(cmds.size()==0) return;
+	if(cmds[0]=="save_flash"){
 		write_nand_file();
 		SaveNor();
 		printf("flash saved to file!!\n");
 		return;
+	}
+
+	if(cmds[0]=="dump"){
+		uint32_t start=stoi(cmds[1],0,16);
+		uint32_t size=stoi(cmds[2],0,10);
+
+
+		for(uint32_t i=start;i<start+size;i++){
+			printf("%02x ",Peek16(i));
+		}
+		printf("\n");
+	}
+
+	if(cmds[0]=="ec"){
+		uint32_t start=stoi(cmds[1],0,16);
+		for(uint32_t i=2;i<cmds.size();i++){
+			Peek16(start++)=stoi(cmds[i],0,16);;
+		}
+		printf("ec done\n");
 	}
 }
 void cpu_run(){
@@ -173,7 +216,7 @@ void cpu_run(){
 			handle_cmd(tmp);
 		}
 		tick++;
-		if(tick%100000000==0) printf("tick=%lld\n",tick);
+		//if(tick%100000000==0) printf("tick=%lld\n",tick);
 //#ifdef DEBUG
 //		if (executed_insts == 2792170) {
 //			printf("debug start!\n");
@@ -219,7 +262,7 @@ void cpu_run(){
 //		}
 //#endif
 		//if(tick>8525000) wanna_inject=true;
-		if(enable_inject&& tick>11000000) wanna_inject=true;
+		if(enable_inject&& tick>60000000) wanna_inject=true;
 		if(wanna_inject&& !injected){
 			inject();
 			printf("injected!!!");
@@ -247,11 +290,6 @@ void cpu_run(){
 			//getchar();
 		}
 
-		if(injected &&reg_pc==0x2018){
-			printf("%x\n",reg_x);
-			//cycles++;
-			//continue;
-		}
 		
 		switch (Peek16(reg_pc++)) {
 		case 0x00: {

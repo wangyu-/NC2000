@@ -100,7 +100,7 @@ void IO_API Write06(uint8_t addr, uint8_t value){
     ram_io[addr] = value;
     if (!lcd_addr||true) {
     	lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
-		printf("%x\n",lcd_addr);
+		printf("lcd_addr=%x\n",lcd_addr);
     }
     ram_io[0x09] &= 0xFE;
 }

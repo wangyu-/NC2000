@@ -14,9 +14,11 @@
 #include <sstream>
 #include <fstream>
 #include <deque>
+#include <vector>
 using std::string;
 using std::deque;
 using std::fstream;
+using std::vector;
 
 #define IO_API
 
