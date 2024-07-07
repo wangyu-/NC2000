@@ -21,6 +21,8 @@ CREATE:
    STA $0914 
    INT $0514
 WRITE:
+   LDA #$00
+   STA $3f6
    LDA $3FFF
    CMP #$00
    BEQ PREEND
@@ -40,5 +42,5 @@ WRITE:
 PREEND:
      INT $0516
 END: INT $0527
-     JMP END  
+     JMP END   
 */
