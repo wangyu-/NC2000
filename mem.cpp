@@ -37,6 +37,13 @@ uint16_t PeekW(uint16_t addr) {
 	return Peek16(addr) | (Peek16((uint16_t) (addr + 1)) << 8);
 }
 uint8_t Load(uint16_t addr) {
+	{
+		bool dummy_io(uint16_t addr, uint8_t &value);
+		uint8_t value;
+		if(dummy_io(addr, value)){
+			return value;
+		}
+	}
 	if (addr < IO_LIMIT) {
 		return io_read[addr](addr);
 	}

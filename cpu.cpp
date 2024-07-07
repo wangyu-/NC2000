@@ -172,15 +172,15 @@ void copy_to_addr(uint16_t addr, uint8_t * buf,uint16_t size){
 	}
 }
 deque<char> queue;
-uint32_t dummy_io_cnt=0;
-bool dummy_io(int &value){
+int32_t dummy_io_cnt=-1;
+bool dummy_io(uint16_t addr, uint8_t &value){
+	if(addr!=0x3fff) return false;
+	if(dummy_io_cnt== -1) return false;
 	if(queue.empty()) {
-		if(dummy_io_cnt!=0){
-			dummy_io_cnt=0;
-			value=0;
-			return true;
-		}
-		return false;
+		value=0;
+        dummy_io_cnt=-1;
+		printf("<dummy read %02x>\n",value);
+		return true;
 	}
 	if(dummy_io_cnt++%2==0) {
 		value=1;
@@ -188,6 +188,7 @@ bool dummy_io(int &value){
 		value=queue.front();
 		queue.pop_front();
 	}
+	printf("<dummy read %02x>\n",value);
 	return true;
 }
 void handle_cmd(string & str){
@@ -251,6 +252,39 @@ void handle_cmd(string & str){
 			ram_io[0x0a]|=0x80;
 			super_switch();
 			reg_pc=0x4018;
+			return;
+	}
+	if(cmds[0]=="put"){
+			vector<char> file;
+			read_file(cmds[1], file);
+			string target=cmds[1];
+			if(cmds.size()>2) target=cmds[2];
+			queue.clear();
+			for(int i=0;i<file.size();i++){
+				queue.push_back(file[i]);
+			}
+			dummy_io_cnt=0;
+
+			copy_to_addr(0x08d6, (uint8_t*)target.c_str(), target.size()+1);
+
+			
+			/*
+			for(;;){
+				auto value=Load(0x3fff);
+				printf("<%02x>",value);
+				if(value==0) break;
+				auto value2=Load(0x3fff);
+				printf("<%02x>",value2);
+			}
+			printf("\n");*/
+			uint8_t buf[]={0xA9,0x70,0x8D,0x12,0x09,0xA9,0xEF,0x8D,0x13,0x09,0x8D,0x14,0x09,0x00,0x14,0x05,
+0xAD,0xFF,0x3F,0xC9,0x00,0xF0,0x21,0xAD,0xFF,0x3F,0x8D,0x00,0x32,0xA9,0x00,0x85,
+0xDD,0xA9,0x32,0x85,0xDE,0xA9,0x01,0x8D,0x0F,0x09,0xA9,0x00,0x8D,0x10,0x09,0x8D,
+0x11,0x09,0x00,0x17,0x05,0x4C,0x10,0x30,0x00,0x16,0x05,0x00,0x27,0x05,0x4C,0x3B,
+0x30,};
+			copy_to_addr(0x3000,buf,sizeof(buf));
+			reg_pc=0x3000;
+			
 			return;
 	}
 	printf("unknow command <%s>\n",cmds[0].c_str());
