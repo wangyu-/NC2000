@@ -93,7 +93,7 @@ void init_udp_server(){
 	printf("create socket done\n");
 	memset((char *)&myaddr, 0, sizeof(myaddr));
 	myaddr.sin_family = AF_INET;
-	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	myaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	myaddr.sin_port = htons(listen_port);
 
 	if (bind(udp_fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
