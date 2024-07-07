@@ -75,8 +75,10 @@ const uint32_t FRAME_INTERVAL= (1000u/FRAME_RATE);
 cycles related
 ===================
 */
+const uint32_t static_multipler=10; //tmp fix for speed and crash
+
 // cpu cycles per second (cpu freq).
-const uint32_t CYCLES_SECOND = 5120000*(nc2000?1:1);
+const uint32_t CYCLES_SECOND = 5120000*(nc2000?static_multipler:1);
 const uint32_t TIMER0_FREQ = 2;
 const uint32_t TIMER1_FREQ = 0x100;
 // cpu cycles per timer0 period (1/2 s).

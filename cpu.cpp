@@ -220,7 +220,7 @@ bool dummy_io(uint16_t addr, uint8_t &value){
 	//printf("<dummy read %02x>\n",value);
 	return true;
 }
-uint32_t speed_multiplier=1;
+double speed_multiplier=1.0;
 void handle_cmd(string & str){
 	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
 		str.pop_back();
@@ -288,9 +288,9 @@ void handle_cmd(string & str){
 	if(cmds[0]=="speed"){
 			if(cmds.size()==1) speed_multiplier=1;
 			else{
-				sscanf(cmds[1].c_str(),"%u",&speed_multiplier);
+				sscanf(cmds[1].c_str(),"%lf",&speed_multiplier);
 			}
-			printf("change speed to %u\n",speed_multiplier);
+			printf("change speed to %f\n",speed_multiplier);
 			return;
 	}
 	if(cmds[0]=="put"){

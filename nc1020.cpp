@@ -1,4 +1,5 @@
 #include "nc1020.h"
+#include "comm.h"
 #include "disassembler.h"
 #include "state.h"
 #include "cpu.h"
