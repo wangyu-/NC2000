@@ -19,6 +19,8 @@ The device has following hardware:
 
 The rest of Readme is going to be in Chinese， I will put english materials in [wiki](https://github.com/wangyu-/NC2000/wiki)
 
+# NC2000
+
 文曲星nc2000/nc2600模拟器。跨平台，支持windows/linux/mac。
 
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/05079aab-d3ae-4938-868c-c2eca7c58244">
