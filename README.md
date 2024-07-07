@@ -1,18 +1,28 @@
 # NC2000
-文曲星nc2000/nc2600模拟器
+文曲星nc2000/nc2600模拟器。跨平台，支持windows/linux/mac。
 
-<img width="327" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/05079aab-d3ae-4938-868c-c2eca7c58244">
-<img width="327" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/4a75209e-a200-4250-bd3b-e9fc4d4ca390">  
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/05079aab-d3ae-4938-868c-c2eca7c58244">
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/4a75209e-a200-4250-bd3b-e9fc4d4ca390">  
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/f05a426f-d5e5-4190-880e-9fe40570d58f">
+
 <br>
-<img width="327" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/f05a426f-d5e5-4190-880e-9fe40570d58f">
-<img width="323" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/ce8f6dea-a2ab-46ac-bdc0-6a93b821640e">
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/991604a8-2b8a-442f-885a-f94f3d40b868">
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/15f89720-2ba4-41b6-91f0-5041deb68c3b">
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/ce8f6dea-a2ab-46ac-bdc0-6a93b821640e">
+
+<br>
+
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/d2d0d8b7-a291-4778-9d2c-511ce0c4017e">
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/b699cf4a-4831-4203-9446-9b6f7f257caa">
+<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/07fc2e49-46f8-4d84-8402-7bbdbd33d239">
+
 
 代码刚刚调通，非常乱，暂时不要尝试阅读，后面会整理。 nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
 
-后面会做下载和发音。
+后面会做发音。
 
 # nand 和 nor
-因为可能有版权问题，暂时没放到repo里。 可以从官方2600模拟器里自取rom。
+因为可能有版权问题，暂时没放到repo里。 可以从官方nc2000或nc2600模拟器里自取rom。
 
 nand命名为：`nand.bin`
 
@@ -52,15 +62,15 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 ### 下载相关命令
 
-`create_dir XXXX`： 在模拟器当前目录内创建一个名为XXXX的目录。 
+`create_dir XXXX`： 在文曲星当前目录内创建一个名为XXXX的目录。 
 
-`put aaa.bin bbb.bin` ：把本地的aaa.bin上传到模拟器的当前目录，命名为bbb.bin
+`put aaa.bin bbb.bin` ：把本地的aaa.bin上传到文曲星的当前目录，命名为bbb.bin
 
-`put 1.txt` 把本地的1.txt上传到模拟器的当前目录，命名为1.txt (也就是上一个命令省略了一个参数的形式)
+`put 1.txt` 把本地的1.txt上传到文曲星的当前目录，命名为1.txt (也就是上一个命令省略了一个参数的形式)
 
 #### Note
 
-1. 如何切换当前目录呢？ 你在文曲星上打开资源管理器，进入哪个目录，哪个目录就是你的当前目录
+1. 如何切换当前目录呢？ 你在文曲星上打开资源管理器，进入哪个目录，哪个目录就是你的当前目录。 也就是说你文件上传到哪里，取决于模拟器内文曲星当前所在的文件夹。
 2. 以上命令需要文曲星在进入系统以后才可以运行
 3. 模拟器暂时不支持bin解密。上传bin文件需要在电脑上提前把bin文件解密好。
 4. 下载功能只做了nc2600。nc2000目前未做，强行使用可能会死机。
@@ -94,8 +104,6 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 2. 在资源管理器里运行“空间整理”会死机。 nand模拟的小问题，以后会修。
 
-3. 发音还未开始做。
-   
 # 代码基于以下项目
 
 原版： https://github.com/banxian/Sim800   （初始code）
