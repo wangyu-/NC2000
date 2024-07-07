@@ -3,13 +3,42 @@
 #include "disassembler.h"
 #include "mem.h"
 #include "state.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <thread>
 #include <mutex>
 #include <unistd.h>
 #include "nand.h"
 #include "nor.h"
+
+#if defined(__MINGW32__)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+typedef unsigned char u_int8_t;
+typedef unsigned short u_int16_t;
+typedef unsigned int u_int32_t;
+typedef int socklen_t;
+#else
+#include <sys/socket.h>    //for socket ofcourse
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#endif
+
+#if defined(__MINGW32__)
+typedef SOCKET my_fd_t;
+inline int sock_close(my_fd_t fd)
+{
+	return closesocket(fd);
+}
+#else
+typedef int my_fd_t;
+inline int sock_close(my_fd_t fd)
+{
+	return close(fd);
+}
+
+#endif
+
 
 
 
@@ -58,7 +87,7 @@ void read_loop(std::string msg)
 
 void init_udp_server(){
 	if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("cannot create socket");
+		printf("cannot create socket");
 		return ;
 	}
 	printf("create socket done\n");
@@ -68,8 +97,8 @@ void init_udp_server(){
 	myaddr.sin_port = htons(listen_port);
 
 	if (bind(udp_fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
-		perror("bind failed");
-		close(udp_fd);
+		printf("bind failed");
+		sock_close(udp_fd);
 		return ;
 	}
 	
