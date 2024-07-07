@@ -2,6 +2,15 @@
 #include "disassembler.h"
 #include "mem.h"
 #include "state.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <thread>
+#include <mutex>
+#include <unistd.h>
+#include "nand.h"
+#include "nor.h"
+
+
 
 extern nc1020_states_t nc1020_states;
 
@@ -21,7 +30,54 @@ static uint8_t& reg_x = nc1020_states.cpu.reg_x;
 static uint8_t& reg_y = nc1020_states.cpu.reg_y;
 static uint8_t& reg_sp = nc1020_states.cpu.reg_sp;
 
+static int udp_fd;
+static struct sockaddr_in myaddr;
+static struct sockaddr_in remaddr;
 
+string udp_msg;
+std::mutex g_mutex;
+
+void read_loop(std::string msg)
+{
+	char buf[1000];
+	socklen_t addrlen = sizeof(remaddr);  
+	
+	while(1){
+		ssize_t recvlen = recvfrom(udp_fd, buf, sizeof(buf)-1, 0, (struct sockaddr *)&remaddr, &addrlen);
+		if(recvlen>0) {
+			buf[recvlen]=0;
+		} 
+		g_mutex.lock();
+		udp_msg=buf;
+		g_mutex.unlock();
+	}
+    //std::cout << "task1 says: " << msg;
+}
+
+
+void init_udp_server(){
+	if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("cannot create socket");
+		return ;
+	}
+	printf("create socket done\n");
+	memset((char *)&myaddr, 0, sizeof(myaddr));
+	myaddr.sin_family = AF_INET;
+	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	myaddr.sin_port = htons(9000);
+
+	if (bind(udp_fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
+		perror("bind failed");
+		close(udp_fd);
+		return ;
+	}
+	printf("bind socket done\n");
+
+	printf("udp all good!!!\n");
+	std::thread task1(read_loop, "hi");
+	task1.detach();
+	return ;
+}
 void reset_cpu_states(){
 	nc1020_states.should_irq = false;
 	nc1020_states.cycles = 0;
@@ -63,7 +119,6 @@ bool IsCountDown(){
 }
 
 void inject(){
-/*
 	for(int i=0;i<8;i++){
 		for(int j=0;j<=0xFE;j+=2){
 			ram_b[0x100*i+j]=j;
@@ -90,11 +145,32 @@ void inject(){
 	//Peek16(0xe4)=0xb2;
 	//nc1020_states.ext_ram[0x17]=0x58;
 	reg_pc=0x4018;
-*/
 }
 
-
+void handle_cmd(string & cmd){
+	while(!cmd.empty() &&(cmd.back()=='\n'||cmd.back()=='\r'||cmd.back()==' ')){
+		cmd.pop_back();
+	} 
+	printf("received %s from udp\n",cmd.c_str());
+	if(cmd=="save_flash"){
+		write_nand_file();
+		SaveNor();
+		printf("flash saved to file!!\n");
+		return;
+	}
+}
 void cpu_run(){
+
+		string tmp;
+		g_mutex.lock();
+		if(!udp_msg.empty()){
+			tmp= udp_msg;
+			udp_msg.clear();
+		}
+		g_mutex.unlock();
+		if(!tmp.empty()){
+			handle_cmd(tmp);
+		}
 		tick++;
 		if(tick%100000000==0) printf("tick=%lld\n",tick);
 //#ifdef DEBUG

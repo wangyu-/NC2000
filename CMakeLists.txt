@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_FLAGS "-O2 -g3 -fsanitize=address -I/opt/homebrew/include")
-set(CMAKE_CXX_FLAGS "-O2 -g3")
+set(CMAKE_CXX_FLAGS "-O2 -g3 -pthread")
 find_package(SDL2 REQUIRED)
 project(a.out LANGUAGES CXX)
 

@@ -24,12 +24,14 @@ static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
 void Initialize() {
+	init_udp_server();
+
 	if(nc2000){
      nc1020_rom.norFlashPath= "./2600nor.bin";
   	}
 
 	if(enable_inject){
-		std::ifstream inject_bin("shoot.bin");
+		std::ifstream inject_bin("inject.bin");
 		std::stringstream buffer;
 		buffer << inject_bin.rdbuf();
 		printf("<inject_size=%lu>\n",buffer.str().size());
@@ -44,22 +46,7 @@ void Initialize() {
 	printf("<size=%lu>\n",nand_buffer.str().size());*/
 
 	if(nc2000){
-		memset(nand,0xff,sizeof(nand));
-		char *p0= &nand[64][0];
-		FILE *f = fopen("./2600nand.bin", "rb");
-		if(f==0) {
-			printf("file ./2600nand.bin not exist!\n");
-			exit(-1);
-		}
-		fseek(f, 0, SEEK_END);
-		long fsize = ftell(f);
-		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		fread(p0, fsize, 1, f);
-		fclose(f);
-		printf("<nand_file_size=%lu>\n",fsize);
-
-		//the value inside the real 0 nand 32k page. But it doesn't really matter
-		memcpy(nand+0x200+0x10,"ggv nc2000",strlen("ggv nc2000"));
+		read_nand_file();
 	}
 	
 	init_io();
