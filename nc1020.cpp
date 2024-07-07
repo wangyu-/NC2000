@@ -27,7 +27,7 @@ void Initialize() {
 	init_udp_server();
 
 	if(nc2000){
-     nc1020_rom.norFlashPath= "./2600nor.bin";
+     nc1020_rom.norFlashPath= "./nor.bin";
   	}
 
 	if(enable_inject){
@@ -167,6 +167,8 @@ bool CopyLcdBuffer(uint8_t* buffer){
 
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
+
+	end_cycles= end_cycles * speed_multiplier;
 
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (nc1020_states.cycles < end_cycles) {

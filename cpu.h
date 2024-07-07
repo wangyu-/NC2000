@@ -2,6 +2,9 @@
 
 #include "comm.h"
 
+
+extern uint32_t speed_multiplier;
+
 void reset_cpu_states();
 void cpu_run();
 

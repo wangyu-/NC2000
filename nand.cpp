@@ -18,9 +18,9 @@ char nand[65536+64][528];
 void read_nand_file(){
     memset(nand,0xff,sizeof(nand));
     char *p0= &nand[64][0];
-    FILE *f = fopen("./2600nand.bin", "rb");
+    FILE *f = fopen("./nand.bin", "rb");
     if(f==0) {
-        printf("file ./2600nand.bin not exist!\n");
+        printf("file ./nand.bin not exist!\n");
         exit(-1);
     }
     fseek(f, 0, SEEK_END);
@@ -35,7 +35,7 @@ void read_nand_file(){
 }
 
 void write_nand_file(){
-    FILE *f = fopen("./2600nand.bin", "wb");
+    FILE *f = fopen("./nand.bin", "wb");
     fwrite(&nand[0][0]+ 64*528, sizeof(nand)-64*528, 1 , f);
     fclose(f);
 }

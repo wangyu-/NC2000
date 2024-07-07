@@ -191,6 +191,7 @@ bool dummy_io(uint16_t addr, uint8_t &value){
 	//printf("<dummy read %02x>\n",value);
 	return true;
 }
+uint32_t speed_multiplier=1;
 void handle_cmd(string & str){
 	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
 		str.pop_back();
@@ -254,6 +255,14 @@ void handle_cmd(string & str){
 			reg_pc=0x4018;
 			return;
 	}
+	if(cmds[0]=="speed"){
+			if(cmds.size()==1) speed_multiplier=1;
+			else{
+				sscanf(cmds[1].c_str(),"%u",&speed_multiplier);
+			}
+			printf("change speed to %u\n",speed_multiplier);
+			return;
+	}
 	if(cmds[0]=="put"){
 			vector<char> file;
 			read_file(cmds[1], file);
@@ -267,7 +276,6 @@ void handle_cmd(string & str){
 
 			copy_to_addr(0x08d6, (uint8_t*)target.c_str(), target.size()+1);
 
-			
 			/*
 			for(;;){
 				auto value=Load(0x3fff);
