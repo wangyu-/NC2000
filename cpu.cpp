@@ -171,7 +171,25 @@ void copy_to_addr(uint16_t addr, uint8_t * buf,uint16_t size){
 		Peek16(addr+i)=buf[i];
 	}
 }
-
+deque<char> queue;
+uint32_t dummy_io_cnt=0;
+bool dummy_io(int &value){
+	if(queue.empty()) {
+		if(dummy_io_cnt!=0){
+			dummy_io_cnt=0;
+			value=0;
+			return true;
+		}
+		return false;
+	}
+	if(dummy_io_cnt++%2==0) {
+		value=1;
+	}else{
+		value=queue.front();
+		queue.pop_front();
+	}
+	return true;
+}
 void handle_cmd(string & str){
 	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
 		str.pop_back();
@@ -210,7 +228,7 @@ void handle_cmd(string & str){
 
 	if(cmds[0]=="file_manager"){
 		reg_pc = 0x3000;
-		uint8_t buf[]={0x00,0x27,0x05,0x60};
+		uint8_t buf[]={0x00,0x27,0x05,0x18,0x90,0xfa};
 		copy_to_addr(0x3000, buf, sizeof buf);
 		return;
 	}
@@ -220,14 +238,25 @@ void handle_cmd(string & str){
 			reg_pc = 0x3000;
 			copy_to_addr(0x08d6, (uint8_t*)cmds[1].c_str(), cmds[1].size()+1);
 			Peek16(0x0912)=0x02;
-			//uint8_t buf[]={0x00,0x0b,0x05,0x00,0x22,0x05,0x00,0x27,0x05,0x60};
-			uint8_t buf[]={0x00,0x0b,0x05,0x00,0x27,0x05,0x60};
+			uint8_t buf[]={0x00,0x0b,0x05,0x00,0x27,0x05,0x18,0x90,0xfa};
 			copy_to_addr(0x3000, buf, sizeof buf);
 			return;
 	}
 
+	if(cmds[0]=="wqxhex"){
+			vector<char> wqxhex;
+			read_file("wqxhex.bin", wqxhex);
+			memcpy(nc1020_states.ext_ram, &wqxhex[0], wqxhex.size());
+			ram_io[0x00]|=0x80;
+			ram_io[0x0a]|=0x80;
+			super_switch();
+			reg_pc=0x4018;
+			return;
+	}
 	printf("unknow command <%s>\n",cmds[0].c_str());
 }
+
+
 void cpu_run(){
 
 		string tmp;
