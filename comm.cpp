@@ -46,3 +46,5 @@ void read_file(string name,vector<char> &v){
     fread(&v[0], fsize, 1, f);
     fclose(f);
 }
+
+

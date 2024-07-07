@@ -13,7 +13,10 @@ bool fast_forward=false;
 SDL_Renderer* renderer;
 static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8];
 
+int init_ws();
+
 bool InitEverything() {
+  init_ws();
   if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
     std::cout << " Failed to initialize SDL : " << SDL_GetError() << std::endl;
     return false;

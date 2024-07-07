@@ -147,8 +147,8 @@ uint8_t read_nand(){
         }*/
         nand_read_cnt++;
         char *p=&nand[0][0];
-        printf("final=%x\n",final);
-        printf("erase!!! %x tick=%lld pc=%x %x\n",final,tick,nc1020_states.cpu.reg_pc, ram_io[0x00]);
+        //printf("final=%x\n",final);
+        //printf("erase!!! %x tick=%lld pc=%x %x\n",final,tick,nc1020_states.cpu.reg_pc, ram_io[0x00]);
         //assert(false);
 
         //final-=32*1024;

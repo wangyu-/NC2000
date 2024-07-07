@@ -231,6 +231,7 @@ void handle_cmd(string & str){
 		printf("<%s>",cmds[i].c_str());
 	}
 	printf("\n");
+	fflush(stdout);
 	if(cmds.size()==0) return;
 	if(cmds[0]=="save_flash"){
 		write_nand_file();
@@ -2189,4 +2190,52 @@ void cpu_run(){
 		}
 		if(should_irq && (enable_debug_pc ||enable_dyn_debug)&&false)
 			printf("should irq!\n");
+}
+
+int init_ws()
+{
+#if defined(__MINGW32__)
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	/* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) {
+		/* Tell the user that we could not find a usable */
+		/* Winsock DLL.                                  */
+		printf("WSAStartup failed with error: %d\n", err);
+		exit(-1);
+	}
+
+	/* Confirm that the WinSock DLL supports 2.2.*/
+	/* Note that if the DLL supports versions greater    */
+	/* than 2.2 in addition to 2.2, it will still return */
+	/* 2.2 in wVersion since that is the version we      */
+	/* requested.                                        */
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+		/* Tell the user that we could not find a usable */
+		/* WinSock DLL.                                  */
+		printf("Could not find a usable version of Winsock.dll\n");
+		WSACleanup();
+		exit(-1);
+	}
+	else
+	{
+		printf("The Winsock 2.2 dll was found okay");
+	}
+	
+	int tmp[]={0,100,200,300,500,800,1000,2000,3000,4000,-1};
+	int succ=0;
+	for(int i=1;tmp[i]!=-1;i++)
+	{
+		if(_setmaxstdio(100)==-1) break;
+		else succ=i;
+	}	
+	printf(", _setmaxstdio() was set to %d\n",tmp[succ]);
+#endif
+return 0;
 }
