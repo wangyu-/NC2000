@@ -166,6 +166,12 @@ vector<string> split_s(const string &str, const string &sp) {
     return res;
 }
 
+void copy_to_addr(uint16_t addr, uint8_t * buf,uint16_t size){
+	for(uint32_t i=0;i<size;i++){
+		Peek16(addr+i)=buf[i];
+	}
+}
+
 void handle_cmd(string & str){
 	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
 		str.pop_back();
@@ -183,16 +189,14 @@ void handle_cmd(string & str){
 		printf("flash saved to file!!\n");
 		return;
 	}
-
 	if(cmds[0]=="dump"){
 		uint32_t start=stoi(cmds[1],0,16);
 		uint32_t size=stoi(cmds[2],0,10);
-
-
 		for(uint32_t i=start;i<start+size;i++){
 			printf("%02x ",Peek16(i));
 		}
 		printf("\n");
+		return;
 	}
 
 	if(cmds[0]=="ec"){
@@ -201,7 +205,28 @@ void handle_cmd(string & str){
 			Peek16(start++)=stoi(cmds[i],0,16);;
 		}
 		printf("ec done\n");
+		return;
 	}
+
+	if(cmds[0]=="file_manager"){
+		reg_pc = 0x3000;
+		uint8_t buf[]={0x00,0x27,0x05,0x60};
+		copy_to_addr(0x3000, buf, sizeof buf);
+		return;
+	}
+
+	if(cmds[0]=="create_dir"){
+			printf("<pc=%x>\n",reg_pc);
+			reg_pc = 0x3000;
+			copy_to_addr(0x08d6, (uint8_t*)cmds[1].c_str(), cmds[1].size()+1);
+			Peek16(0x0912)=0x02;
+			//uint8_t buf[]={0x00,0x0b,0x05,0x00,0x22,0x05,0x00,0x27,0x05,0x60};
+			uint8_t buf[]={0x00,0x0b,0x05,0x00,0x27,0x05,0x60};
+			copy_to_addr(0x3000, buf, sizeof buf);
+			return;
+	}
+
+	printf("unknow command <%s>\n",cmds[0].c_str());
 }
 void cpu_run(){
 
