@@ -87,7 +87,7 @@ uint8_t map_key(int32_t sym){
 
           case SDLK_COMMA: return 0x37;
           case SDLK_SLASH: return 0x1E;
-          case SDLK_DELETE: return 0x3F;
+          case SDLK_BACKSPACE: return 0x3F;
 
           case SDLK_0: return 0x3c;
           case SDLK_1: return 0x34;
@@ -139,6 +139,10 @@ uint8_t map_key(int32_t sym){
           case SDLK_F10: return 0x08;
           case SDLK_F11: return 0x0E;
           case SDLK_F12: return 0x0F;
+
+          case SDLK_SEMICOLON: return 0x15;
+          case SDLK_QUOTE: return 0x14;
+          
 
           default:return 0x00;
     }

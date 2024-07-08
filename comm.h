@@ -66,7 +66,7 @@ const uint32_t SCREEN_WIDTH=160;
 const uint32_t SCREEN_HEIGHT=80;
 const uint32_t LINE_SIZE=2;
 
-const uint32_t FRAME_RATE=30;
+const uint32_t FRAME_RATE=100;
 const uint32_t FRAME_INTERVAL= (1000u/FRAME_RATE);
 
 
