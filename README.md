@@ -16,10 +16,17 @@ The device has following hardware:
 * 24K internal ram, 32K external ram, 4k addition ram built inside SPR4096  (`ram.cpp` and `ram.h`)
 * 00h~03Fh as special registers of SoC, also called IO port (`io.cpp` `io.h`)
 * memory mapping from 0000h~FFFFh controlled by `00h` as "bank switch", `0Ah[0:3]` as "BIOS bank switch", `0Ah[8]` as "ROM/RAM select", `0D[0:1]` as "volume select", `0D[2]` as "ramb select" (`mem.cpp` `mem.h`)
-* 160*80 LCD with SPLD80A as LCD driver (currently as part of `main.cpp` and `nc2000.cpp`)
+* 160*80 LCD with SPLD803A as LCD driver (currently as part of `main.cpp` and `nc2000.cpp`)
 * QWERT keyboard (currently as part of `main.cpp` and `nc2000.cpp`)
 
+PCB layout:
+
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/43768f20-fb8a-4ea3-a1d3-6bf1794c4a7a">
+<br>
+<br>
+
 The rest of Readme is going to be in Chinese， I will put english materials in [wiki](https://github.com/wangyu-/NC2000/wiki)
+
 # Screenshots
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/05079aab-d3ae-4938-868c-c2eca7c58244">
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/4a75209e-a200-4250-bd3b-e9fc4d4ca390">  
