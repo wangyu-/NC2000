@@ -11,13 +11,13 @@ nc2000/nc2600 is a series of electric dictionary:
 The device has following hardware:
 
 * 5MHZ 6502 CPU, integrated inside SPDC1024 SoC    (implemented in `cpu.cpp` and `cpu.h`)
-* 512K x 8 Flash Nor Flash with Bus Flash interface, named SPR4096 (`nor.cpp` `nor.h`)
+* 512K x 8 Bit Nor Flash with Bus Flash interface, named SPR4096 (`nor.cpp` `nor.h`)
 * 32M x 8 Bit NAND Flash Memory, supplied by either Samsung or Toshiba (`nand.cpp` and `nand.h`)
 * 24K internal ram, 32K external ram, 4k addition ram built inside SPR4096  (`ram.cpp` and `ram.h`)
 * 00h~03Fh as special registers of SoC, also called IO port (`io.cpp` `io.h`)
-* memory mapping from 0000h~FFFFh controlled by 00h as "bank switch", `0Ah[0:3]` as "BIOS bank switch", `0Ah[8]` as "ROM/RAM select", `0D[0:1]` as "volume select", `0D[2]` as "ramb select" (`mem.cpp` `mem.h`)
+* memory mapping from 0000h~FFFFh controlled by `00h` as "bank switch", `0Ah[0:3]` as "BIOS bank switch", `0Ah[8]` as "ROM/RAM select", `0D[0:1]` as "volume select", `0D[2]` as "ramb select" (`mem.cpp` `mem.h`)
 * 160*80 LCD with SPLD80A as LCD driver (currently as part of `main.cpp` and `nc2000.cpp`)
-* 5 row keyboard (currently as part of `main.cpp` and `nc2000.cpp`)
+* QWERT keyboard (currently as part of `main.cpp` and `nc2000.cpp`)
 
 The rest of Readme is going to be in Chinese， I will put english materials in [wiki](https://github.com/wangyu-/NC2000/wiki)
 # Screenshots
@@ -38,10 +38,9 @@ The rest of Readme is going to be in Chinese， I will put english materials in 
 
 # NC2000
 
-文曲星nc2000/nc2600模拟器。跨平台，支持windows/linux/mac。
+文曲星nc2000/nc2600模拟器。跨平台，可以运行在windows/linux/mac。支持下载和保存。
 
-
-代码刚刚调通，非常乱，暂时不要尝试阅读，后面会整理。 nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
+nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
 
 后面会做发音。
 
@@ -126,8 +125,7 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 1. 某些游戏速度不正常。 大概是某个timer没有正确实现。 可以暂时用speed命令调整速度，让游戏正常。
 
-2. 在资源管理器里运行“空间整理”会死机。 nand模拟的小问题，以后会修。
-
+2. 发音还没有实现。
 # 代码基于以下项目
 
 原版： https://github.com/banxian/Sim800   （初始code）
