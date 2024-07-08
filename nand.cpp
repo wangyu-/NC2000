@@ -47,6 +47,8 @@ uint8_t read_nand(){
     uint8_t bs=ram_io[0x00];
     uint16_t p=nc1020_states.cpu.reg_pc-4;
 
+     if(enable_debug_nand) printf("tick=%llu read $29\n",tick%10000);
+
     if(nand_cmd.size()==0) {
         printf("oops! no nand cmd\n");
         return 0xff;
@@ -159,6 +161,7 @@ uint8_t read_nand(){
 }
 
 void nand_write(uint8_t value){
+    if(enable_debug_nand) printf("tick=%llu write $29 %x\n",tick%10000,value);
     //printf("tick=%lld, write %x  %02x\n",tick, addr, value);
     uint8_t roa_bbs=ram_io[0x0a];
     uint8_t ramb_vol=ram_io[0x0d];
@@ -197,7 +200,10 @@ void nand_write(uint8_t value){
 
             // robust check: what we dumped is indeed as expected
             if(nand_cmd.size()==7) assert(nand_cmd[6]==0xff);
-            else assert(nand_cmd.size()<=6);
+            else if(nand_cmd.size()==23) assert(nand_cmd[0]==0x50 && nand_cmd.back()==0x10);
+            else {
+                assert(nand_cmd.size()<=6);
+            }
 
             nand_cmd.clear();
             nand_read_cnt=0;
@@ -246,7 +252,7 @@ void nand_write(uint8_t value){
         //if(nand_cmd.size()==6) nand_cmd.pop_front();
     }
     out:;
-    if(enable_debug_nand) printf("write $29 %x\n",value);
+
     //if(nand_cmd.size()==1&& nand_cmd[0]==0xff) nand_cmd.clear();
     //printf("bs=%x roa_bbs=%x pc=%x  %x %x %x %x \n",ram_io[0x00], ram_io[0x0a], reg_pc,  Peek16(p), Peek16(p+1),Peek16(p+2),Peek16(p+3));
     //if(do_inject) wanna_inject=true;
