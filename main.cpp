@@ -209,6 +209,17 @@ void RunGame() {
   if(fast_forward) {
       expected_tick =actual_tick;
   }
+
+  //if actual is behind expected_tick too much, we only remember 300ms
+  if(actual_tick >expected_tick + 300) {
+    expected_tick = actual_tick-300;
+  }
+
+  // similiar strategy as above
+  if(expected_tick > actual_tick + 300) {
+    actual_tick = expected_tick-300;
+  }
+
   if(actual_tick <expected_tick) {
     {SDL_Delay(expected_tick-actual_tick);}
   }

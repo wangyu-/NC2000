@@ -148,11 +148,12 @@ void write_nor(uint16_t addr,uint8_t value){
     } else if (fp_step == 5) {
 		
         if (addr == 0x5555 && value == 0x10) {
-        	for (uint32_t i=0; i<0x20; i++) {
-				printf("wanna erase 111\n");
+        	for (uint32_t i=0; i<num_nor_pages; i++) {
+				printf("wanna erase all\n");
                 memset(nor_banks[i], 0xFF, 0x8000);
             }
             if (fp_type == 5) {
+                printf("wanna erase size 256 A\n");
                 memset(fp_buff, 0xFF, 0x100);
             }
             fp_step = 6;
@@ -160,13 +161,14 @@ void write_nor(uint16_t addr,uint8_t value){
         }
         if (fp_type == 3) {
             if (value == 0x30) {
-				printf("wanna erase 222\n");
+				printf("wanna erase size 2048\n");
                 memset(bank + (addr - (addr % 0x800) - 0x4000), 0xFF, 0x800);
                 fp_step = 6;
                 return;
             }
         } else if (fp_type == 5) {
             if (value == 0x48) {
+                printf("wanna erase size 256 B\n");
                 memset(fp_buff, 0xFF, 0x100);
                 fp_step = 6;
                 return;
