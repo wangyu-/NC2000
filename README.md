@@ -15,7 +15,7 @@ The device has following hardware:
 * 32M x 8 Bit NAND Flash Memory, supplied by either Samsung or Toshiba (`nand.cpp` and `nand.h`)
 * 24K internal ram, 32K external ram, 4k addition ram built inside SPR4096  (`ram.cpp` and `ram.h`)
 * 00h~03Fh as special registers of SoC, also called IO port (`io.cpp` `io.h`)
-* mememory mapping from 0000h~FFFFh controlled by 00h as "bank switch", `0Ah[0:3]` as "BIOS bank switch", `0Ah[8]` as "ROM/RAM select", `0D[0:1]` as "volume select", `0D[2]` as "ramb select" (`mem.cpp` `mem.h`)
+* memory mapping from 0000h~FFFFh controlled by 00h as "bank switch", `0Ah[0:3]` as "BIOS bank switch", `0Ah[8]` as "ROM/RAM select", `0D[0:1]` as "volume select", `0D[2]` as "ramb select" (`mem.cpp` `mem.h`)
 * 160*80 LCD with SPLD80A as LCD driver (currently as part of `main.cpp` and `nc2000.cpp`)
 * 5 row keyboard (currently as part of `main.cpp` and `nc2000.cpp`)
 
