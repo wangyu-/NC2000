@@ -1,5 +1,5 @@
 # NC2000
-Retro device wqx nc2000/nc2600 simulator. 
+Retro device wqx nc2000/nc2600 simulator.  Cross-platform, supports running on windows/linux/mac.
 
 nc2000/nc2600 is a series of electric dictionary:
 <img width="700" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/e9d5bca8-2824-442b-9e22-b13e5e4a0eb6"> 
@@ -18,11 +18,7 @@ The device has following hardware:
 * 5 row keyboard (currently as part of `main.cpp` and `nc2000.cpp`)
 
 The rest of Readme is going to be in Chinese， I will put english materials in [wiki](https://github.com/wangyu-/NC2000/wiki)
-
-# NC2000
-
-文曲星nc2000/nc2600模拟器。跨平台，支持windows/linux/mac。
-
+# Screenshots
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/05079aab-d3ae-4938-868c-c2eca7c58244">
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/4a75209e-a200-4250-bd3b-e9fc4d4ca390">  
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/f05a426f-d5e5-4190-880e-9fe40570d58f">
@@ -37,6 +33,10 @@ The rest of Readme is going to be in Chinese， I will put english materials in 
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/d2d0d8b7-a291-4778-9d2c-511ce0c4017e">
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/b699cf4a-4831-4203-9446-9b6f7f257caa">
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/07fc2e49-46f8-4d84-8402-7bbdbd33d239">
+
+# NC2000
+
+文曲星nc2000/nc2600模拟器。跨平台，支持windows/linux/mac。
 
 
 代码刚刚调通，非常乱，暂时不要尝试阅读，后面会整理。 nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
