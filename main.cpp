@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include "comm.h"
-#include "nc1020.h"
+#include "nc2000.h"
 #include <SDL_keycode.h>
 #include <iostream>
 #include <map>

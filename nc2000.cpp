@@ -1,4 +1,4 @@
-#include "nc1020.h"
+#include "nc2000.h"
 #include "comm.h"
 #include "disassembler.h"
 #include "state.h"
