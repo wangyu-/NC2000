@@ -1,5 +1,7 @@
 # NC2000
-Retro device wqx nc2000/nc2600 simulator.  Cross-platform, supports running on windows/linux/mac.
+Retro device wqx nc2000/nc2600 emulator, which emulates a 6502 SoC and peripherals. The emulator runs the offical firmware.
+
+Cross-platform, supports running on windows/linux/mac.
 
 nc2000/nc2600 is a series of electric dictionary:
 <img width="700" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/e9d5bca8-2824-442b-9e22-b13e5e4a0eb6"> 
@@ -13,7 +15,7 @@ The device has following hardware:
 * 32M x 8 Bit NAND Flash Memory, supplied by either Samsung or Toshiba (`nand.cpp` and `nand.h`)
 * 24K internal ram, 32K external ram, 4k addition ram built inside SPR4096  (`ram.cpp` and `ram.h`)
 * 00h~03Fh as special registers of SoC, also called IO port (`io.cpp` `io.h`)
-* mememory mapping from 0000h~FFFFh controlled by 00h as "bank switch", 0Ah[0:3] as "BIOS bank switch", 0Ah[8] as "ROM/RAM select", 0D[0:1] as "volume select", 0D[0:1] as "ramb select" (`mem.cpp` `mem.h`)
+* mememory mapping from 0000h~FFFFh controlled by 00h as "bank switch", `0Ah[0:3]` as "BIOS bank switch", `0Ah[8]` as "ROM/RAM select", `0D[0:1]` as "volume select", `0D[2]` as "ramb select" (`mem.cpp` `mem.h`)
 * 160*80 LCD with SPLD80A as LCD driver (currently as part of `main.cpp` and `nc2000.cpp`)
 * 5 row keyboard (currently as part of `main.cpp` and `nc2000.cpp`)
 
@@ -68,7 +70,7 @@ nor命名为：`nor.bin`
 
 另外按TAB可以切换快进模式
 
-# 模拟命令行
+# 模拟器命令行
 
 模拟器启动后会监听在udp 9000端口，可以接受外部发来的命令。 实现下载，调整模拟器速度等功能。 
 
