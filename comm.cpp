@@ -47,4 +47,3 @@ void read_file(string name,vector<char> &v){
     fclose(f);
 }
 
-
