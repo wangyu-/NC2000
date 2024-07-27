@@ -23,6 +23,14 @@ static bool& jg_wav_playing = nc1020_states.jg_wav_playing;
 io_read_func_t io_read[0x40];
 io_write_func_t io_write[0x40];
 
+struct BeeperSignal{
+    long long cycle;
+    int value;
+}last_beeper{0};
+
+//deque<BeeperSignal> beeper_signal;
+//long long last_beeper_cycle=0;
+deque<signed short> sound_stream;
 void init_io(){
     for (uint32_t i=0; i<IO_LIMIT; i++) {
 		io_read[i] = ReadXX;
@@ -79,6 +87,24 @@ uint8_t IO_API Read3F(uint8_t addr){
     return idx < 80 ? nc1020_states.clock_buff[idx] : 0;
 }
 
+void manipulate_beeper(int a){
+            long long current_cycle=nc1020_states.previous_cycles+nc1020_states.cycles;
+            long long samples_start=last_beeper.cycle*AUDIO_HZ/CYCLES_SECOND;
+            long long samples_end=current_cycle*AUDIO_HZ/CYCLES_SECOND;
+            //printf("%lld, %d  %lld %lld\n",current_cycle -last_beeper.cycle, nc1020_states.cycles, samples_start,samples_end);
+            last_beeper.cycle=current_cycle;
+
+            for(int i=0;i<(samples_end-samples_start);i++){
+                sound_stream.push_back(8000*last_beeper.value);
+            }
+            last_beeper.value=a;
+}
+
+void manipulate_beeper2(){
+    long long current_cycle=nc1020_states.previous_cycles+nc1020_states.cycles;
+   // printf("<%lld>\n",current_cycle);
+    manipulate_beeper(last_beeper.value);
+}
 void IO_API WriteXX(uint8_t addr, uint8_t value){
 	if(addr==0x29) {
         return nand_write(value);
@@ -88,6 +114,25 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
         if (value==0x80 || value==0x40){
             dsp.reset();
         }
+    }
+
+    if(addr==0x18){
+        int a= value>>7;
+        if(a==0) a=-1;
+
+        if (a!=last_beeper.value){
+            long long current_cycle=nc1020_states.previous_cycles+nc1020_states.cycles;
+            //printf("%lld %lld, %d!!!!!!!!!!!\n",current_cycle, last_beeper.cycle, a);
+        }
+        if(true)
+        {
+            manipulate_beeper(a);
+        }
+        /*if(beeper_signal.empty()||a!=beeper_signal.back().value) {
+            printf("[beeper %d, at %lld]\n",a,nc1020_states.previous_cycles+ nc1020_states.cycles);
+            beeper_signal.push_back({nc1020_states.previous_cycles+ nc1020_states.cycles, a});
+        }*/
+        //printf("<write 0x18 %02x>\n",value);
     }
     
     /*if(addr>=0x30 && addr<=0x3a){

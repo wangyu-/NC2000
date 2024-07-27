@@ -66,16 +66,17 @@ const uint32_t SCREEN_WIDTH=160;
 const uint32_t SCREEN_HEIGHT=80;
 const uint32_t LINE_SIZE=1;
 
-const uint32_t FRAME_RATE=100;
-const uint32_t FRAME_INTERVAL= (1000u/FRAME_RATE);
-
+const uint32_t SLICE_RATE=200;
+const uint32_t SLICE_INTERVAL= (1000u/SLICE_RATE);
+const uint32_t FRAME_RATE=40;
+const uint32_t FRAME_FACTOR=SLICE_RATE/FRAME_RATE;
 
 /*
 ===================
 cycles related
 ===================
 */
-const uint32_t static_multipler=10; //tmp fix for speed and crash
+const uint32_t static_multipler=1; //tmp fix for speed and crash
 
 // cpu cycles per second (cpu freq).
 const uint32_t CYCLES_SECOND = 5120000*(nc2000?static_multipler:1);
@@ -90,6 +91,8 @@ const uint32_t CYCLES_TIMER1_SPEED_UP = CYCLES_SECOND / TIMER1_FREQ / 20;
 // cpu cycles per ms (1/1000 s).
 const uint32_t CYCLES_MS = CYCLES_SECOND / 1000;
 
+const uint32_t AUDIO_HZ = 44100;
+const uint32_t CYCLES_PER_SAMPLE=CYCLES_SECOND/AUDIO_HZ;
 
 /*
 ===================

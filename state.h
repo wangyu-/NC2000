@@ -48,4 +48,5 @@ struct nc1020_states_t{
 	uint8_t keypad_matrix[8];
 
 	bool grey_mode;
+	long long previous_cycles;
 };

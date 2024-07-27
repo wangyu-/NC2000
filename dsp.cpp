@@ -3,8 +3,11 @@
 //include "SoundStream.h"
 #include "dsp.h"
 #include <SDL2/SDL.h>
-
+#include <vector>
+#include "comm.h"
+using namespace std;
 //extern SoundStream soundStream;
+deque<signed short> sound_stream_dsp;
 
 #define CELP_MODE 1
 #define WORD_MODE 2
@@ -146,11 +149,12 @@ void write_file(unsigned char *p, int size){
 }*/
 
 
+
 SDL_AudioDeviceID deviceId;
 void init_audio(){
    // SDL_Init(SDL_INIT_AUDIO);
       SDL_AudioSpec desired_spec = {
-        .freq = 8000,
+        .freq = AUDIO_HZ,
         .format = AUDIO_S16LSB,
         .channels = 1,
         .samples = 4096,
@@ -178,9 +182,10 @@ void Dsp::reset() {
     c2=0;
     c4=0;
 	dspStart();
+    //vec.clear();
 	dspMode=CELP_MODE;
 }
-
+int cnt=0;
 void Dsp::write(int high,int low) {
 	if (dspMode==PCM_MODE) {
 		if (high==0xff) {
@@ -191,6 +196,7 @@ void Dsp::write(int high,int low) {
 		return;
 	}
 	if (high<0x60) {
+        cnt++;
 		int id=high>>4;
 		if (id<3) {
 			dspCelpOff=id;
@@ -213,8 +219,21 @@ void Dsp::write(int high,int low) {
         if(high==0xc4){
             c4=low;
         }
+        if(high==0xc3/*||high==0xc1*/){
+            //int len=(c4-c2);
+            //if(c2+len+240<vec.size()) len+=240;
+            //if(len<0) len+=240;
+            printf("cnt=%d\n",cnt);
+            //SDL_QueueAudio(deviceId, (void*)&vec[0], vec.size()*2);
+
+            c2=0;
+            c4=0;
+            //vec.clear();
+            cnt=0;
+        }
 	}
 }
+
 
 void Dsp::dspCelpToCelp() {
     if ((dspCelp[0] & 0x8000) != 0)
@@ -283,10 +302,11 @@ void Dsp::dspCelpToCelp() {
     dsp(clpBuf);
     int len = (dspCelp[0] & 0x8000) != 0 ? 160 : 240;
     for (int i = 0; i < len; i++) {
+        //vec.push_back(Sout[i]);
         writeSample8000(Sout[i]);
     }
-    printf("<<len %d>>!!!",len);
-    SDL_QueueAudio(deviceId, (void*)Sout,len*2);
+    //printf("<<len %d>>!!!",len);
+    //SDL_QueueAudio(deviceId, (void*)Sout,len*2);
     //c2=0;c4=0;
 }
 
@@ -299,7 +319,13 @@ void Dsp::writeSample8000(int val) {
     ////soundStream.write(val);
     ////soundStream.write(val);
     ////soundStream.write(val);
+     sound_stream_dsp.push_back(val);
+     sound_stream_dsp.push_back(val);
+     sound_stream_dsp.push_back(val);
+     sound_stream_dsp.push_back(val);
+     sound_stream_dsp.push_back(val);
     if ((id++ & 1) > 0){
+        sound_stream_dsp.push_back(val);
         ////soundStream.write(val);
     }
 }
