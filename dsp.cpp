@@ -263,7 +263,7 @@ void Dsp::write(int high,int low) {
             //printf()
             //c2=0;
             //end=buf_vec.size();
-            float range=6.0;
+            float range=12.0;
             for(int j=0; j+ c2<end &&j<range;j++)
             {
                 //printf("%d  %f \n",end-1-j, j/range);
