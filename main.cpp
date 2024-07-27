@@ -19,6 +19,7 @@ const int gap_size=1;
 
 const int total_size=pixel_size+gap_size;
 int init_ws();
+void init_audio();
 
 bool InitEverything() {
   init_ws();
@@ -26,6 +27,8 @@ bool InitEverything() {
     std::cout << " Failed to initialize SDL : " << SDL_GetError() << std::endl;
     return false;
   }
+  init_audio();
+
   SDL_Window* window =
     SDL_CreateWindow("WQX", 0, 40, LINE_SIZE * SCREEN_WIDTH *total_size, LINE_SIZE * SCREEN_HEIGHT *total_size, 0);
   if (!window) {
@@ -260,6 +263,7 @@ void handle_key(signed int sym, bool key_down){
             break;
         }
 }
+
 void RunGame() {
   bool loop = true;
 
@@ -316,7 +320,6 @@ void RunGame() {
 }
 
 int main(int argc, char* args[]) {
-
   if(argc>1){
     sscanf(args[1],"%d",&listen_port);
   }

@@ -1,6 +1,8 @@
-﻿#include <stdio.h>
+﻿#include <cstdio>
+#include <stdio.h>
 //include "SoundStream.h"
 #include "dsp.h"
+#include <SDL2/SDL.h>
 
 //extern SoundStream soundStream;
 
@@ -131,12 +133,50 @@ const short FIXCODEBOOK[435] = {
 	0x1a1c, 0x1a1d, 0x1b1c, 0x1b1d, 0x1c1d
 };
 
+/*
+FILE *fp;
+void init_file(){
+     fp=fopen("./1.output","wb");
+}
+void close_file(){
+     fclose(fp);
+}
+void write_file(unsigned char *p, int size){
+    fwrite(p,size,1,fp);
+}*/
+
+
+SDL_AudioDeviceID deviceId;
+void init_audio(){
+   // SDL_Init(SDL_INIT_AUDIO);
+      SDL_AudioSpec desired_spec = {
+        .freq = 8000,
+        .format = AUDIO_S16LSB,
+        .channels = 1,
+        .samples = 4096,
+        .callback = NULL,
+        .userdata = NULL,
+    };
+    //SDL_AudioSpec obtained_spec;
+    deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec, NULL, 0);
+    if(deviceId<=0){
+        printf("SDL_OpenAudioDevice Failed!\n");
+    }
+    SDL_PauseAudioDevice(deviceId, 0);
+}
+
+
 Dsp::Dsp() {
 	id = 0;
 	lspflag = true;
 }
 
+int c2;
+int c4;
+
 void Dsp::reset() {
+    c2=0;
+    c4=0;
 	dspStart();
 	dspMode=CELP_MODE;
 }
@@ -167,6 +207,12 @@ void Dsp::write(int high,int low) {
 		printf("DSP_MODE %d\n",low);
 	} else {
 		printf("DSP_CMD %04X\n",(high<<8)|low);
+        if(high==0xc2){
+            c2=low;
+        }
+        if(high==0xc4){
+            c4=low;
+        }
 	}
 }
 
@@ -239,9 +285,14 @@ void Dsp::dspCelpToCelp() {
     for (int i = 0; i < len; i++) {
         writeSample8000(Sout[i]);
     }
+    printf("<<len %d>>!!!",len);
+    SDL_QueueAudio(deviceId, (void*)Sout,len*2);
+    //c2=0;c4=0;
 }
 
 void Dsp::writeSample8000(int val) {
+    //printf("<%d>",val);
+    //write_file((unsigned char *)&val,2);
     //通过重复5.5次，把8000Hz变成44000Hz
     ////soundStream.write(val);
     ////soundStream.write(val);
