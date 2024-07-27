@@ -181,7 +181,7 @@ bool unvoice1=0;
 bool unvoice2=0;
 bool unvoice3=0;
 
-bool enable_unvoice=true;
+bool enable_unvoice=false;
 void Dsp::write(int high,int low) {
 
     printf("%02x %02x\n",low,high);
@@ -267,10 +267,15 @@ void Dsp::write(int high,int low) {
             }
 
             if(high==0xc3||high==0xc1){
-                for(auto v: buf_vec2){
-                    //sound_stream_dsp.push_back(v);
+                if(!dsp_only)
+                {
+                    for(auto v: buf_vec2){
+                        sound_stream_dsp.push_back(v);
+                    }
+                }else {
+                    SDL_QueueAudio(deviceId, &buf_vec2[0], buf_vec2.size()*2);
                 }
-                SDL_QueueAudio(deviceId, &buf_vec2[0], buf_vec2.size()*2);
+                //
                 buf_vec2.clear();
                 //SDL_Delay(1000);
             }
