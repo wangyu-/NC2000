@@ -9,6 +9,7 @@
 #include "nor.h"
 #include "nand.h"
 #include <SDL2/SDL.h>
+#include <SDL_timer.h>
 #include <cassert>
 #include <deque>
 
@@ -247,9 +248,14 @@ vector<signed short> buf;
 bool charging=true;
 bool draining=false;
 
-double queue_drain_threshold=AUDIO_HZ/10.0;
-//int min_since_last_drain=0;
-long long last_drain=0;
+
+long long last_check_time=0;
+//int pop_cnt=0;
+int min_queue=AUDIO_HZ*999;
+
+//int target_total=AUDIO_HZ/10;
+int target_queue=AUDIO_HZ/10;
+long long last_increase_time=0;
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
 
@@ -262,52 +268,48 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	}
 	manipulate_beeper2();
 
-	//printf("<size=%lu, delta=%lu>\n",sound_stream.size(),sound_stream.size()-old);
-	//if(sound_stream.size()>200||start){
-		//start=true;
-	if(SDL_GetQueuedAudioSize(deviceId)==0){
-		printf("oops audio queue drained!\n");
-		draining=false;
-		//last_drain=SDL_GetTicks64();
-		queue_drain_threshold*=1.1;
-		//min_since_last_drain=AUDIO_HZ*100;
-		//charging=true;
+	long long current_time=SDL_GetTicks64();
+	if(current_time-last_check_time>1000*10){
+		//if(pop_cnt==0){
+		if(min_queue >AUDIO_HZ/100){
+			target_queue -= min_queue-AUDIO_HZ/100;
+			printf("shrink!!!!!!!!!!!!!!!target_queue=%d\n",target_queue);
+		}
+		//pop_cnt=0;
+		min_queue=AUDIO_HZ*999;
+		last_check_time=current_time;
 	}
 
-	if(SDL_GetQueuedAudioSize(deviceId)>queue_drain_threshold){
-		draining=true;
-		printf("draining!!!!!!!!!!\n");
-	}
-	printf("queue size=%d\n",SDL_GetQueuedAudioSize(deviceId));
-	/*if(charging && sound_stream.size()>AUDIO_HZ/20){
-		charging=false;
-	}*/
+	int queue_size=SDL_GetQueuedAudioSize(deviceId);
 
-	if(true||!charging){
+	if(rand()%100==0) printf("q=%d\n",queue_size);
+	if(queue_size<min_queue) min_queue=queue_size;
+	if(queue_size==0 && current_time-last_increase_time>1000){
+		//pop_cnt++;;
+		target_queue*=1.1;
+		last_increase_time=current_time;
+		printf("oops audio queue drained! target_queue=%d\n",target_queue);
+	}
+
+	while(!sound_stream.empty() &&  SDL_GetQueuedAudioSize(deviceId) >target_queue){
+		sound_stream.pop_front();
+	}
+
+	if(true)
+	{
 		while(!sound_stream.empty()){
-			//vector<signed short> vec(sound_stream.begin(),sound_stream.end());
-			//SDL_QueueAudio(deviceId, &vec[0], vec.size()*2);
-			//write_file((unsigned char *)&sound_stream[0], 2);
-			//sound_stream.clear();
-			//if(SDL_GetQueuedAudioSize(deviceId)<1000){
-
-			/*if(SDL_GetQueuedAudioSize(deviceId)<AUDIO_HZ/10){
-				draining=false;
-			}*/
-			if(!draining){
-				int value=sound_stream[0];
-				double val=value-cuttmp;
-				cuttmp+=cutoff*val;
-				value=val;
-				if(!sound_stream_dsp.empty()){
-					value+=sound_stream_dsp.front();
-					sound_stream_dsp.pop_front();
-					if(value>32767) value=32767;
-					if(value<-32768) value=-32768;
-				}
-				buf.push_back(value);
-			}
+			int value=sound_stream[0];
 			sound_stream.pop_front();
+			double val=value-cuttmp;
+			cuttmp+=cutoff*val;
+			value=val;
+			if(!sound_stream_dsp.empty()){
+				value+=sound_stream_dsp.front();
+				sound_stream_dsp.pop_front();
+				if(value>32767) value=32767;
+				if(value<-32768) value=-32768;
+			}
+			buf.push_back(value);
 		}
 		if(!buf.empty()){
 			SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
