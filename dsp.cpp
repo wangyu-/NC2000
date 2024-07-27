@@ -151,23 +151,6 @@ void write_file(unsigned char *p, int size){
 
 
 SDL_AudioDeviceID deviceId;
-void init_audio(){
-   // SDL_Init(SDL_INIT_AUDIO);
-      SDL_AudioSpec desired_spec = {
-        .freq = AUDIO_HZ,
-        .format = AUDIO_S16LSB,
-        .channels = 1,
-        .samples = 4096,
-        .callback = NULL,
-        .userdata = NULL,
-    };
-    //SDL_AudioSpec obtained_spec;
-    deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec, NULL, 0);
-    if(deviceId<=0){
-        printf("SDL_OpenAudioDevice Failed!\n");
-    }
-    SDL_PauseAudioDevice(deviceId, 0);
-}
 
 
 Dsp::Dsp() {
