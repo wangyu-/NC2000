@@ -4,22 +4,16 @@
 #include <SDL_keycode.h>
 #include <iostream>
 #include <map>
+#include "sound.h"
 using namespace std;
 
+static int enable_debug_key_shoot=false;
+static bool fast_forward=false;
 
-int enable_debug_key_shoot=false;
-bool fast_forward=false;
-
-SDL_Renderer* renderer;
+static SDL_Renderer* renderer;
 static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
-
-const int pixel_size=3;
-const int gap_size=1;
-
-const int total_size=pixel_size+gap_size;
 int init_ws();
-void init_audio();
 
 bool InitEverything() {
   init_ws();
@@ -270,10 +264,7 @@ void RunGame() {
   uint64_t start_tick = SDL_GetTicks64();
   uint64_t expected_tick = 0;
 
-  uint64_t cnt=0;
-
   while (loop) {
-    cnt++;
     RunTimeSlice(SLICE_INTERVAL, false);
 
     SDL_Event event;
@@ -293,7 +284,7 @@ void RunGame() {
       }
     }
 
-    if(cnt%(FRAME_FACTOR)){
+    if(expected_tick/LCD_REFRESH_INTERVAL != (expected_tick+SLICE_INTERVAL)/LCD_REFRESH_INTERVAL){
       if (!CopyLcdBuffer(lcd_buf)) {
         std::cout << "Failed to copy buffer renderer." << std::endl;
       }
@@ -324,24 +315,21 @@ void RunGame() {
     }
   }
 
-
   /*while((actual_tick=SDL_GetTicks64() - start_tick) <expected_tick) {
     //{SDL_Delay(expected_tick-actual_tick);}
   }*/
     //SDL_Delay(FRAME_INTERVAL < tick ? 0 : FRAME_INTERVAL - tick);
   }
 }
-void init_file();
 int main(int argc, char* args[]) {
-  init_file();
   if(argc>1){
     sscanf(args[1],"%d",&listen_port);
   }
   if (!InitEverything())
     return -1;
   
-  SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
-  SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
+  //SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+  //SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
   RunGame();
   if(false){
     SaveNC1020();
