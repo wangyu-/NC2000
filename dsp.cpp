@@ -454,7 +454,6 @@ void Dsp::dspStart() {
 	EX = 147 ;
 	PM = 0 ;
 }
-
 void Dsp::subFrame(int subframe_NUM,int s0,int s1,int fixpos) {
     int op, Amp1, Amp2;
     int Expos, Pitpos;
@@ -504,7 +503,9 @@ void Dsp::subFrame(int subframe_NUM,int s0,int s1,int fixpos) {
         LTP[Expos] = op;
         r[i + base] = fixpolefilter(op);
         int t = r[i + base] * 16;
-        //t*=0.2;
+        t*=0.3;
+        assert(t>=-32768&&t<=32767);
+        if(t>32767 ||t<-32768) {printf("clip!!! %d\n",t);}
         Sout[i + base] = (short) (t > 32767 ? 32767 : (t < -32768 ? -32768 : t));
 
         if (Expos > 0)
