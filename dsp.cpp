@@ -283,7 +283,9 @@ void Dsp::write(int high,int low) {
                 //
                 //buf_vec2.clear();
                 printf("-----------%02x--------------\n",high);
-                //SDL_Delay(5000);
+                if(delay_between_syllable){
+                    SDL_Delay(5000);
+                }
             }
             //SDL_QueueAudio(deviceId, (void*)&vec[0], vec.size()*2);
 
