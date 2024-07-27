@@ -241,12 +241,14 @@ void init_audio(){
 
 	extern void dsp_test();
 	extern void dsp_test2();
-	dsp_test();
-	dsp_test();
-	dsp_test();
-	dsp_test2();
-	dsp_test2();
-	dsp_test2();
+	if(enable_dsp_test){
+		dsp_test();
+		dsp_test();
+		dsp_test();
+		dsp_test2();
+		dsp_test2();
+		dsp_test2();
+	}
 	//dsp_test();
 	//dsp_test();
 }

@@ -48,6 +48,8 @@ const bool nc1020 = false;
 const bool nc2000 = !nc1020;
 
 const bool dsp_only=false;
+const bool enable_dsp_test=true;
+const bool delay_between_syllable=false;
 /*
 ===================
 cpu related
