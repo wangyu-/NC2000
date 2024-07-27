@@ -270,10 +270,11 @@ void RunGame() {
   uint64_t start_tick = SDL_GetTicks64();
   uint64_t expected_tick = 0;
 
+  uint64_t cnt=0;
+
   while (loop) {
-
-
-    RunTimeSlice(FRAME_INTERVAL, false);
+    cnt++;
+    RunTimeSlice(SLICE_INTERVAL, false);
 
     SDL_Event event;
     map<signed int, bool> mp;
@@ -291,11 +292,14 @@ void RunGame() {
         }
       }
     }
-    if (!CopyLcdBuffer(lcd_buf)) {
-      std::cout << "Failed to copy buffer renderer." << std::endl;
+
+    if(cnt%(FRAME_FACTOR)){
+      if (!CopyLcdBuffer(lcd_buf)) {
+        std::cout << "Failed to copy buffer renderer." << std::endl;
+      }
+      Render();
     }
-    Render();
-    expected_tick+=FRAME_INTERVAL;
+    expected_tick+=SLICE_INTERVAL;
     uint64_t actual_tick= SDL_GetTicks64() - start_tick;
 
   if(fast_forward) {
@@ -312,20 +316,32 @@ void RunGame() {
     actual_tick = expected_tick-300;
   }
 
-  if(actual_tick <expected_tick) {
+  if(actual_tick < expected_tick) {
     {SDL_Delay(expected_tick-actual_tick);}
+    long long exceed=SDL_GetTicks64()-start_tick  -expected_tick;
+    if(exceed>10){
+      printf("oops sleep too much %lld\n",exceed);
+    }
   }
+
+
+  /*while((actual_tick=SDL_GetTicks64() - start_tick) <expected_tick) {
+    //{SDL_Delay(expected_tick-actual_tick);}
+  }*/
     //SDL_Delay(FRAME_INTERVAL < tick ? 0 : FRAME_INTERVAL - tick);
   }
 }
-
+void init_file();
 int main(int argc, char* args[]) {
+  init_file();
   if(argc>1){
     sscanf(args[1],"%d",&listen_port);
   }
   if (!InitEverything())
     return -1;
   
+  SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+  SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
   RunGame();
   if(false){
     SaveNC1020();

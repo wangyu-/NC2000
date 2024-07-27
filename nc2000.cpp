@@ -8,6 +8,9 @@
 #include "rom.h"
 #include "nor.h"
 #include "nand.h"
+#include <SDL2/SDL.h>
+#include <cassert>
+#include <deque>
 
 extern WqxRom nc1020_rom;
 
@@ -28,7 +31,7 @@ void Initialize() {
 	init_udp_server();
 
 	if(nc2000){
-     nc1020_rom.norFlashPath= "./nor.bin";
+    	nc1020_rom.norFlashPath= "./nor.bin";
   	}
 
 	if(enable_inject){
@@ -170,19 +173,104 @@ bool CopyLcdBuffer(uint8_t* buffer){
 	}
 	return true;
 }
+extern deque<signed short> sound_stream;
+extern deque<signed short> sound_stream_dsp;
+extern SDL_AudioDeviceID deviceId;
+bool start=false;
 
+
+FILE *fp;
+void init_file(){
+     fp=fopen("./1.output","wb");
+	 assert(fp!=0);
+}
+void close_file(){
+     fclose(fp);
+}
+void write_file(unsigned char *p, int size){
+    fwrite(p,size,1,fp);
+}
+
+void manipulate_beeper2();
+//int draining=false;
+vector<signed short> buf;
+double cuttmp=-8000;
+double cutoff=2.0*3.141592654*40/AUDIO_HZ;
+bool charging=true;
+bool draining=false;
+
+double queue_drain_threshold=AUDIO_HZ/10.0;
+//int min_since_last_drain=0;
+long long last_drain=0;
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
 
 	end_cycles= end_cycles * speed_multiplier;
 
+	auto old=sound_stream.size();
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (nc1020_states.cycles < end_cycles) {
 		cpu_run();
 	}
+	manipulate_beeper2();
 
+	//printf("<size=%lu, delta=%lu>\n",sound_stream.size(),sound_stream.size()-old);
+	//if(sound_stream.size()>200||start){
+		//start=true;
+	if(SDL_GetQueuedAudioSize(deviceId)==0){
+		printf("oops audio queue drained!\n");
+		draining=false;
+		//last_drain=SDL_GetTicks64();
+		queue_drain_threshold*=1.1;
+		//min_since_last_drain=AUDIO_HZ*100;
+		//charging=true;
+	}
+
+	if(SDL_GetQueuedAudioSize(deviceId)>queue_drain_threshold){
+		draining=true;
+		printf("draining!!!!!!!!!!\n");
+	}
+	printf("queue size=%d\n",SDL_GetQueuedAudioSize(deviceId));
+	/*if(charging && sound_stream.size()>AUDIO_HZ/20){
+		charging=false;
+	}*/
+
+	if(true||!charging){
+		while(!sound_stream.empty()){
+			//vector<signed short> vec(sound_stream.begin(),sound_stream.end());
+			//SDL_QueueAudio(deviceId, &vec[0], vec.size()*2);
+			//write_file((unsigned char *)&sound_stream[0], 2);
+			//sound_stream.clear();
+			//if(SDL_GetQueuedAudioSize(deviceId)<1000){
+
+			/*if(SDL_GetQueuedAudioSize(deviceId)<AUDIO_HZ/10){
+				draining=false;
+			}*/
+			if(!draining){
+				int value=sound_stream[0];
+				double val=value-cuttmp;
+				cuttmp+=cutoff*val;
+				value=val;
+				if(!sound_stream_dsp.empty()){
+					value+=sound_stream_dsp.front();
+					sound_stream_dsp.pop_front();
+					if(value>32767) value=32767;
+					if(value<-32768) value=-32768;
+				}
+				buf.push_back(value);
+			}
+			sound_stream.pop_front();
+		}
+		if(!buf.empty()){
+			SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
+			buf.clear();
+		}
+	}
+
+	nc1020_states.previous_cycles+=end_cycles;
 	nc1020_states.cycles -= end_cycles;
 	nc1020_states.timer0_cycles -= end_cycles;
 	nc1020_states.timer1_cycles -= end_cycles;
+
 
 }
