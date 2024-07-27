@@ -238,6 +238,13 @@ void init_audio(){
         printf("SDL_OpenAudioDevice Failed!\n");
     }
     SDL_PauseAudioDevice(deviceId, 0);
+
+	extern void dsp_test();
+	dsp_test();
+	dsp_test();
+	dsp_test();
+	//dsp_test();
+	//dsp_test();
 }
 
 
@@ -312,7 +319,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 			buf.push_back(value);
 		}
 		if(!buf.empty()){
-			SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
+			//SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
 			buf.clear();
 		}
 	}
