@@ -3,8 +3,11 @@
 #include "state.h"
 #include "io.h"
 #include "nand.h"
+#include "dsp.h"
 
 extern nc1020_states_t nc1020_states;
+
+Dsp dsp;
 
 static bool& slept = nc1020_states.slept;
 static bool& should_wake_up = nc1020_states.should_wake_up;
@@ -16,7 +19,6 @@ static uint8_t* jg_wav_buff = nc1020_states.jg_wav_data;
 static uint8_t& jg_wav_flags = nc1020_states.jg_wav_flags;
 static uint8_t& jg_wav_index = nc1020_states.jg_wav_idx;
 static bool& jg_wav_playing = nc1020_states.jg_wav_playing;
-
 
 io_read_func_t io_read[0x40];
 io_write_func_t io_write[0x40];
@@ -81,6 +83,12 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
 	if(addr==0x29) {
         return nand_write(value);
     }
+
+    if(addr==0x30){
+        if (value==0x80 || value==0x40){
+            dsp.reset();
+        }
+    }
     
     /*if(addr>=0x30 && addr<=0x3a){
       printf("{z %04x %02x}\n",addr,value);
@@ -89,15 +97,16 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
     
     if(addr==0x32) {
       printf("<w %02x>",value);
-      return;
+      //return;
     }
     else if(addr==0x33){
       printf("[w %02x]\n",value);
       extern string udp_msg;
+      dsp.write(value, ram_io[0x32]);
       if(value==0x14) {
         //udp_msg="dump 0280 100";
       }
-      return;
+      //return;
     } 
 
     //printf("write unknow IO %02x ,value=%02x\n",addr, value);
