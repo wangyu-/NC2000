@@ -81,9 +81,18 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
         return nand_write(value);
     }
 
-    if(addr==0x30){
-        if (value==0x80 || value==0x40){
-            reset_dsp();
+    if(nc2000){
+        if(addr==0x30){
+            if (value==0x80 || value==0x40){
+                reset_dsp();
+            }
+        }
+    }
+    if(nc1020){
+        if(addr==0x20){
+            if (value==0x80 || value==0x40){
+                reset_dsp();
+            }
         }
     }
 
@@ -103,21 +112,32 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
       return; 
     }*/
     
-    if(addr==0x32) {
-      //fprintf(stderr,"0x%02x,",value);
-      //printf("<w %02x>",value);
-      //return;
+
+    if(nc2000){
+        if(addr==0x32) {
+        //fprintf(stderr,"0x%02x,",value);
+        //printf("<w %02x>",value);
+        //return;
+        }
+        if(addr==0x33){
+        //fprintf(stderr,"0x%02x,\n",value);
+        //printf("[w %02x]\n",value);
+        extern string udp_msg;
+        write_data_to_dsp(value, ram_io[0x32]);
+        if(value==0x14) {
+            //udp_msg="dump 0280 100";
+        }
+        //return;
+        } 
     }
-    else if(addr==0x33){
-      //fprintf(stderr,"0x%02x,\n",value);
-      //printf("[w %02x]\n",value);
-      extern string udp_msg;
-      write_data_to_dsp(value, ram_io[0x32]);
-      if(value==0x14) {
-        //udp_msg="dump 0280 100";
-      }
-      //return;
-    } 
+    if(nc1020){
+        if(addr==0x23){
+        //fprintf(stderr,"0x%02x,\n",value);
+        //printf("[w %02x]\n",value);
+        extern string udp_msg;
+        write_data_to_dsp(value, ram_io[0x22]);
+        }
+    }
 
     //printf("write unknow IO %02x ,value=%02x\n",addr, value);
 
