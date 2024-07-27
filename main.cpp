@@ -14,7 +14,7 @@ SDL_Renderer* renderer;
 static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
 
-const int pixel_size=2;
+const int pixel_size=3;
 const int gap_size=1;
 
 const int total_size=pixel_size+gap_size;
@@ -54,15 +54,26 @@ void Render() {
   int pitch = 0;
   static const SDL_Rect source = { 0, 0, SCREEN_WIDTH*total_size, SCREEN_HEIGHT*total_size };
   SDL_LockTexture(texture, &source, reinterpret_cast<void**>(&bytes), &pitch);
+  
+  static const unsigned char colors[4]={255,180,105,0};
+  static const unsigned char shadows[4]={255,
+        (unsigned char)(colors[1]+(255-colors[1])/8),
+        (unsigned char)(colors[2]+(255-colors[2])/4),
+        (unsigned char)(colors[3]+(255-colors[3])/2)
+        };
 
-  static const unsigned char white_color[4] = { 0, 255, 255, 255 };
-  static const unsigned char near_white_color[4] = { 0, 180, 180, 180 };
-  static const unsigned char near_black_color[4] = { 0, 105, 105, 105 };
-  static const unsigned char black_color[4] = { 0, 30*0, 30*0, 30*0 };
+  static const unsigned char white_color[4] = { 0, colors[0], colors[0], colors[0] };
+  static const unsigned char near_white_color[4] = { 0, colors[1], colors[1], colors[1] };
+  static const unsigned char near_black_color[4] = { 0, colors[2], colors[2], colors[2] };
+  static const unsigned char black_color[4] = { 0, colors[3], colors[3], colors[3] };
 
+  static const unsigned char white_color_shadow[4] = { 0, shadows[0], shadows[0], shadows[0] };
+  static const unsigned char near_white_color_shadow[4] = { 0, shadows[1], shadows[1], shadows[1]  };
+  static const unsigned char near_black_color_shadow[4] = { 0, shadows[2], shadows[2], shadows[2]  };
+  static const unsigned char black_color_shadow[4] = { 0, shadows[3], shadows[3], shadows[3] };
 
   static const unsigned char * index[4]={white_color,near_white_color,near_black_color,black_color};
-  
+  static const unsigned char * index_shadow[4]={white_color, near_white_color_shadow, near_black_color_shadow, black_color_shadow};
   static const size_t color_size = sizeof(black_color);
   //unsigned char lcd[80*(pixel_size+gap_zize)][160*(pixel_size+gap_zize)][color_size] ;
   //unsigned char lcd[80*(pixel_size+gap_zize)][160*(pixel_size+gap_zize)][color_size] ;
@@ -85,10 +96,11 @@ void Render() {
                 memcpy(p[u][v],index[0],color_size);  
               }*/
               else{
-                unsigned char tmp[4];
+                memcpy(p[u][v],index_shadow[value],color_size);
+                /*unsigned char tmp[4];
                 memcpy(tmp,index[value],color_size);
                 tmp[1]+=(255-tmp[1])/2;tmp[2]+=(255-tmp[2])/2;tmp[3]+=(255-tmp[3])/2;
-                memcpy(p[u][v],tmp,color_size);
+                memcpy(p[u][v],tmp,color_size);*/
               }
           }
         }
@@ -112,10 +124,11 @@ void Render() {
                 memcpy(p[u][v],index[0],color_size);  
               }*/
               else{
-                unsigned char tmp[4];
+                memcpy(p[u][v],index_shadow[value],color_size);
+                /*unsigned char tmp[4];
                 memcpy(tmp,index[value],color_size);
                 tmp[1]+=(255-tmp[1])/2;tmp[2]+=(255-tmp[2])/2;tmp[3]+=(255-tmp[3])/2;
-                memcpy(p[u][v],tmp,color_size);
+                memcpy(p[u][v],tmp,color_size);*/
               }
           }
         }

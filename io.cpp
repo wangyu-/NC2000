@@ -93,6 +93,10 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
     }
     else if(addr==0x33){
       printf("[w %02x]\n",value);
+      extern string udp_msg;
+      if(value==0x14) {
+        //udp_msg="dump 0280 100";
+      }
       return;
     } 
 
