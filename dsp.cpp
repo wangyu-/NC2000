@@ -1,4 +1,5 @@
-﻿#include <cstdio>
+﻿#include <SDL_audio.h>
+#include <cstdio>
 #include <stdio.h>
 //include "SoundStream.h"
 #include "dsp.h"
@@ -8,7 +9,8 @@
 using namespace std;
 //extern SoundStream soundStream;
 deque<signed short> sound_stream_dsp;
-
+vector<signed short> buf_vec;
+vector<signed short> buf_vec2;
 #define CELP_MODE 1
 #define WORD_MODE 2
 #define PCM_MODE 4
@@ -160,16 +162,24 @@ Dsp::Dsp() {
 
 int c2;
 int c4;
+int c8;
+int cnt=0;
 
 void Dsp::reset() {
     c2=0;
     c4=0;
+    c8=0;
+    cnt=0;
 	dspStart();
-    //vec.clear();
+    buf_vec.clear();
+    buf_vec2.clear();
 	dspMode=CELP_MODE;
 }
-int cnt=0;
+
+
 void Dsp::write(int high,int low) {
+
+    printf("%02x %02x\n",low,high);
 	if (dspMode==PCM_MODE) {
 		if (high==0xff) {
 			dspMode=CELP_MODE;
@@ -180,6 +190,7 @@ void Dsp::write(int high,int low) {
 	}
 	if (high<0x60) {
         cnt++;
+        //printf("cnt=%d\n",cnt);
 		int id=high>>4;
 		if (id<3) {
 			dspCelpOff=id;
@@ -193,24 +204,59 @@ void Dsp::write(int high,int low) {
 		}
 	} else if (high==0xa0) {
 		dspMode=low;
+        cnt=0;
 		printf("DSP_MODE %d\n",low);
 	} else {
 		printf("DSP_CMD %04X\n",(high<<8)|low);
         if(high==0xc2){
             c2=low;
+            cnt=0;
         }
         if(high==0xc4){
             c4=low;
+            //if(c4==0) c4=240;
+            cnt=0;
         }
-        if(high==0xc3/*||high==0xc1*/){
+        if(high==0xc8){
+            c8=low;
+            cnt=0;
+        }
+        if(high==0xc3 || high==0xc1){
             //int len=(c4-c2);
             //if(c2+len+240<vec.size()) len+=240;
             //if(len<0) len+=240;
-            printf("cnt=%d\n",cnt);
+            printf("cnt=%d!!!!!!!!!!!!!!!!!!!!\n",cnt);
+            assert(cnt%15==0);
+            int end=c4+240*(cnt/15)  -240;
+            //int end=c4+ buf_vec.size()  -240;
+            printf("<%d %d %d>\n",c2,end,(int)buf_vec.size());
+            if(end>(int)buf_vec.size()){
+                assert(false);
+                end=buf_vec.size();
+            }
+            //printf()
+            //c2=0;
+            //end=buf_vec.size();
+            for(int i=c2;i<end;i++){
+                signed short value=buf_vec[i];
+                for(int x=0;x<AUDIO_HZ/8000;x++){
+                    buf_vec2.push_back(value);
+                }
+            }
+
+            if(high==0xc3||high==0xc1){
+                for(auto v: buf_vec2){
+                    //sound_stream_dsp.push_back(v);
+                }
+                SDL_QueueAudio(deviceId, &buf_vec2[0], buf_vec2.size()*2);
+                buf_vec2.clear();
+                SDL_Delay(1000);
+            }
             //SDL_QueueAudio(deviceId, (void*)&vec[0], vec.size()*2);
 
             c2=0;
             c4=0;
+            buf_vec.clear();
             //vec.clear();
             cnt=0;
         }
@@ -302,6 +348,10 @@ void Dsp::writeSample8000(int val) {
     ////soundStream.write(val);
     ////soundStream.write(val);
     ////soundStream.write(val);
+
+    buf_vec.push_back(val);
+
+    /*
      sound_stream_dsp.push_back(val);
      sound_stream_dsp.push_back(val);
      sound_stream_dsp.push_back(val);
@@ -310,7 +360,7 @@ void Dsp::writeSample8000(int val) {
     if ((id++ & 1) > 0){
         sound_stream_dsp.push_back(val);
         ////soundStream.write(val);
-    }
+    }*/
 }
 
 void Dsp::writePcm(int val) {
