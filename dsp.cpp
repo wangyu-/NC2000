@@ -263,12 +263,24 @@ void Dsp::write(int high,int low) {
             //printf()
             //c2=0;
             //end=buf_vec.size();
-            printf("<<%d>>\n",(int)buf_vec.size());
+            float range=6.0;
+            for(int j=0; j+ c2<end &&j<range;j++)
+            {
+                //printf("%d  %f \n",end-1-j, j/range);
+                buf_vec[j+c2]*=j/range;
+            }
+            for(int j=0; j<range && end-1-j >=0;j++)
+            {
+                //printf("%d  %f \n",end-1-j, j/range);
+                buf_vec[(int)end-1-j]*=j/range;
+            }
+            //printf("<<%d>>\n",(int)buf_vec.size());
             for(int i=c2;i<end;i++){
                 signed short value=buf_vec[i];
                 for(int x=0;x<AUDIO_HZ/8000;x++){
                     buf_vec2.push_back(value);
                 }
+
             }
 
             if(high==0xc3||high==0xc1){
@@ -284,7 +296,7 @@ void Dsp::write(int high,int low) {
                 //buf_vec2.clear();
                 printf("-----------%02x--------------\n",high);
                 if(delay_between_syllable){
-                    SDL_Delay(5000);
+                    SDL_Delay(1000);
                 }
             }
             //SDL_QueueAudio(deviceId, (void*)&vec[0], vec.size()*2);
@@ -492,6 +504,7 @@ void Dsp::subFrame(int subframe_NUM,int s0,int s1,int fixpos) {
         LTP[Expos] = op;
         r[i + base] = fixpolefilter(op);
         int t = r[i + base] * 16;
+        //t*=0.2;
         Sout[i + base] = (short) (t > 32767 ? 32767 : (t < -32768 ? -32768 : t));
 
         if (Expos > 0)
