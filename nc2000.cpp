@@ -267,6 +267,14 @@ int min_queue=AUDIO_HZ*999;
 //int target_total=AUDIO_HZ/10;
 int target_queue=AUDIO_HZ/5;
 long long last_increase_time=0;
+
+
+
+int RawData;
+double SmoothData=0;
+double LPF_Beta = 0.025; // 0<ß<1
+
+
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
 
@@ -315,7 +323,11 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 			cuttmp+=cutoff*val;
 			value=val;
 			if(!sound_stream_dsp.empty()){
-				value+=sound_stream_dsp.front();
+				RawData = sound_stream_dsp.front();
+      			SmoothData = SmoothData - (LPF_Beta * (SmoothData - RawData));
+
+				//value+=SmoothData;
+				value+=RawData;
 				sound_stream_dsp.pop_front();
 				if(value>32767) value=32767;
 				if(value<-32768) value=-32768;
