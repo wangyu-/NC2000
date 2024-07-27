@@ -49,9 +49,9 @@ void Render() {
   int pitch = 0;
   static const SDL_Rect source = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
   SDL_LockTexture(texture, &source, reinterpret_cast<void**>(&bytes), &pitch);
-  static const unsigned char black_color[4] = { 0, 64, 64, 64 };
-  static const unsigned char near_black_color[4] = { 0, 128, 128, 128 };
-  static const unsigned char near_white_color[4] = { 0, 192, 192, 192 };
+  static const unsigned char black_color[4] = { 0, 30, 30, 30 };
+  static const unsigned char near_black_color[4] = { 0, 105, 105, 105 };
+  static const unsigned char near_white_color[4] = { 0, 180, 180, 180 };
   static const unsigned char white_color[4] = { 0, 255, 255, 255 };
 
 
