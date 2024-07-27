@@ -77,7 +77,7 @@ void post_cpu_run_sound_handling(){
 		//if(pop_cnt==0){
 		if(min_audio_queue_size_observed >DSP_AUDIO_HZ/100){
 			target_audio_queue_size -= min_audio_queue_size_observed-DSP_AUDIO_HZ/100;
-            if(enable_beeper_debug){
+            if(enable_debug_beeper){
 			    printf("shrink!!!!!!!!!!!!!!!target_queue=%d\n",target_audio_queue_size);
             }
 		}
@@ -94,7 +94,7 @@ void post_cpu_run_sound_handling(){
 		//pop_cnt++;;
 		target_audio_queue_size*=1.1;
 		last_audio_queue_increase_time=current_time;
-        if(enable_beeper_debug){
+        if(enable_debug_beeper){
 		    printf("oops audio queue drained! target_queue=%d\n",target_audio_queue_size);
         }
 	}
