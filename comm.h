@@ -36,8 +36,6 @@ extern bool enable_inject;
 extern bool wanna_inject;
 extern bool injected;
 
-extern int listen_port;
-
 /*
 ===================
 global switch
@@ -155,4 +153,19 @@ struct WqxRom {
     std::string statesPath;
 };
 
-
+inline vector<string> split_s(const string &str, const string &sp) {
+    vector<string> res;
+    size_t i = 0, pos;
+    for (;; i = pos + sp.length()) {
+        pos = str.find(sp, i);
+        if (pos == string::npos) {
+			string s=str.substr(i, pos);
+            if(!s.empty()) res.push_back(s);
+            break;
+        } else {
+			string s=str.substr(i, pos - i);
+            if(!s.empty()) res.push_back(s);
+        }
+    }
+    return res;
+}

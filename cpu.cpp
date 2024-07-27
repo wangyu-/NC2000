@@ -3,45 +3,10 @@
 #include "disassembler.h"
 #include "mem.h"
 #include "state.h"
-#include <thread>
 #include <mutex>
-#include <unistd.h>
-#include "nand.h"
-#include "nor.h"
-#include <time.h>
 
-#if defined(__MINGW32__)
-#include <winsock2.h>
-#include <ws2tcpip.h>
-typedef unsigned char u_int8_t;
-typedef unsigned short u_int16_t;
-typedef unsigned int u_int32_t;
-typedef int socklen_t;
-#else
-#include <sys/socket.h>    //for socket ofcourse
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#endif
-
-#if defined(__MINGW32__)
-typedef SOCKET my_fd_t;
-inline int sock_close(my_fd_t fd)
-{
-	return closesocket(fd);
-}
-#else
-typedef int my_fd_t;
-inline int sock_close(my_fd_t fd)
-{
-	return close(fd);
-}
-
-#endif
-
-
-
+#include "console.h"
+#include <thread>
 
 extern nc1020_states_t nc1020_states;
 
@@ -61,55 +26,8 @@ static uint8_t& reg_x = nc1020_states.cpu.reg_x;
 static uint8_t& reg_y = nc1020_states.cpu.reg_y;
 static uint8_t& reg_sp = nc1020_states.cpu.reg_sp;
 
-static int udp_fd;
-static struct sockaddr_in myaddr;
-static struct sockaddr_in remaddr;
+double speed_multiplier=1.0;
 
-string udp_msg;
-std::mutex g_mutex;
-
-void read_loop(std::string msg)
-{
-	char buf[1000];
-	socklen_t addrlen = sizeof(remaddr);  
-	
-	while(1){
-		ssize_t recvlen = recvfrom(udp_fd, buf, sizeof(buf)-1, 0, (struct sockaddr *)&remaddr, &addrlen);
-		if(recvlen>0) {
-			buf[recvlen]=0;
-		} 
-		g_mutex.lock();
-		udp_msg=buf;
-		g_mutex.unlock();
-	}
-    //std::cout << "task1 says: " << msg;
-}
-
-
-void init_udp_server(){
-	if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		printf("cannot create socket");
-		return ;
-	}
-	printf("create socket done\n");
-	memset((char *)&myaddr, 0, sizeof(myaddr));
-	myaddr.sin_family = AF_INET;
-	myaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	myaddr.sin_port = htons(listen_port);
-
-	if (bind(udp_fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
-		printf("bind failed");
-		sock_close(udp_fd);
-		return ;
-	}
-	
-	printf("bind socket done\n");
-
-	printf("udp listening at %d!!!\n",listen_port);
-	std::thread task1(read_loop, "hi");
-	task1.detach();
-	return ;
-}
 void reset_cpu_states(){
 	nc1020_states.should_irq = false;
 	nc1020_states.cycles = 0;
@@ -179,185 +97,11 @@ void inject(){
 	reg_pc=0x4018;
 }
 
-vector<string> split_s(const string &str, const string &sp) {
-    vector<string> res;
-    size_t i = 0, pos;
-    for (;; i = pos + sp.length()) {
-        pos = str.find(sp, i);
-        if (pos == string::npos) {
-			string s=str.substr(i, pos);
-            if(!s.empty()) res.push_back(s);
-            break;
-        } else {
-			string s=str.substr(i, pos - i);
-            if(!s.empty()) res.push_back(s);
-        }
-    }
-    return res;
-}
-
-void copy_to_addr(uint16_t addr, uint8_t * buf,uint16_t size){
-	for(uint32_t i=0;i<size;i++){
-		Peek16(addr+i)=buf[i];
-	}
-}
-deque<char> queue;
-int32_t dummy_io_cnt=-1;
-bool dummy_io(uint16_t addr, uint8_t &value){
-	if(addr!=0x3fff) return false;
-	if(dummy_io_cnt== -1) return false;
-	if(queue.empty()) {
-		value=0;
-        dummy_io_cnt=-1;
-		//printf("<dummy read %02x>\n",value);
-		return true;
-	}
-	if(dummy_io_cnt++%2==0) {
-		value=1;
-	}else{
-		value=queue.front();
-		queue.pop_front();
-	}
-	//printf("<dummy read %02x>\n",value);
-	return true;
-}
-double speed_multiplier=1.0;
-void handle_cmd(string & str){
-	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
-		str.pop_back();
-	} 
-	printf("received %s from udp\n",str.c_str());
-	auto cmds=split_s(str," ");
-	for(int i=0;i<cmds.size();i++){
-		printf("<%s>",cmds[i].c_str());
-	}
-	printf("\n");
-	fflush(stdout);
-	if(cmds.size()==0) return;
-	if(cmds[0]=="save_flash"){
-		write_nand_file();
-		SaveNor();
-		printf("flash saved to file!!\n");
-		return;
-	}
-	if(cmds[0]=="dump"){
-		uint32_t start=stoi(cmds[1],0,16);
-		uint32_t size=stoi(cmds[2],0,10);
-		for(uint32_t i=start;i<start+size;i++){
-			printf("%02x ",Peek16(i));
-		}
-		printf("\n");
-		return;
-	}
-
-	if(cmds[0]=="ec"){
-		uint32_t start=stoi(cmds[1],0,16);
-		for(uint32_t i=2;i<cmds.size();i++){
-			Peek16(start++)=stoi(cmds[i],0,16);;
-		}
-		printf("ec done\n");
-		return;
-	}
-
-	if(cmds[0]=="file_manager"){
-		reg_pc = 0x3000;
-		uint8_t buf[]={0x00,0x27,0x05,0x18,0x90,0xfa};
-		copy_to_addr(0x3000, buf, sizeof buf);
-		return;
-	}
-
-	if(cmds[0]=="create_dir"){
-			printf("<pc=%x>\n",reg_pc);
-			reg_pc = 0x3000;
-			copy_to_addr(0x08d6, (uint8_t*)cmds[1].c_str(), cmds[1].size()+1);
-			Peek16(0x0912)=0x02;
-			uint8_t buf[]={0x00,0x0b,0x05,0x00,0x27,0x05,0x18,0x90,0xfa};
-			copy_to_addr(0x3000, buf, sizeof buf);
-			return;
-	}
-
-	if(cmds[0]=="wqxhex"){
-			vector<char> wqxhex;
-			read_file("wqxhex.bin", wqxhex);
-			memcpy(nc1020_states.ext_ram, &wqxhex[0], wqxhex.size());
-			ram_io[0x00]|=0x80;
-			ram_io[0x0a]|=0x80;
-			super_switch();
-			reg_pc=0x4018;
-			return;
-	}
-	if(cmds[0]=="speed"){
-			if(cmds.size()==1) speed_multiplier=1;
-			else{
-				sscanf(cmds[1].c_str(),"%lf",&speed_multiplier);
-			}
-			printf("change speed to %f\n",speed_multiplier);
-			return;
-	}
-	if(cmds[0]=="log"){
-			enable_dyn_debug^=0x1;
-			return;
-	}
-	if(cmds[0]=="put"){
-			vector<char> file;
-			read_file(cmds[1], file);
-			string target=cmds[1];
-			if(cmds.size()>2) target=cmds[2];
-			queue.clear();
-			for(int i=0;i<file.size();i++){
-				queue.push_back(file[i]);
-			}
-			dummy_io_cnt=0;
-
-			copy_to_addr(0x08d6, (uint8_t*)target.c_str(), target.size()+1);
-
-			/*
-			for(;;){
-				auto value=Load(0x3fff);
-				printf("<%02x>",value);
-				if(value==0) break;
-				auto value2=Load(0x3fff);
-				printf("<%02x>",value2);
-			}
-			printf("\n");*/
-			uint8_t buf[]={0xA9,0x70,0x8D,0x12,0x09,0xA9,0xEF,0x8D,0x13,0x09,0x8D,0x14,0x09,0x00,0x14,0x05,
-0xA9,0x00,0x8D,0xF6,0x03,0xAD,0xFF,0x3F,0xC9,0x00,0xF0,0x21,0xAD,0xFF,0x3F,0x8D,
-0x00,0x32,0xA9,0x00,0x85,0xDD,0xA9,0x32,0x85,0xDE,0xA9,0x01,0x8D,0x0F,0x09,0xA9,
-0x00,0x8D,0x10,0x09,0x8D,0x11,0x09,0x00,0x17,0x05,0x4C,0x10,0x30,0x00,0x16,0x05,
-0x00,0x27,0x05,0x4C,0x40,0x30,};
-			copy_to_addr(0x3000,buf,sizeof(buf));
-			reg_pc=0x3000;
-			
-			return;
-	}
-
-	if(cmds[0]=="sync_time") {
-		time_t t = time(NULL);
-  		struct tm tm = *localtime(&t);
-		Peek16(1018)=tm.tm_year+1900-1881;
-		Peek16(1019)=tm.tm_mon;
-	    Peek16(1020)=tm.tm_mday-1;
-		Peek16(1015)=tm.tm_hour;
-		Peek16(1016)=tm.tm_min;
-		Peek16(1017)=tm.tm_sec*2;
-		return ;
-	}
-	printf("unknow command <%s>\n",cmds[0].c_str());
-	fflush(stdout);
-}
-
-
 void cpu_run(){
 
-		string tmp;
-		g_mutex.lock();
-		if(!udp_msg.empty()){
-			tmp= udp_msg;
-			udp_msg.clear();
-		}
-		g_mutex.unlock();
-		if(!tmp.empty()){
-			handle_cmd(tmp);
+		string msg=get_message();
+		if(!msg.empty()){
+			handle_cmd(msg);
 		}
 		tick++;
 		//if(tick%100000000==0) printf("tick=%lld\n",tick);
@@ -2209,52 +1953,4 @@ void cpu_run(){
 		}
 		if(should_irq && (enable_debug_pc ||enable_dyn_debug)&&false)
 			printf("should irq!\n");
-}
-
-int init_ws()
-{
-#if defined(__MINGW32__)
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	int err;
-
-	/* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
-	wVersionRequested = MAKEWORD(2, 2);
-
-	err = WSAStartup(wVersionRequested, &wsaData);
-	if (err != 0) {
-		/* Tell the user that we could not find a usable */
-		/* Winsock DLL.                                  */
-		printf("WSAStartup failed with error: %d\n", err);
-		exit(-1);
-	}
-
-	/* Confirm that the WinSock DLL supports 2.2.*/
-	/* Note that if the DLL supports versions greater    */
-	/* than 2.2 in addition to 2.2, it will still return */
-	/* 2.2 in wVersion since that is the version we      */
-	/* requested.                                        */
-
-	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
-		/* Tell the user that we could not find a usable */
-		/* WinSock DLL.                                  */
-		printf("Could not find a usable version of Winsock.dll\n");
-		WSACleanup();
-		exit(-1);
-	}
-	else
-	{
-		printf("The Winsock 2.2 dll was found okay");
-	}
-	
-	int tmp[]={0,100,200,300,500,800,1000,2000,3000,4000,-1};
-	int succ=0;
-	for(int i=1;tmp[i]!=-1;i++)
-	{
-		if(_setmaxstdio(100)==-1) break;
-		else succ=i;
-	}	
-	printf(", _setmaxstdio() was set to %d\n",tmp[succ]);
-#endif
-return 0;
 }

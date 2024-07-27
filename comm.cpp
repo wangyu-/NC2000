@@ -14,8 +14,6 @@ bool enable_inject=false;
 bool wanna_inject=false;
 bool injected=false;
 
-int listen_port=9000;
-
 WqxRom nc1020_rom = {
     .romPath = "./obj_lu.bin",
     .norFlashPath = "./nc1020.fls",
