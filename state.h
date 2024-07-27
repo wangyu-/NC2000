@@ -46,4 +46,6 @@ struct nc1020_states_t{
 
 	uint32_t lcd_addr;
 	uint8_t keypad_matrix[8];
+
+	bool grey_mode;
 };

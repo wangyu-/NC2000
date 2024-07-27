@@ -51,6 +51,8 @@ uint8_t IO_API ReadXX(uint8_t addr){
         return read_nand();
 	}
 
+    //printf("read unknow IO %02x ,value=%02x\n",addr, ram_io[addr]);
+
     if(addr==0x03){
         return 0xff;
     }
@@ -93,6 +95,9 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
       printf("[w %02x]\n",value);
       return;
     } 
+
+    //printf("write unknow IO %02x ,value=%02x\n",addr, value);
+
     ram_io[addr] = value;
 }
 
@@ -116,11 +121,17 @@ void IO_API Write05(uint8_t addr, uint8_t value){
 	}
 }
 
+
 void IO_API Write06(uint8_t addr, uint8_t value){
     ram_io[addr] = value;
     if (!lcd_addr||true) {
     	lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
 		printf("lcd_addr=%x\n",lcd_addr);
+        if(lcd_addr==0x1380){
+            nc1020_states.grey_mode=1;
+        }else{
+             nc1020_states.grey_mode=0;
+        }
     }
     ram_io[0x09] &= 0xFE;
 }

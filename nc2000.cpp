@@ -153,15 +153,20 @@ void SetKey(uint8_t key_id, bool down_or_up){
 		}
 	}
 }
-
+bool is_grey_mode(){
+	return nc1020_states.grey_mode;
+}
 bool CopyLcdBuffer(uint8_t* buffer){
 	if (lcd_addr == 0) return false;
-	uint32_t off=0;
-	if(nc2000) off=400;
-	memcpy(buffer, ram_buff + lcd_addr+off, 1600);
+	memcpy(buffer, ram_buff + lcd_addr, 1600);
 
 	if(nc2000){
-		memcpy(buffer, ram_buff + 0x19c0, 1600);
+		if(!is_grey_mode()){
+			memcpy(buffer, ram_buff + 0x19c0, 1600 );
+		}else{
+			memcpy(buffer, ram_buff + 0x19c0 -1600, 1600 *2);
+		}
+
 	}
 	return true;
 }

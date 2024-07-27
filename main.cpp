@@ -11,7 +11,7 @@ int enable_debug_key_shoot=false;
 bool fast_forward=false;
 
 SDL_Renderer* renderer;
-static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8];
+static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
 int init_ws();
 
@@ -49,14 +49,32 @@ void Render() {
   int pitch = 0;
   static const SDL_Rect source = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
   SDL_LockTexture(texture, &source, reinterpret_cast<void**>(&bytes), &pitch);
-  static const unsigned char on_color[4] = { 255, 0, 0, 0 };
-  static const unsigned char off_color[4] = { 255, 255, 255, 255 };
-  static const size_t color_size = sizeof(on_color);
-  for (int i = 0; i < sizeof(lcd_buf); ++i) {
-    for (int j = 0; j < 8; ++j) {
-      bool pixel = (lcd_buf[i] & (1 << (7 - j))) != 0;
-      memcpy(bytes, pixel ? on_color : off_color, color_size);
-      bytes += color_size;
+  static const unsigned char black_color[4] = { 0, 64, 64, 64 };
+  static const unsigned char near_black_color[4] = { 0, 128, 128, 128 };
+  static const unsigned char near_white_color[4] = { 0, 192, 192, 192 };
+  static const unsigned char white_color[4] = { 0, 255, 255, 255 };
+
+
+  static const unsigned char * index[4]={white_color,near_white_color,near_black_color,black_color};
+  
+
+  static const size_t color_size = sizeof(black_color);
+
+  if(!is_grey_mode()){
+    for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8; ++i) {
+      for (int j = 0; j < 8; ++j) {
+        bool pixel = (lcd_buf[i] & (1 << (7 - j))) != 0;
+        memcpy(bytes, pixel ? black_color : white_color, color_size);
+        bytes += color_size;
+      }
+    }
+  }else{
+    for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8 *2; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        uint8_t pixel=(lcd_buf[i]>>(6-j*2)) &0x03;
+        memcpy(bytes, index[pixel], color_size);
+        bytes += color_size;
+      }
     }
   }
   SDL_UnlockTexture(texture);

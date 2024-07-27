@@ -14,3 +14,5 @@ void RunTimeSlice(uint32_t, bool);
 bool CopyLcdBuffer(uint8_t*);
 void LoadNC1020();
 void SaveNC1020();
+
+bool is_grey_mode();
