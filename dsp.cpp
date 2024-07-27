@@ -200,7 +200,7 @@ void Dsp::write(int high,int low) {
         if(id==3&& dspCelpOff==3 ) {
             printf("id3-->%02x",high); 
             if(high!=0x30&&high!=0x3f) printf("!!!!!!!");printf("\n");
-            if(high!=0x30){
+            if(high!=0x30||true){
             unvoice3= (high&0x01)==0; 
             unvoice2= (high&0x02)==0; 
             unvoice1= (high&0x04)==0; 
@@ -246,11 +246,16 @@ void Dsp::write(int high,int low) {
             //if(len<0) len+=240;
             printf("cnt=%d!!!!!!!!!!!!!!!!!!!!\n",cnt);
             assert(cnt%15==0);
-            int end=c4+240*(cnt/15)  -240;
+            int end1=c4+240*(cnt/15)  -240;
             //c2=0;end=buf_vec.size();
-            //int end=c4+240*(c8)-240;
+            int end2=c4+240*(c8);
+
+            int end3= (c4==0? 240*(cnt/15) : c4+240*(cnt/15)  -240 );
+            assert(end2==end3);
             //int end=c4+ buf_vec.size()  -240;
-            printf("<%d %d %d %d %d>\n",c2, c4,end,(int)buf_vec.size(),c8);
+
+            int end=end3;
+            printf("<%d %d %d %d %d %d>\n",c2, c4,end1,end2,(int)buf_vec.size(),c8);
             if(end>(int)buf_vec.size()){
                 assert(false);
                 end=buf_vec.size();
@@ -276,14 +281,15 @@ void Dsp::write(int high,int low) {
                     SDL_QueueAudio(deviceId, &buf_vec2[0], buf_vec2.size()*2);
                 }
                 //
-                buf_vec2.clear();
-                //SDL_Delay(1000);
+                //buf_vec2.clear();
+                printf("-----------%02x--------------\n",high);
+                //SDL_Delay(5000);
             }
             //SDL_QueueAudio(deviceId, (void*)&vec[0], vec.size()*2);
 
-           // c2=0;
-           // c4=0;
-            buf_vec.clear();
+            /*c2=0;
+            c4=0;
+            buf_vec.clear();*/
             //vec.clear();
             cnt=0;
             reset();
@@ -387,7 +393,9 @@ void Dsp::dspCelpToCelp() {
         }
         //vec.push_back(Sout[i]);
         if(!mute) writeSample8000(Sout[i]);
-        else writeSample8000(0);
+        else {
+            writeSample8000(0);
+        }
     }
     unvoice0=0;
     unvoice1=0;

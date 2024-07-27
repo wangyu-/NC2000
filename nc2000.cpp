@@ -289,7 +289,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 
 	int queue_size=SDL_GetQueuedAudioSize(deviceId);
 
-	if(rand()%100==0) printf("q=%d\n",queue_size);
+	//if(rand()%100==0) printf("q=%d\n",queue_size);
 	if(queue_size<min_queue) min_queue=queue_size;
 	if(queue_size==0 && current_time-last_increase_time>1000){
 		//pop_cnt++;;
