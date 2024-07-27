@@ -8,8 +8,6 @@ extern double speed_multiplier;
 void reset_cpu_states();
 void cpu_run();
 
-void init_udp_server();
-
 /*
 INT:.MACRO INT_PARAM
     .DB $00

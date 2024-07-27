@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include "sound.h"
+#include "udp_server.h"
 using namespace std;
 
 static int enable_debug_key_shoot=false;
@@ -13,10 +14,7 @@ static bool fast_forward=false;
 static SDL_Renderer* renderer;
 static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
-int init_ws();
-
 bool InitEverything() {
-  init_ws();
   if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
     std::cout << " Failed to initialize SDL : " << SDL_GetError() << std::endl;
     return false;
@@ -322,9 +320,11 @@ void RunGame() {
   }
 }
 int main(int argc, char* args[]) {
+  int listen_port=9000;
   if(argc>1){
     sscanf(args[1],"%d",&listen_port);
   }
+  init_udp_server(listen_port);
   if (!InitEverything())
     return -1;
   

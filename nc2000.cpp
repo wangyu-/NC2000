@@ -29,7 +29,6 @@ static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
 void Initialize() {
-	init_udp_server();
 
 	if(nc2000){
     	nc1020_rom.norFlashPath= "./nor.bin";
