@@ -172,8 +172,9 @@ bool unvoice3=0;
 bool enable_unvoice=false;
 
 void Dsp::write(int high,int low) {
-
-    printf("%02x %02x\n",low,high);
+    if(enable_debug_dsp){
+        printf("%02x %02x\n",low,high);
+    }
 	if (dspMode==PCM_MODE) {
 		if (high==0xff) {
 			dspMode=CELP_MODE;
@@ -187,15 +188,22 @@ void Dsp::write(int high,int low) {
         //printf("cnt=%d\n",cnt);
 		int id=high>>4;
         if(id==3&& dspCelpOff==3 ) {
-            printf("id3-->%02x",high); 
-            if(high!=0x30&&high!=0x3f) printf("!!!!!!!");printf("\n");
-            if(high!=0x30||true){
-            unvoice3= (high&0x01)==0; 
-            unvoice2= (high&0x02)==0; 
-            unvoice1= (high&0x04)==0; 
-            unvoice0= (high&0x08)==0;
+            if(enable_debug_dsp){
+                printf("id3-->%02x",high); 
+                if(high!=0x30&&high!=0x3f){
+                    printf("!!!!!!!");
+                }
+                printf("\n");
             }
-            printf("unvoice %d %d %d %d\n",unvoice0,unvoice1,unvoice2,unvoice3);
+            if(high!=0x30||true){
+                unvoice3= (high&0x01)==0; 
+                unvoice2= (high&0x02)==0; 
+                unvoice1= (high&0x04)==0; 
+                unvoice0= (high&0x08)==0;
+            }
+            if(enable_debug_dsp){
+                printf("unvoice %d %d %d %d\n",unvoice0,unvoice1,unvoice2,unvoice3);
+            }
 
             /*assert(high==0x30||high==0x3f);*/
         }
@@ -212,10 +220,14 @@ void Dsp::write(int high,int low) {
 	} else if (high==0xa0) {
 		dspMode=low;
         cnt=0;
-		printf("DSP_MODE %d\n",low);
+        if(enable_debug_dsp){
+		    printf("DSP_MODE %d\n",low);
+        }
         assert(low==2);
 	} else {
-		printf("DSP_CMD %04X\n",(high<<8)|low);
+        if(enable_debug_dsp){
+		    printf("DSP_CMD %04X\n",(high<<8)|low);
+        }
         if(high==0xc2){
             c2=low;
             cnt=0;
@@ -230,7 +242,9 @@ void Dsp::write(int high,int low) {
             cnt=0;
         }
         if(high==0xc3 || high==0xc1){
-            printf("cnt=%d!!!!!!!!!!!!!!!!!!!!\n",cnt);
+            if(enable_debug_dsp){
+                printf("cnt=%d!!!!!!!!!!!!!!!!!!!!\n",cnt);
+            }
             assert(cnt%15==0);
             int end1=c4+240*(cnt/15)  -240;
             //c2=0;end=buf_vec.size();
@@ -240,7 +254,9 @@ void Dsp::write(int high,int low) {
             //int end=c4+ buf_vec.size()  -240;
 
             int end=end3;
-            printf("<%d %d %d %d %d %d>\n",c2, c4,end1,end2,(int)buf_frame.size(),c8);
+            if(enable_debug_dsp){
+                printf("<%d %d %d %d %d %d>\n",c2, c4,end1,end2,(int)buf_frame.size(),c8);
+            }
             if(end>(int)buf_frame.size()){
                 assert(false);
                 end=buf_frame.size();
@@ -270,7 +286,9 @@ void Dsp::write(int high,int low) {
             if(high==0xc3||high==0xc1){
                 callback((unsigned char *)&buf_syllable[0], buf_syllable.size()*2);
                 //buf_vec2.clear();
-                printf("-----------%02x--------------\n",high);
+                if(enable_debug_dsp){
+                    printf("-----------%02x--------------\n",high);
+                }
                 if(delay_between_syllable){
                     SDL_Delay(1000);
                 }

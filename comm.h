@@ -51,7 +51,8 @@ const bool enable_beeper=true;
 const bool enable_dsp_test=true;
 const bool delay_between_syllable=false;
 
-const bool enable_beeper_debug=false;
+const bool enable_debug_beeper=false;
+const bool enable_debug_dsp=false;
 /*
 ===================
 cpu related

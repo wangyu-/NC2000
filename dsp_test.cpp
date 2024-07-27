@@ -2396,14 +2396,14 @@ unsigned char test_data3[]={
 extern Dsp dsp;
 
 void dsp_test(){
-    printf("==============================================\n");
+    printf("====================dsp test==========================\n");
     dsp.reset();
     for(int i=0;i<sizeof(test_data)/2;i++){
         dsp.write(test_data[i*2+1], test_data[i*2]);
     }
 }
 void dsp_test2(){
-    printf("==============================================\n");
+    printf("====================dsp test2==========================\n");
     dsp.reset();
     for(int i=0;i<sizeof(test_data2)/2;i++){
         dsp.write(test_data2[i*2+1], test_data2[i*2]);
@@ -2411,7 +2411,7 @@ void dsp_test2(){
 }
 
 void dsp_test3(){
-    printf("==============================================\n");
+    printf("====================dsp test3==========================\n");
     dsp.reset();
     for(int i=0;i<sizeof(test_data3)/2;i++){
         dsp.write(test_data3[i*2+1], test_data3[i*2]);
