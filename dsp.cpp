@@ -176,7 +176,12 @@ void Dsp::reset() {
 	dspMode=CELP_MODE;
 }
 
+bool unvoice0=0;
+bool unvoice1=0;
+bool unvoice2=0;
+bool unvoice3=0;
 
+bool enable_unvoice=true;
 void Dsp::write(int high,int low) {
 
     printf("%02x %02x\n",low,high);
@@ -192,6 +197,19 @@ void Dsp::write(int high,int low) {
         cnt++;
         //printf("cnt=%d\n",cnt);
 		int id=high>>4;
+        if(id==3&& dspCelpOff==3 ) {
+            printf("id3-->%02x",high); 
+            if(high!=0x30&&high!=0x3f) printf("!!!!!!!");printf("\n");
+            if(high!=0x30){
+            unvoice3= (high&0x01)==0; 
+            unvoice2= (high&0x02)==0; 
+            unvoice1= (high&0x04)==0; 
+            unvoice0= (high&0x08)==0;
+            }
+            printf("unvoice %d %d %d %d\n",unvoice0,unvoice1,unvoice2,unvoice3);
+
+            /*assert(high==0x30||high==0x3f);*/
+        }
 		if (id<3) {
 			dspCelpOff=id;
 			dspCelp[dspCelpOff++]=(high<<8)|low;
@@ -206,6 +224,7 @@ void Dsp::write(int high,int low) {
 		dspMode=low;
         cnt=0;
 		printf("DSP_MODE %d\n",low);
+        assert(low==2);
 	} else {
 		printf("DSP_CMD %04X\n",(high<<8)|low);
         if(high==0xc2){
@@ -228,8 +247,10 @@ void Dsp::write(int high,int low) {
             printf("cnt=%d!!!!!!!!!!!!!!!!!!!!\n",cnt);
             assert(cnt%15==0);
             int end=c4+240*(cnt/15)  -240;
+            //c2=0;end=buf_vec.size();
+            //int end=c4+240*(c8)-240;
             //int end=c4+ buf_vec.size()  -240;
-            printf("<%d %d %d>\n",c2,end,(int)buf_vec.size());
+            printf("<%d %d %d %d %d>\n",c2, c4,end,(int)buf_vec.size(),c8);
             if(end>(int)buf_vec.size()){
                 assert(false);
                 end=buf_vec.size();
@@ -237,6 +258,7 @@ void Dsp::write(int high,int low) {
             //printf()
             //c2=0;
             //end=buf_vec.size();
+            printf("<<%d>>\n",(int)buf_vec.size());
             for(int i=c2;i<end;i++){
                 signed short value=buf_vec[i];
                 for(int x=0;x<AUDIO_HZ/8000;x++){
@@ -250,21 +272,25 @@ void Dsp::write(int high,int low) {
                 }
                 SDL_QueueAudio(deviceId, &buf_vec2[0], buf_vec2.size()*2);
                 buf_vec2.clear();
-                SDL_Delay(1000);
+                //SDL_Delay(1000);
             }
             //SDL_QueueAudio(deviceId, (void*)&vec[0], vec.size()*2);
 
-            c2=0;
-            c4=0;
+           // c2=0;
+           // c4=0;
             buf_vec.clear();
             //vec.clear();
             cnt=0;
+            reset();
         }
 	}
 }
 
 
 void Dsp::dspCelpToCelp() {
+    //dspCelp[0] |=0x8000;
+    assert((dspCelp[0] & 0x8000) == 0);
+    //dspCelp[0] &=0x7fff;
     if ((dspCelp[0] & 0x8000) != 0)
         clpBuf[0] = 0x20;
     else
@@ -331,9 +357,37 @@ void Dsp::dspCelpToCelp() {
     dsp(clpBuf);
     int len = (dspCelp[0] & 0x8000) != 0 ? 160 : 240;
     for (int i = 0; i < len; i++) {
+        int mute=false;
+        if(enable_unvoice){
+            if(unvoice0 &&i/80==0){
+                mute=true;
+                //Sout[i]=0;
+                //continue;
+            }
+            if(unvoice1 &&i/80==1){
+                 mute=true;
+                //Sout[i]=0;
+                //continue;
+            }
+            if(unvoice2 &&i/80==2){
+                 mute=true;
+                //Sout[i]=0;
+                //continue;
+            }
+            if(unvoice3 &&i/80==3){
+                 mute=true;
+                //Sout[i]=0;
+                //continue;
+            }
+        }
         //vec.push_back(Sout[i]);
-        writeSample8000(Sout[i]);
+        if(!mute) writeSample8000(Sout[i]);
+        else writeSample8000(0);
     }
+    unvoice0=0;
+    unvoice1=0;
+    unvoice2=0;
+    unvoice3=0;
     //printf("<<len %d>>!!!",len);
     //SDL_QueueAudio(deviceId, (void*)Sout,len*2);
     //c2=0;c4=0;
