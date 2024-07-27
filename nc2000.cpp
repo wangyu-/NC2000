@@ -240,9 +240,13 @@ void init_audio(){
     SDL_PauseAudioDevice(deviceId, 0);
 
 	extern void dsp_test();
+	extern void dsp_test2();
 	dsp_test();
 	dsp_test();
 	dsp_test();
+	dsp_test2();
+	dsp_test2();
+	dsp_test2();
 	//dsp_test();
 	//dsp_test();
 }
