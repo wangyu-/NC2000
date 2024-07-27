@@ -143,16 +143,21 @@ uint8_t map_key(int32_t sym){
           case SDLK_SEMICOLON: return 0x15;
           case SDLK_QUOTE: return 0x14;
           
-
-          default:return 0x00;
+          default:return 0xff;
     }
+
+    /*note: 0x01  infra red
+            0x00  on/off  (according to peek/pkoe)
+            0x0f  on/off  (according to hackwaly/nc1020/NC1020_KeypadView.java) (wang-yue/NC1020/blob/master/main.cpp)
+            0x02  on/off   (according to hackwaly/jswqx/src/keyinput.js)
+    */
 }
 void handle_key(signed int sym, bool key_down){
         if(enable_debug_key_shoot){
           printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
         }
         uint8_t value=map_key(sym);
-        if(value!=0){
+        if(value!=0xff){
           SetKey(value, key_down);
         }
         switch ( sym) {

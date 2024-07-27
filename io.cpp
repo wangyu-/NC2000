@@ -38,7 +38,7 @@ void init_io(){
 	io_write[0x0D] = Write0D;
 	io_write[0x0F] = Write0F;
 	io_write[0x20] = Write20;
-	io_write[0x23] = Write23;
+	//io_write[0x23] = Write23;
 	io_write[0x3F] = Write3F;
 
 }
@@ -50,8 +50,14 @@ uint8_t IO_API ReadXX(uint8_t addr){
 	if(addr==0x29) {
         return read_nand();
 	}
+
+    if(addr==0x03){
+        return 0xff;
+    }
 	return ram_io[addr];
 }
+
+
 
 uint8_t IO_API Read06(uint8_t addr){
 	return ram_io[addr];
@@ -73,6 +79,20 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
 	if(addr==0x29) {
         return nand_write(value);
     }
+    
+    /*if(addr>=0x30 && addr<=0x3a){
+      printf("{z %04x %02x}\n",addr,value);
+      return; 
+    }*/
+    
+    if(addr==0x32) {
+      printf("<w %02x>",value);
+      return;
+    }
+    else if(addr==0x33){
+      printf("[w %02x]\n",value);
+      return;
+    } 
     ram_io[addr] = value;
 }
 

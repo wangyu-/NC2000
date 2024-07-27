@@ -294,6 +294,10 @@ void handle_cmd(string & str){
 			printf("change speed to %f\n",speed_multiplier);
 			return;
 	}
+	if(cmds[0]=="log"){
+			enable_dyn_debug^=0x1;
+			return;
+	}
 	if(cmds[0]=="put"){
 			vector<char> file;
 			read_file(cmds[1], file);
@@ -452,6 +456,7 @@ void cpu_run(){
 		}
 			break;
 		case 0x02: {
+			//reg_pc+=1;
 		}
 			break;
 		case 0x03: {
