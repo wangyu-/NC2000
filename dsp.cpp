@@ -1,4 +1,6 @@
-﻿#include <SDL_audio.h>
+﻿// orignal author: Lee
+
+#include <SDL_audio.h>
 #include <cstdio>
 #include <stdio.h>
 //include "SoundStream.h"
