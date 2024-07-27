@@ -13,6 +13,11 @@ bool fast_forward=false;
 SDL_Renderer* renderer;
 static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
+
+const int pixel_size=2;
+const int gap_size=1;
+
+const int total_size=pixel_size+gap_size;
 int init_ws();
 
 bool InitEverything() {
@@ -22,7 +27,7 @@ bool InitEverything() {
     return false;
   }
   SDL_Window* window =
-    SDL_CreateWindow("WQX", 0, 40, LINE_SIZE * SCREEN_WIDTH, LINE_SIZE * SCREEN_HEIGHT, 0);
+    SDL_CreateWindow("WQX", 0, 40, LINE_SIZE * SCREEN_WIDTH *total_size, LINE_SIZE * SCREEN_HEIGHT *total_size, 0);
   if (!window) {
     std::cout << "Failed to create window : " << SDL_GetError() << std::endl;
     return false;
@@ -32,7 +37,7 @@ bool InitEverything() {
     std::cout << "Failed to create renderer : " << SDL_GetError() << std::endl;
     return false;
   }
-  SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH * LINE_SIZE, SCREEN_HEIGHT * LINE_SIZE);
+  SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH * LINE_SIZE *total_size, SCREEN_HEIGHT * LINE_SIZE *total_size);
 
   Initialize();
   LoadNC1020();
@@ -43,43 +48,90 @@ bool InitEverything() {
 void Render() {
   SDL_RenderClear(renderer);
   SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-    SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH*total_size, SCREEN_HEIGHT*total_size);
 
   unsigned char* bytes = nullptr;
   int pitch = 0;
-  static const SDL_Rect source = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+  static const SDL_Rect source = { 0, 0, SCREEN_WIDTH*total_size, SCREEN_HEIGHT*total_size };
   SDL_LockTexture(texture, &source, reinterpret_cast<void**>(&bytes), &pitch);
-  static const unsigned char black_color[4] = { 0, 30, 30, 30 };
-  static const unsigned char near_black_color[4] = { 0, 105, 105, 105 };
-  static const unsigned char near_white_color[4] = { 0, 180, 180, 180 };
+
   static const unsigned char white_color[4] = { 0, 255, 255, 255 };
+  static const unsigned char near_white_color[4] = { 0, 180, 180, 180 };
+  static const unsigned char near_black_color[4] = { 0, 105, 105, 105 };
+  static const unsigned char black_color[4] = { 0, 30*0, 30*0, 30*0 };
 
 
   static const unsigned char * index[4]={white_color,near_white_color,near_black_color,black_color};
   
-
   static const size_t color_size = sizeof(black_color);
-
+  //unsigned char lcd[80*(pixel_size+gap_zize)][160*(pixel_size+gap_zize)][color_size] ;
+  //unsigned char lcd[80*(pixel_size+gap_zize)][160*(pixel_size+gap_zize)][color_size] ;
+  unsigned char (*p)[160*total_size][color_size] ;
+  p=(unsigned char (*)[160*total_size][color_size] ) bytes;
   if(!is_grey_mode()){
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8; ++i) {
       for (int j = 0; j < 8; ++j) {
         bool pixel = (lcd_buf[i] & (1 << (7 - j))) != 0;
-        memcpy(bytes, pixel ? black_color : white_color, color_size);
-        bytes += color_size;
+        int pos=i*8+j;
+        int value= pixel? 3:0;
+        int r=pos/160;
+        int c=pos%160;
+        //memcpy(p[r][c],index[value],color_size);
+        for(int u=r*total_size;u<r*total_size+total_size;u++){
+          for(int v=c*total_size;v<c*total_size+total_size;v++){
+              if(u-r*total_size<pixel_size && v-c*total_size<pixel_size){
+                memcpy(p[u][v],index[value],color_size);     
+              }/*else if (u==r*total_size &&  v-c*total_size>=pixel_size || v==c*total_size && u-r*total_size>=pixel_size){
+                memcpy(p[u][v],index[0],color_size);  
+              }*/
+              else{
+                unsigned char tmp[4];
+                memcpy(tmp,index[value],color_size);
+                tmp[1]+=(255-tmp[1])/2;tmp[2]+=(255-tmp[2])/2;tmp[3]+=(255-tmp[3])/2;
+                memcpy(p[u][v],tmp,color_size);
+              }
+          }
+        }
+        //memcpy(bytes, pixel ? black_color : white_color, color_size);
+        //bytes += color_size;
       }
     }
   }else{
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8 *2; ++i) {
       for (int j = 0; j < 4; ++j) {
-        uint8_t pixel=(lcd_buf[i]>>(6-j*2)) &0x03;
-        memcpy(bytes, index[pixel], color_size);
-        bytes += color_size;
+        uint8_t value=(lcd_buf[i]>>(6-j*2)) &0x03;
+        int pos=(i*8+j*2)/2;
+        int r=pos/160;
+        int c=pos%160;
+        //memcpy(p[r][c],index[value],color_size);
+        for(int u=r*total_size;u<r*total_size+total_size;u++){
+          for(int v=c*total_size;v<c*total_size+total_size;v++){
+              if(u-r*total_size<pixel_size && v-c*total_size<pixel_size){
+                memcpy(p[u][v],index[value],color_size);     
+              }/*else if (u==r*total_size &&  v-c*total_size>=pixel_size || v==c*total_size && u-r*total_size>=pixel_size){
+                memcpy(p[u][v],index[0],color_size);  
+              }*/
+              else{
+                unsigned char tmp[4];
+                memcpy(tmp,index[value],color_size);
+                tmp[1]+=(255-tmp[1])/2;tmp[2]+=(255-tmp[2])/2;tmp[3]+=(255-tmp[3])/2;
+                memcpy(p[u][v],tmp,color_size);
+              }
+          }
+        }
       }
     }
   }
+  /*
+  for(int i=0;i<80;i++){
+    for(int j=0;j<160;j++){
+      memcpy(bytes, index[lcd[i][j]],color_size);
+      bytes+=color_size;
+    }
+  }*/
   SDL_UnlockTexture(texture);
   static const SDL_Rect destination =
-    { 0, 0, SCREEN_WIDTH * LINE_SIZE, SCREEN_HEIGHT * LINE_SIZE };
+    { 0, 0, SCREEN_WIDTH * LINE_SIZE *total_size, SCREEN_HEIGHT * LINE_SIZE *total_size };
   SDL_RenderCopy(renderer, texture, &source, &destination);
   SDL_RenderPresent(renderer);
   SDL_DestroyTexture(texture);
