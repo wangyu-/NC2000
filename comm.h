@@ -47,9 +47,13 @@ global switch
 const bool nc1020 = false;
 const bool nc2000 = !nc1020;
 
-const bool dsp_only=false;
+const bool enabled_dsp=true;
+const bool enable_beeper=true;
+//const bool dsp_only=false;
 const bool enable_dsp_test=true;
 const bool delay_between_syllable=false;
+
+const bool enable_beeper_debug=false;
 /*
 ===================
 cpu related
@@ -58,8 +62,15 @@ cpu related
 const uint16_t NMI_VEC = 0xFFFA;
 const uint16_t RESET_VEC = 0xFFFC;
 const uint16_t IRQ_VEC = 0xFFFE;
-
 const uint32_t VERSION = 0x06;
+
+/*
+===================
+emulation parameter
+===================
+*/
+const uint32_t SLICE_INTERVAL= 10;  //10ms
+
 /*
 ===================
 display related
@@ -69,10 +80,13 @@ const uint32_t SCREEN_WIDTH=160;
 const uint32_t SCREEN_HEIGHT=80;
 const uint32_t LINE_SIZE=1;
 
-const uint32_t SLICE_RATE=200;
-const uint32_t SLICE_INTERVAL= (1000u/SLICE_RATE);
-const uint32_t FRAME_RATE=40;
-const uint32_t FRAME_FACTOR=SLICE_RATE/FRAME_RATE;
+const int pixel_size=3;
+const int gap_size=1;
+const int total_size=pixel_size+gap_size;
+
+const uint32_t LCD_REFRESH_INTERVAL=50; //refresh every 50 ms
+//const uint32_t FRAME_RATE=40;   //how many frames in a second
+//const uint32_t FRAME_FACTOR=SLICE_RATE/FRAME_RATE;
 
 /*
 ===================
@@ -108,14 +122,13 @@ const uint32_t num_rom_pages =0x300;
 static const uint32_t ROM_SIZE = 0x8000 * num_rom_pages;
 static const uint32_t NOR_SIZE = 0x8000 * num_nor_pages;
 
-
 /*
 ===================
 misc
 ===================
 */
 extern bool enable_dyn_debug;
-
+const int int_inf=10*10000*10000;
 /*
 ===================
 common functions

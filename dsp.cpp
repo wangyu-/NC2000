@@ -7,10 +7,7 @@
 #include <vector>
 #include "comm.h"
 using namespace std;
-//extern SoundStream soundStream;
-deque<signed short> sound_stream_dsp;
-vector<signed short> buf_vec;
-vector<signed short> buf_vec2;
+
 #define CELP_MODE 1
 #define WORD_MODE 2
 #define PCM_MODE 4
@@ -150,20 +147,10 @@ void write_file(unsigned char *p, int size){
     fwrite(p,size,1,fp);
 }*/
 
-
-
-SDL_AudioDeviceID beeper_deviceId;
-SDL_AudioDeviceID dsp_deviceId;
-
 Dsp::Dsp() {
 	id = 0;
 	lspflag = true;
 }
-
-int c2;
-int c4;
-int c8;
-int cnt=0;
 
 void Dsp::reset() {
     c2=0;
@@ -171,17 +158,19 @@ void Dsp::reset() {
     c8=0;
     cnt=0;
 	dspStart();
-    buf_vec.clear();
-    buf_vec2.clear();
+    buf_frame.clear();
+    buf_syllable.clear();
 	dspMode=CELP_MODE;
 }
 
+/*experiment only*/
 bool unvoice0=0;
 bool unvoice1=0;
 bool unvoice2=0;
 bool unvoice3=0;
 
 bool enable_unvoice=false;
+
 void Dsp::write(int high,int low) {
 
     printf("%02x %02x\n",low,high);
@@ -241,58 +230,45 @@ void Dsp::write(int high,int low) {
             cnt=0;
         }
         if(high==0xc3 || high==0xc1){
-            //int len=(c4-c2);
-            //if(c2+len+240<vec.size()) len+=240;
-            //if(len<0) len+=240;
             printf("cnt=%d!!!!!!!!!!!!!!!!!!!!\n",cnt);
             assert(cnt%15==0);
             int end1=c4+240*(cnt/15)  -240;
             //c2=0;end=buf_vec.size();
             int end2=c4+240*(c8);
-
             int end3= (c4==0? 240*(cnt/15) : c4+240*(cnt/15)  -240 );
             assert(end2==end3);
             //int end=c4+ buf_vec.size()  -240;
 
             int end=end3;
-            printf("<%d %d %d %d %d %d>\n",c2, c4,end1,end2,(int)buf_vec.size(),c8);
-            if(end>(int)buf_vec.size()){
+            printf("<%d %d %d %d %d %d>\n",c2, c4,end1,end2,(int)buf_frame.size(),c8);
+            if(end>(int)buf_frame.size()){
                 assert(false);
-                end=buf_vec.size();
+                end=buf_frame.size();
             }
-            //printf()
             //c2=0;
             //end=buf_vec.size();
             float range=12.0;
             for(int j=0; j+ c2<end &&j<range;j++)
             {
                 //printf("%d  %f \n",end-1-j, j/range);
-                buf_vec[j+c2]*=j/range;
+                buf_frame[j+c2]*=j/range;
             }
             for(int j=0; j<range && end-1-j >=0;j++)
             {
                 //printf("%d  %f \n",end-1-j, j/range);
-                buf_vec[(int)end-1-j]*=j/range;
+                buf_frame[(int)end-1-j]*=j/range;
             }
             //printf("<<%d>>\n",(int)buf_vec.size());
             for(int i=c2;i<end;i++){
-                signed short value=buf_vec[i];
+                signed short value=buf_frame[i];
                 for(int x=0;x<DSP_AUDIO_HZ/8000;x++){
-                    buf_vec2.push_back(value);
+                    buf_syllable.push_back(value);
                 }
 
             }
 
             if(high==0xc3||high==0xc1){
-                if(false)
-                {
-                    for(auto v: buf_vec2){
-                        sound_stream_dsp.push_back(v);
-                    }
-                }else {
-                    SDL_QueueAudio(dsp_deviceId, &buf_vec2[0], buf_vec2.size()*2);
-                }
-                //
+                callback((unsigned char *)&buf_syllable[0], buf_syllable.size()*2);
                 //buf_vec2.clear();
                 printf("-----------%02x--------------\n",high);
                 if(delay_between_syllable){
@@ -430,7 +406,7 @@ void Dsp::writeSample8000(int val) {
     ////soundStream.write(val);
     ////soundStream.write(val);
 
-    buf_vec.push_back(val);
+    buf_frame.push_back(val);
 
     /*
      sound_stream_dsp.push_back(val);

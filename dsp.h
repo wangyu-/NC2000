@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+using std::vector;
+
 #define byte unsigned char
 
 #define ORDER 10
@@ -63,4 +66,15 @@ private:
     int tr[5];
 	int p[5], q[5] , RX[5] , SX[5];
 	int id;
+
+	vector<signed short> buf_frame;
+	vector<signed short> buf_syllable;
+	int c2=0;
+	int c4=0;
+	int c8=0;
+	int cnt=0;
+
+public:
+	void (*callback) (unsigned char *, int);
+
 };
