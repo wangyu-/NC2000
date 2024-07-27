@@ -191,11 +191,59 @@ void write_file(unsigned char *p, int size){
     fwrite(p,size,1,fp);
 }
 
+double cuttmp=-8000;
+double cutoff=2.0*3.141592654*40/AUDIO_HZ;
+
+/*
+void callback(void* userdata, Uint8* stream, int len) {
+	short * snd = reinterpret_cast<short*>(stream);
+	printf("calling!!\n");
+	if (sound_stream.size()<len){
+		printf("oops!!\n");
+		for(int i=0;i<len;i++){
+			snd[i]=0;
+		}
+	}else{
+		for(int i=0;i<len;i++){
+				int value=sound_stream[0];
+				sound_stream.pop_front();
+				double val=value-cuttmp;
+				cuttmp+=cutoff*val;
+				value=val;
+				if(!sound_stream_dsp.empty()){
+					value+=sound_stream_dsp.front();
+					sound_stream_dsp.pop_front();
+					if(value>32767) value=32767;
+					if(value<-32768) value=-32768;
+				}
+				snd[i]=value;
+		}
+
+	}
+}*/
+void init_audio(){
+   // SDL_Init(SDL_INIT_AUDIO);
+      SDL_AudioSpec desired_spec = {
+        .freq = AUDIO_HZ,
+        .format = AUDIO_S16LSB,
+        .channels = 1,
+        .samples = 4096,
+        .callback = NULL,
+        .userdata = NULL,
+    };
+    //SDL_AudioSpec obtained_spec;
+    deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec, NULL, 0);
+    if(deviceId<=0){
+        printf("SDL_OpenAudioDevice Failed!\n");
+    }
+    SDL_PauseAudioDevice(deviceId, 0);
+}
+
+
 void manipulate_beeper2();
 //int draining=false;
 vector<signed short> buf;
-double cuttmp=-8000;
-double cutoff=2.0*3.141592654*40/AUDIO_HZ;
+
 bool charging=true;
 bool draining=false;
 
