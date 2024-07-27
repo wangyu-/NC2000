@@ -47,7 +47,7 @@ global switch
 const bool nc1020 = false;
 const bool nc2000 = !nc1020;
 
-const bool dsp_only=true;
+const bool dsp_only=false;
 const bool enable_dsp_test=true;
 const bool delay_between_syllable=false;
 /*
@@ -94,8 +94,8 @@ const uint32_t CYCLES_TIMER1_SPEED_UP = CYCLES_SECOND / TIMER1_FREQ / 20;
 // cpu cycles per ms (1/1000 s).
 const uint32_t CYCLES_MS = CYCLES_SECOND / 1000;
 
-const uint32_t AUDIO_HZ = 8000;
-const uint32_t CYCLES_PER_SAMPLE=CYCLES_SECOND/AUDIO_HZ;
+const uint32_t DSP_AUDIO_HZ = 8000;
+const uint32_t BEEPER_AUDIO_HZ = 44100;
 
 /*
 ===================
