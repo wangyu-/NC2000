@@ -28,6 +28,9 @@ static uint32_t& lcd_addr = nc1020_states.lcd_addr;
 static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
+extern SDL_AudioDeviceID beeper_deviceId;
+extern SDL_AudioDeviceID dsp_deviceId;
+
 void Initialize() {
 	init_udp_server();
 
@@ -176,7 +179,7 @@ bool CopyLcdBuffer(uint8_t* buffer){
 }
 extern deque<signed short> sound_stream;
 extern deque<signed short> sound_stream_dsp;
-extern SDL_AudioDeviceID deviceId;
+
 bool start=false;
 
 
@@ -193,7 +196,7 @@ void write_file(unsigned char *p, int size){
 }
 
 double cuttmp=-8000;
-double cutoff=2.0*3.141592654*40/AUDIO_HZ;
+double cutoff=2.0*3.141592654*40/DSP_AUDIO_HZ;
 
 /*
 void callback(void* userdata, Uint8* stream, int len) {
@@ -222,22 +225,38 @@ void callback(void* userdata, Uint8* stream, int len) {
 
 	}
 }*/
+
+
 void init_audio(){
    // SDL_Init(SDL_INIT_AUDIO);
       SDL_AudioSpec desired_spec = {
-        .freq = AUDIO_HZ,
+        .freq = BEEPER_AUDIO_HZ,
         .format = AUDIO_S16LSB,
         .channels = 1,
         .samples = 4096,
         .callback = NULL,
         .userdata = NULL,
     };
+	SDL_AudioSpec desired_spec2 = {
+        .freq = DSP_AUDIO_HZ,
+        .format = AUDIO_S16LSB,
+        .channels = 1,
+        .samples = 4096,
+        .callback = NULL,
+        .userdata = NULL,
+    };
+
     //SDL_AudioSpec obtained_spec;
-    deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec, NULL, 0);
-    if(deviceId<=0){
+    beeper_deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec, NULL, 0);
+    if(beeper_deviceId<=0){
         printf("SDL_OpenAudioDevice Failed!\n");
     }
-    SDL_PauseAudioDevice(deviceId, 0);
+	dsp_deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec2, NULL, 0);
+    if(dsp_deviceId<=0){
+        printf("SDL_OpenAudioDevice Failed!\n");
+    }
+	SDL_PauseAudioDevice(beeper_deviceId, 0);
+    SDL_PauseAudioDevice(dsp_deviceId, 0);
 
 	extern void dsp_test();
 	extern void dsp_test2();
@@ -262,10 +281,10 @@ bool draining=false;
 
 long long last_check_time=0;
 //int pop_cnt=0;
-int min_queue=AUDIO_HZ*999;
+int min_queue=DSP_AUDIO_HZ*999;
 
 //int target_total=AUDIO_HZ/10;
-int target_queue=AUDIO_HZ/5;
+int target_queue=DSP_AUDIO_HZ/5;
 long long last_increase_time=0;
 
 
@@ -290,16 +309,16 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	long long current_time=SDL_GetTicks64();
 	if(current_time-last_check_time>1000*10){
 		//if(pop_cnt==0){
-		if(min_queue >AUDIO_HZ/100){
-			target_queue -= min_queue-AUDIO_HZ/100;
+		if(min_queue >DSP_AUDIO_HZ/100){
+			target_queue -= min_queue-DSP_AUDIO_HZ/100;
 			printf("shrink!!!!!!!!!!!!!!!target_queue=%d\n",target_queue);
 		}
 		//pop_cnt=0;
-		min_queue=AUDIO_HZ*999;
+		min_queue=DSP_AUDIO_HZ*999;
 		last_check_time=current_time;
 	}
 
-	int queue_size=SDL_GetQueuedAudioSize(deviceId);
+	int queue_size=SDL_GetQueuedAudioSize(beeper_deviceId);
 
 	//if(rand()%100==0) printf("q=%d\n",queue_size);
 	if(queue_size<min_queue) min_queue=queue_size;
@@ -310,7 +329,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 		printf("oops audio queue drained! target_queue=%d\n",target_queue);
 	}
 
-	while(!sound_stream.empty() &&  SDL_GetQueuedAudioSize(deviceId) >target_queue){
+	while(!sound_stream.empty() &&  SDL_GetQueuedAudioSize(beeper_deviceId) >target_queue){
 		sound_stream.pop_front();
 	}
 
@@ -336,7 +355,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 		}
 		if(!buf.empty()){
 			if(!dsp_only){
-				SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
+				SDL_QueueAudio(beeper_deviceId, &buf[0] , 2*buf.size());
 			}
 			buf.clear();
 		}

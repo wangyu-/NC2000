@@ -152,8 +152,8 @@ void write_file(unsigned char *p, int size){
 
 
 
-SDL_AudioDeviceID deviceId;
-
+SDL_AudioDeviceID beeper_deviceId;
+SDL_AudioDeviceID dsp_deviceId;
 
 Dsp::Dsp() {
 	id = 0;
@@ -277,20 +277,20 @@ void Dsp::write(int high,int low) {
             //printf("<<%d>>\n",(int)buf_vec.size());
             for(int i=c2;i<end;i++){
                 signed short value=buf_vec[i];
-                for(int x=0;x<AUDIO_HZ/8000;x++){
+                for(int x=0;x<DSP_AUDIO_HZ/8000;x++){
                     buf_vec2.push_back(value);
                 }
 
             }
 
             if(high==0xc3||high==0xc1){
-                if(!dsp_only)
+                if(false)
                 {
                     for(auto v: buf_vec2){
                         sound_stream_dsp.push_back(v);
                     }
                 }else {
-                    SDL_QueueAudio(deviceId, &buf_vec2[0], buf_vec2.size()*2);
+                    SDL_QueueAudio(dsp_deviceId, &buf_vec2[0], buf_vec2.size()*2);
                 }
                 //
                 //buf_vec2.clear();
@@ -504,8 +504,8 @@ void Dsp::subFrame(int subframe_NUM,int s0,int s1,int fixpos) {
         r[i + base] = fixpolefilter(op);
         int t = r[i + base] * 16;
         t*=0.3;
-        assert(t>=-32768&&t<=32767);
-        if(t>32767 ||t<-32768) {printf("clip!!! %d\n",t);}
+        //assert(t>=-32768&&t<=32767);
+        if(t>32767 ||t<-32768) {printf("clip!!!!!!!!!!!!!!!! %d\n",t);}
         Sout[i + base] = (short) (t > 32767 ? 32767 : (t < -32768 ? -32768 : t));
 
         if (Expos > 0)
