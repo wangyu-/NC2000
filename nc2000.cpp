@@ -261,7 +261,7 @@ long long last_check_time=0;
 int min_queue=AUDIO_HZ*999;
 
 //int target_total=AUDIO_HZ/10;
-int target_queue=AUDIO_HZ/10;
+int target_queue=AUDIO_HZ/5;
 long long last_increase_time=0;
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t end_cycles = time_slice * CYCLES_MS;
@@ -319,7 +319,9 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 			buf.push_back(value);
 		}
 		if(!buf.empty()){
-			//SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
+			if(!dsp_only){
+				SDL_QueueAudio(deviceId, &buf[0] , 2*buf.size());
+			}
 			buf.clear();
 		}
 	}
