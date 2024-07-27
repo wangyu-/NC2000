@@ -103,7 +103,7 @@ void post_cpu_run_sound_handling(){
 		sound_stream_beeper.pop_front();
 	}
 
-	if(!enable_beeper)
+	if(enable_beeper)
 	{
 		while(!sound_stream_beeper.empty()){
 			int value=sound_stream_beeper[0];
