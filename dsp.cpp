@@ -503,7 +503,15 @@ void Dsp::subFrame(int subframe_NUM,int s0,int s1,int fixpos) {
         LTP[Expos] = op;
         r[i + base] = fixpolefilter(op);
         int t = r[i + base] * 16;
-        t*=0.3;
+        int sign= t>=0? 1:-1;
+        double abs_value=fabs(t);
+        double thres=20000;
+        if (abs_value>thres){
+            //abs_value=thres+(abs_value-thres)*0.3;
+            const double r=3.5;
+            abs_value=pow(thres,1-1/r)*pow(abs_value,1/r);
+        }
+        t=abs_value*sign;
         //assert(t>=-32768&&t<=32767);
         if(t>32767 ||t<-32768) {printf("clip!!!!!!!!!!!!!!!! %d\n",t);}
         Sout[i + base] = (short) (t > 32767 ? 32767 : (t < -32768 ? -32768 : t));
