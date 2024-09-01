@@ -28,9 +28,16 @@ PCB layout:
 The rest of Readme is going to be in Chinese， I will put english materials in [wiki](https://github.com/wangyu-/NC2000/wiki)
 
 # Screenshots
-<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/05079aab-d3ae-4938-868c-c2eca7c58244">
-<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/4a75209e-a200-4250-bd3b-e9fc4d4ca390">  
-<img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/f05a426f-d5e5-4190-880e-9fe40570d58f">
+
+<img width="405" alt="image" src="https://github.com/user-attachments/assets/fc9514bc-4733-40a4-966d-10c6021a8bb1">
+<img width="405" alt="image" src="https://github.com/user-attachments/assets/f6449eb2-d1df-4922-ad62-55eb23b158a2">
+
+<br>
+
+<img width="270" alt="image" src="https://github.com/user-attachments/assets/03c426b6-b2bc-434d-adf6-97dbe8f60144">
+<img width="270" alt="image" src="https://github.com/user-attachments/assets/3ff956a8-83b9-42bf-a57d-63398c73c981">
+<img width="270" alt="image" src="https://github.com/user-attachments/assets/b95e775c-2e61-40f8-bd37-905af0d6c772">
+
 
 <br>
 <img width="270" alt="image" src="https://github.com/wangyu-/NC2000/assets/4922024/991604a8-2b8a-442f-885a-f94f3d40b868">
@@ -45,11 +52,14 @@ The rest of Readme is going to be in Chinese， I will put english materials in 
 
 # NC2000
 
-文曲星nc2000/nc2600模拟器。跨平台，可以运行在windows/linux/mac。支持下载和保存。
+文曲星nc2000/nc2600模拟器。跨平台，可以运行在windows/linux/mac。
 
-nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
-
-后面会做发音。
+支持以下feature：
+* 下载
+* 保存状态
+* 发音/beeper
+* 4灰度
+* 液晶格栅效果
 
 # nand 和 nor
 因为可能有版权问题，暂时没放到repo里。 可以从官方nc2000或nc2600模拟器里自取rom。
@@ -127,12 +137,15 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 比如 `a.exe 8000` 就是监听在8000端口。
 
-
 ### 已知问题
 
-1. 某些游戏速度不正常。 大概是某个timer没有正确实现。 可以暂时用speed命令调整速度，让游戏正常。
+1. 某些游戏速度不正常，大概是某个timer没有正确实现。 可以暂时用speed命令调整速度，让游戏正常。
 
-2. 发音还没有实现。
+### TODO
+
+1. 模拟器更多的I/O。
+2. nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
+
 # 代码基于以下项目
 
 原版： https://github.com/banxian/Sim800   （初始code）
