@@ -39,7 +39,7 @@ typedef struct _regsrec {
     BYTE x;   // index X
     BYTE y;   // index Y
     BYTE ps;  // processor status
-    WORD pc;  // program counter
+    //WORD pc;  // program counter
     WORD sp;  // stack pointer
 } regsrec, *regsptr;
 

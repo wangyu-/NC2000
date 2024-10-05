@@ -31,7 +31,7 @@ static uint8_t& reg_y = nc1020_states.cpu.reg_y;
 static uint8_t& reg_sp = nc1020_states.cpu.reg_sp;
 */
 
-static uint16_t& reg_pc = regs.pc;
+static int& reg_pc = mPC;
 
 double speed_multiplier=1.0;
 
@@ -132,7 +132,7 @@ void cpu_run(){
 			buf[3]=0;
 			printf("tick=%lld ",tick /*, reg_pc*/);
 			printf("%02x %02x %02x %02x; ",Peek16(reg_pc), Peek16(reg_pc+1),Peek16(reg_pc+2),Peek16(reg_pc+3));
-			///////printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],reg_a,reg_x,reg_y,reg_sp,reg_ps,disassemble_next(buf,reg_pc).c_str());
+			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],regs.a,regs.x,regs.y,regs.sp,regs.ps,disassemble_next(buf,reg_pc).c_str());
 			printf("\n");
 
 			//getchar();		
