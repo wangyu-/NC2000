@@ -84,6 +84,14 @@ void Store(uint16_t addr, uint8_t value) {
 	return write_nor(addr,value);
 
 }
+extern "C"{
+uint8_t Peek16_2(uint16_t addr) {
+	return Peek16(addr);
+}
+void Store2(uint16_t addr, uint8_t value){
+	return Store(addr,value);
+}
+}
 
 uint8_t* GetBank(uint8_t bank_idx){
 	uint8_t volume_idx = ram_io[0x0D];
@@ -184,7 +192,7 @@ void super_switch(){
 	uint8_t roa_bbs=ram_io[0x0a];
 	uint8_t ramb_vol=ram_io[0x0d];
 	uint8_t bs=ram_io[0x00];
-	if(enable_debug_switch)printf("tick=%llx pc=%x bs=%x roa_bbs=%x ramb_vol=%x\n",tick, nc1020_states.cpu.reg_pc,bs, roa_bbs , ramb_vol);
+	///////////if(enable_debug_switch)printf("tick=%llx pc=%x bs=%x roa_bbs=%x ramb_vol=%x\n",tick, nc1020_states.cpu.reg_pc,bs, roa_bbs , ramb_vol);
 
 	if(nc1020){
 		if(bs<0x80 &&bs>=num_nor_pages) {
