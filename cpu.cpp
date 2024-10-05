@@ -13,12 +13,12 @@ extern "C" {
 
 extern nc1020_states_t nc1020_states;
 
-static uint32_t& cycles = nc1020_states.cycles;
+static uint64_t& cycles = nc1020_states.cycles;
 //static bool& should_irq = nc1020_states.should_irq;
 static bool& timer0_toggle = nc1020_states.timer0_toggle;
 
-static uint32_t& timer0_cycles = nc1020_states.timer0_cycles;
-static uint32_t& timer1_cycles = nc1020_states.timer1_cycles;
+static uint64_t& timer0_cycles = nc1020_states.timer0_cycles;
+static uint64_t& timer1_cycles = nc1020_states.timer1_cycles;
 
 static bool& should_wake_up = nc1020_states.should_wake_up;
 

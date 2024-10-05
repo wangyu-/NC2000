@@ -176,22 +176,24 @@ bool CopyLcdBuffer(uint8_t* buffer){
 
 
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
-	uint32_t end_cycles = time_slice * CYCLES_MS;
+	uint32_t new_cycles = time_slice * CYCLES_MS;
 
-	end_cycles= end_cycles * speed_multiplier;
+	new_cycles= new_cycles * speed_multiplier;
+
+	uint64_t target_cycles=nc1020_states.cycles +new_cycles;
 
 	//auto old=sound_stream.size();
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
-	while (nc1020_states.cycles < end_cycles) {
+	while (nc1020_states.cycles < target_cycles) {
 		cpu_run();
 	}
 
 	post_cpu_run_sound_handling();
 
-	nc1020_states.previous_cycles+=end_cycles;
-	nc1020_states.cycles -= end_cycles;
-	nc1020_states.timer0_cycles -= end_cycles;
-	nc1020_states.timer1_cycles -= end_cycles;
+	//nc1020_states.previous_cycles+=end_cycles;
+	//nc1020_states.cycles -= end_cycles;
+	//nc1020_states.timer0_cycles -= end_cycles;
+	//nc1020_states.timer1_cycles -= end_cycles;
 
 
 }

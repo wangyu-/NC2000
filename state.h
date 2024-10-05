@@ -39,14 +39,14 @@ struct nc1020_states_t{
 	uint8_t wake_up_flags;
 
 	bool timer0_toggle;
-	uint32_t cycles;
-	uint32_t timer0_cycles;
-	uint32_t timer1_cycles;
+	uint64_t cycles;
+	uint64_t timer0_cycles;
+	uint64_t timer1_cycles;
 	/////////bool should_irq;
 
 	uint32_t lcd_addr;
 	uint8_t keypad_matrix[8];
 
 	bool grey_mode;
-	long long previous_cycles;
+	//long long previous_cycles;
 };
