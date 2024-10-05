@@ -4,8 +4,8 @@ extern "C" {
 #include "w65c02.h"
 #include "w65c02macro.h"
 }
+#include <stdio.h>
 regsrec regs;
-
 
 DWORD     autoboot          = 0;
 BOOL      restart           = 0;
@@ -62,6 +62,7 @@ void CpuInitialize()
     mOpcode = 0;
     mOperand = 0;
     mPC = CPU_PEEKW(BOOT_VECTOR);
+    printf("<<%d>>\n",mPC);
     mN = FALSE;
     mV = FALSE;
     mB = FALSE;
