@@ -1,7 +1,7 @@
-#include "NekoDriver.h"
+//#include "NekoDriver.h"
 extern "C" {
 #ifdef HANDYPSP
-#include "ANSI/w65c02.h"
+//#include "ANSI/w65c02.h"
 #else
 #include "ANSI/65C02.h"
 #endif
@@ -9,7 +9,10 @@ extern "C" {
 #include "CC800IOName.h"
 #include "NekoDriverIO.h"
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#define qDebug(...)
 
 bool timer0run = false;
 bool timer1run_tmie = false;

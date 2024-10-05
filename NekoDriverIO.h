@@ -1,6 +1,10 @@
 #ifndef NEKODRIVER_IO_H
 #define NEKODRIVER_IO_H
 
+typedef unsigned char BYTE;
+#define __iocallconv
+
+
 
 // Full MOS IO Ports?
 // (I/O) io_zp_bsw
