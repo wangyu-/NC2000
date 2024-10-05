@@ -49,6 +49,7 @@ void reset_cpu_states(){
 	nc1020_states.timer1_cycles = CYCLES_TIMER1;
 
 	CpuInitialize();
+	setPS(0x24);
 }
 void AdjustTime(){
 	uint8_t* clock_buff = nc1020_states.clock_buff;
