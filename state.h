@@ -11,7 +11,7 @@ struct cpu_states_t {
 
 struct nc1020_states_t{
 	uint32_t version;
-	cpu_states_t cpu;
+	////////////cpu_states_t cpu;
 	uint8_t ram[0x8000];
 	uint8_t ext_ram[0x8000];
 	//uint8_t ext_ram2[0x8000];
@@ -42,7 +42,7 @@ struct nc1020_states_t{
 	uint32_t cycles;
 	uint32_t timer0_cycles;
 	uint32_t timer1_cycles;
-	bool should_irq;
+	/////////bool should_irq;
 
 	uint32_t lcd_addr;
 	uint8_t keypad_matrix[8];

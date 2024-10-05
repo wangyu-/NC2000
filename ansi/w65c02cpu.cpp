@@ -4,6 +4,8 @@ extern "C" {
 #include "w65c02.h"
 #include "w65c02macro.h"
 }
+regsrec regs;
+
 
 DWORD     autoboot          = 0;
 BOOL      restart           = 0;

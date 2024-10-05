@@ -8,7 +8,9 @@
 #include "mem.h"
 #include "state.h"
 #include "cpu.h"
-
+extern "C" {
+#include "ansi/w65c02.h"
+}
 extern nc1020_states_t nc1020_states;
 
 deque<string> udp_msgs;
@@ -98,15 +100,15 @@ void handle_cmd(string & str){
 	}
 
 	if(cmds[0]=="file_manager"){
-		nc1020_states.cpu.reg_pc = 0x3000;
+		regs.pc = 0x3000;
 		uint8_t buf[]={0x00,0x27,0x05,0x18,0x90,0xfa};
 		copy_to_addr(0x3000, buf, sizeof buf);
 		return;
 	}
 
 	if(cmds[0]=="create_dir"){
-			printf("<pc=%x>\n",nc1020_states.cpu.reg_pc);
-			nc1020_states.cpu.reg_pc = 0x3000;
+			printf("<pc=%x>\n",regs.pc);
+			regs.pc = 0x3000;
 			copy_to_addr(0x08d6, (uint8_t*)cmds[1].c_str(), cmds[1].size()+1);
 			Peek16(0x0912)=0x02;
 			uint8_t buf[]={0x00,0x0b,0x05,0x00,0x27,0x05,0x18,0x90,0xfa};
@@ -121,7 +123,7 @@ void handle_cmd(string & str){
 			ram_io[0x00]|=0x80;
 			ram_io[0x0a]|=0x80;
 			super_switch();
-			nc1020_states.cpu.reg_pc=0x4018;
+			regs.pc=0x4018;
 			return;
 	}
 	if(cmds[0]=="speed"){
@@ -164,7 +166,7 @@ void handle_cmd(string & str){
 0x00,0x8D,0x10,0x09,0x8D,0x11,0x09,0x00,0x17,0x05,0x4C,0x10,0x30,0x00,0x16,0x05,
 0x00,0x27,0x05,0x4C,0x40,0x30,};
 			copy_to_addr(0x3000,buf,sizeof(buf));
-			nc1020_states.cpu.reg_pc=0x3000;
+			regs.pc=0x3000;
 			
 			return;
 	}

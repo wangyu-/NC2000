@@ -45,7 +45,7 @@ uint8_t read_nand(){
     uint8_t roa_bbs=ram_io[0x0a];
     uint8_t ramb_vol=ram_io[0x0d];
     uint8_t bs=ram_io[0x00];
-    uint16_t p=nc1020_states.cpu.reg_pc-4;
+   ///////// uint16_t p=nc1020_states.cpu.reg_pc-4;
 
      if(enable_debug_nand) printf("tick=%llu read $29\n",tick%10000);
 
@@ -190,7 +190,7 @@ void nand_write(uint8_t value){
     uint8_t roa_bbs=ram_io[0x0a];
     uint8_t ramb_vol=ram_io[0x0d];
     uint8_t bs=ram_io[0x00];
-    uint16_t p=nc1020_states.cpu.reg_pc-4;
+   ///////////////// uint16_t p=nc1020_states.cpu.reg_pc-4;
 
     {
         if(nand_cmd.size()==0 && value==0xff) {

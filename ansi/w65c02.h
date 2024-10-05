@@ -137,11 +137,14 @@ unsigned short GetWord(unsigned short address);
 // Don't use ++/-- in addr, or will be execute multi time
 // TODO: should place io operation in first case to prefer io speed (side effect: slown down other normal memory access)
 inline uint8_t CPU_PEEK(uint16_t addr){
+  uint8_t Peek16_2(uint16_t);
+  return Peek16_2(addr);
+  /*
     if(addr >= 0x80) {
       return *(pmemmap[unsigned(addr) >> 0xD] + (addr & 0x1FFF));
     }else{
       return (addr >= iorange?zp40ptr[addr-0x40]:ioread[addr & 0xFF]((BYTE)(addr & 0xff)));
-    }
+    }*/
 }
 
 inline uint16_t CPU_PEEKW(uint16_t addr){
@@ -150,6 +153,9 @@ inline uint16_t CPU_PEEKW(uint16_t addr){
 
 inline void CPU_POKE(uint16_t addr, uint8_t a)   
 { 
+  void Store2(uint16_t addr, uint8_t value);
+  Store2(addr,a);
+  /*
   if ((addr >= 0x80)) { 
     if (addr < 0x4000) {
     *(pmemmap[unsigned(addr) >> 0xD] + (addr & 0x1FFF)) = (BYTE)(a);
@@ -160,7 +166,7 @@ inline void CPU_POKE(uint16_t addr, uint8_t a)
     zp40ptr[addr-0x40] = (BYTE)(a);
   }  else {
   iowrite[addr & 0xFF]((BYTE)(addr & 0xff),(BYTE)(a)); 
-  }
+  }*/
 }
     
 
