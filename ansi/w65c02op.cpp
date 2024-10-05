@@ -1461,7 +1461,7 @@ DWORD CpuExecute(void)
     // FIXME: GET Latest GGV Simulator
     // NC3000 have same behavior
     if (g_nmi) {
-        printf("NMI!!!\n");
+        //printf("NMI!!!\n");
         // Mark the NMI as services
         g_nmi = FALSE;
         cycle += 6; // NMI?
@@ -1482,7 +1482,7 @@ DWORD CpuExecute(void)
         mPC = CPU_PEEKW(NMI_VECTOR);
     }
     if (g_irq && !mI) {
-        printf("irq!!\n");
+        //printf("irq!!\n");
         TRACE_CPU1("Update() IRQ taken at PC=%04x", mPC);
         // IRQ signal clearance is handled by CMikie::Update() as this
         // is the only source of interrupts

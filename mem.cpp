@@ -85,8 +85,8 @@ void Store(uint16_t addr, uint8_t value) {
 
 }
 extern "C"{
-uint8_t Peek16_2(uint16_t addr) {
-	return Peek16(addr);
+uint8_t Load2(uint16_t addr) {
+	return Load(addr);
 }
 void Store2(uint16_t addr, uint8_t value){
 	return Store(addr,value);
