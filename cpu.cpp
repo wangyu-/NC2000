@@ -264,7 +264,7 @@ void cpu_run(){
 			buf[3]=0;
 			printf("tick=%lld ",tick /*, reg_pc*/);
 			printf("%02x %02x %02x %02x; ",Peek16(reg_pc), Peek16(reg_pc+1),Peek16(reg_pc+2),Peek16(reg_pc+3));
-			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],mA,mX,mY,mSP,0,disassemble_next(buf,reg_pc).c_str());
+			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],mA,mX,mY,mSP,PS(),disassemble_next(buf,reg_pc).c_str());
 			printf("\n");
 
 			//getchar();		
@@ -302,6 +302,7 @@ void cpu_run(){
 		uint32_t CpuTicks = CpuExecute();
 		cycles+=CpuTicks;
 
+		Store(1025, 0); //set idle time to zero, prevent sleep
 		
 		gDeadlockCounter++;
 		bool needirq = false;
