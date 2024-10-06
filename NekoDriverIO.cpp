@@ -74,7 +74,7 @@ BYTE __iocallconv Read05StartTimer0( BYTE ) // 05
 {
     // SPDC1016
     qDebug("ggv wanna start timer0");
-    printf("ggv wanna start timer0\n");
+    //printf("ggv wanna start timer0\n");
     timer0run = true;
     timer0ticks = 0; // reset only on start. not on every write?
     
@@ -85,7 +85,7 @@ BYTE __iocallconv Read04StopTimer0( BYTE ) // 04
 {
     // SPDC1016
     qDebug("ggv wanna stop timer0");
-    printf("ggv wanna stop timer0\n");
+    //printf("ggv wanna stop timer0\n");
     //BYTE r = zpioregs[io02_timer0_val];
     timer0run = false;
 
@@ -156,7 +156,7 @@ void __iocallconv Write06LCDStartAddr( BYTE write, BYTE value ) // 06
     unsigned short t = (value << 4);
     lcdbuffaddr &= ~0x0FF0; // 去掉中间8bit
     lcdbuffaddr |= t;
-    printf("ggv wanna change lcdbuf address to 0x%04x in io06\n", lcdbuffaddr & lcdbuffaddrmask);
+    ////printf("ggv wanna change lcdbuf address to 0x%04x in io06\n", lcdbuffaddr & lcdbuffaddrmask);
     zpioregs[io06_lcd_config] = value;
     //lcdbuffaddr = t;
     (void)write;
@@ -171,7 +171,7 @@ void __iocallconv Write0CTimer01Control( BYTE write, BYTE value ) // 0C
     //t = t | (zpioregs[io06_lcd_config] << 4); // lc4~lc11
     lcdbuffaddr &= ~0x3000;
     lcdbuffaddr |= t;
-    printf("ggv wanna change lcdbuf address to 0x%04x in io0C\n", lcdbuffaddr & lcdbuffaddrmask);
+    ////printf("ggv wanna change lcdbuf address to 0x%04x in io0C\n", lcdbuffaddr & lcdbuffaddrmask);
     //qDebug("ggv also wanna change timer settings to 0x%02x.", (value & 0xC));
     w0c_b67_TMODESL = value >> 6;
     if (w0c_b67_TMODESL == 1) {
@@ -613,7 +613,7 @@ void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value)
     }
     w04_b7_EPOL = (value & 0x80) != 0;
     w04_b03_TBC = value & 0xF;
-    printf("write 04 %02x\n",value);
+    //printf("write 04 %02x\n",value);
     zpioregs[io04_general_ctrl] = value;
     (void)write;
 }
