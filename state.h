@@ -40,6 +40,7 @@ struct nc1020_states_t{
 
 	bool timer0_toggle;
 	uint64_t cycles;
+	uint64_t unknown_timer_cycles;
 	uint64_t timer0_cycles;
 	uint64_t timer1_cycles;
 	uint64_t timebase_cycles;
