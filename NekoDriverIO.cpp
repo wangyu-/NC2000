@@ -612,6 +612,7 @@ void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value)
     }
     w04_b7_EPOL = (value & 0x80) != 0;
     w04_b03_TBC = value & 0xF;
+    printf("write 04 %02x\n",value);
     zpioregs[io04_general_ctrl] = value;
     (void)write;
 }

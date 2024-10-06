@@ -27,7 +27,7 @@ extern nc1020_states_t nc1020_states;
 static uint64_t& cycles = nc1020_states.cycles;
 //static bool& should_irq = nc1020_states.should_irq;
 static bool& timer0_toggle = nc1020_states.timer0_toggle;
-
+static uint64_t& unknown_timer_cycles = nc1020_states.unknown_timer_cycles;
 static uint64_t& timer0_cycles = nc1020_states.timer0_cycles;
 static uint64_t& timer1_cycles = nc1020_states.timer1_cycles;
 static uint64_t& timebase_cycles = nc1020_states.timebase_cycles;
@@ -62,6 +62,7 @@ void reset_cpu_states(){
 	nc1020_states.timer0_cycles = CYCLES_TIMER0;
 	nc1020_states.timer1_cycles = CYCLES_TIMER1;
 	nc1020_states.nmi_cycles = CYCLES_NMI;
+	nc1020_states.unknown_timer_cycles = CYCLES_UNKNOWN_TIMER;
 	CpuInitialize();
 	setPS(0x24);
 	CreateHotlinkMapping();
@@ -126,7 +127,8 @@ void inject(){
 
 void CheckTimebaseAndSetIRQTBI()
 {
-    if (zpioregs[io04_general_ctrl] & 0x0F) {
+	//////////TODO: remove the or true
+    if (zpioregs[io04_general_ctrl] & 0x0F ||true) {
         gThreadFlags |= 0x10; // Add IRQ flag
         //irq = 0; // TODO: move to NMI check
         zpioregs[io01_int_status] |= 0x8; // TIMEBASE INTERRUPT
@@ -303,7 +305,10 @@ void cpu_run(){
 		
 		gDeadlockCounter++;
 		bool needirq = false;
-		if (gDeadlockCounter == 6000&&false) {
+		//don't use magic number
+		//////if (gDeadlockCounter == 6000) {
+		if (cycles >= timebase_cycles) {
+			timebase_cycles += CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
 			if ((gThreadFlags & 0x80u) == 0) {
@@ -311,6 +316,7 @@ void cpu_run(){
 				CheckTimebaseAndSetIRQTBI();
 				needirq = KeepTimer01(CpuTicks);
 			} else {
+				assert(false);
 				// RESET
 				zpioregs[io01_int_enable] |= 0x1; // TIMER A INTERRUPT ENABLE
 				zpioregs[io02_timer0_val] |= 0x1; // [io01+1] Timer0 bit1 = 1
@@ -327,8 +333,8 @@ void cpu_run(){
 			CheckTimebaseSetTimer0IntStatusAddIRQFlag();
 		}
 
-		/*if (cycles >= timer0_cycles) {
-			timer0_cycles += CYCLES_TIMER0;
+		if (cycles >= unknown_timer_cycles) {
+			unknown_timer_cycles += CYCLES_UNKNOWN_TIMER;
 			timer0_toggle = !timer0_toggle;
 			if (!timer0_toggle) {
 				AdjustTime();
@@ -340,8 +346,9 @@ void cpu_run(){
 				nc1020_states.clock_flags &= 0xFD;
 			}
 			g_irq = true;
-		}*/
+		}
 
+		/*
 		if (cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
@@ -356,10 +363,8 @@ void cpu_run(){
 				g_irq = true;
 			}
 			//printf("???\n");
-		}
-
+		}*/
 		
-
 		/*
 		if(should_irq && (enable_debug_pc ||enable_dyn_debug)&&false)
 			printf("should irq!\n");*/
