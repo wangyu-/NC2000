@@ -308,13 +308,13 @@ void cpu_run(){
 		bool needirq = false;
 		//don't use magic number
 		//////if (gDeadlockCounter == 6000) {
-		if (cycles >= timebase_cycles) {
+		if (cycles >= timebase_cycles && false) {
 			timebase_cycles += CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
 			if ((gThreadFlags & 0x80u) == 0) {
 				// CheckTimerbaseAndEnableIRQnEXIE1
-				CheckTimebaseAndSetIRQTBI();
+				CheckTimebaseAndSetIRQTBI();//??? timebase doesn't trigger needirq??
 				needirq = KeepTimer01(CpuTicks);
 			} else {
 				assert(false);
@@ -349,7 +349,6 @@ void cpu_run(){
 			//g_irq = true;
 		}
 
-		/*
 		if (cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
@@ -361,10 +360,11 @@ void cpu_run(){
 				reg_pc = PeekW(RESET_VEC);
 			} else {
 				ram_io[0x01] |= 0x08;
-				g_irq = true;
+				////////////g_irq = true;
+				gThreadFlags |= 0x10;
 			}
-			//printf("???\n");
-		}*/
+			//printf("timebase!!\n");
+		}
 		
 		/*
 		if(should_irq && (enable_debug_pc ||enable_dyn_debug)&&false)
