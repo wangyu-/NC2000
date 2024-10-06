@@ -73,7 +73,8 @@ struct HotlinkBundle
 extern HotlinkBundle* hotlinkios;
 
 // Temp
-extern unsigned char zpioregs[0x40];
+//////extern unsigned char* zpioregs[0x40];
+extern unsigned char* zpioregs;
 
 #define _ADD_TM0I_BIT() zpioregs[io01_int_status] |= 0x10
 #define _ADD_TM1I_BIT() zpioregs[io01_int_status] |= 0x20

@@ -17,7 +17,7 @@ extern "C" {
 
 #define TF_IRQFLAG 0x10
 extern unsigned short gThreadFlags;
-extern unsigned char zpioregs[0x40];
+extern unsigned char * zpioregs;
 extern bool timer0run;
 extern bool timer1run_tmie;
 int gDeadlockCounter = 0;
@@ -30,6 +30,8 @@ static bool& timer0_toggle = nc1020_states.timer0_toggle;
 
 static uint64_t& timer0_cycles = nc1020_states.timer0_cycles;
 static uint64_t& timer1_cycles = nc1020_states.timer1_cycles;
+static uint64_t& timebase_cycles = nc1020_states.timebase_cycles;
+
 static uint64_t& nmi_cycles = nc1020_states.nmi_cycles;
 
 static bool& should_wake_up = nc1020_states.should_wake_up;
@@ -272,14 +274,15 @@ void cpu_run(){
 
 		//printf("%d\n",cycles);
 
-		/*
+		
 		if (cycles >= nmi_cycles) {
 			nmi_cycles += CYCLES_NMI;
-			gThreadFlags |= 0x08; // Add NMIFlag
-		}*/
+			////////////TODO
+			////////////gThreadFlags |= 0x08; // Add NMIFlag
+		}
 
 		// NMI > IRQ
-		/*
+		
 		if ((gThreadFlags & 0x08) != 0) {
 			gThreadFlags &= 0xFFF7u; // remove 0x08 NMI Flag
 			// FIXME: NO MORE REVERSE
@@ -292,18 +295,18 @@ void cpu_run(){
 			g_irq = TRUE; // B flag (AF_BREAK) will remove in CpuExecute
 			qDebug("ggv wanna IRQ.");
 			gDeadlockCounter--; // wrong behavior of wqxsim
-		}*/
+		}
 
 		uint32_t CpuTicks = CpuExecute();
 		cycles+=CpuTicks;
 
-		/*
+		
 		gDeadlockCounter++;
 		bool needirq = false;
-		if (gDeadlockCounter == 6000) {
+		if (gDeadlockCounter == 6000&&false) {
 			// overflowed
 			gDeadlockCounter = 0;
-			if ((gThreadFlags & 0x80u) == 0 || true) {
+			if ((gThreadFlags & 0x80u) == 0) {
 				// CheckTimerbaseAndEnableIRQnEXIE1
 				CheckTimebaseAndSetIRQTBI();
 				needirq = KeepTimer01(CpuTicks);
@@ -312,7 +315,8 @@ void cpu_run(){
 				zpioregs[io01_int_enable] |= 0x1; // TIMER A INTERRUPT ENABLE
 				zpioregs[io02_timer0_val] |= 0x1; // [io01+1] Timer0 bit1 = 1
 				gThreadFlags &= 0xFF7F;      // remove 0x80 | 0x10
-				mPC = *(unsigned short*)&pmemmap[mapE000][0x1FFC];
+				//mPC = *(unsigned short*)&pmemmap[mapE000][0x1FFC];
+				mPC = Peek16(0xFFFC);
 			}
 		} else {
 			needirq = KeepTimer01(CpuTicks);
@@ -321,9 +325,9 @@ void cpu_run(){
 		if (needirq) {
 			//printf("!!!!!\n");
 			CheckTimebaseSetTimer0IntStatusAddIRQFlag();
-		}*/
+		}
 
-		if (cycles >= timer0_cycles) {
+		/*if (cycles >= timer0_cycles) {
 			timer0_cycles += CYCLES_TIMER0;
 			timer0_toggle = !timer0_toggle;
 			if (!timer0_toggle) {
@@ -335,12 +339,11 @@ void cpu_run(){
 				ram_io[0x3D] = 0x20;
 				nc1020_states.clock_flags &= 0xFD;
 			}
-			//printf("!!!\n");
 			g_irq = true;
-		}
+		}*/
 
-		if (cycles >= timer1_cycles) {
-			timer1_cycles += CYCLES_TIMER1;
+		if (cycles >= timebase_cycles) {
+			timebase_cycles += CYCLES_TIMEBASE;
 
 			nc1020_states.clock_buff[4] ++;
 			if (should_wake_up) {

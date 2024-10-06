@@ -97,11 +97,13 @@ const uint32_t static_multipler=1; //tmp fix for speed and crash
 // cpu cycles per second (cpu freq).
 const uint32_t CYCLES_SECOND = 5120000*(nc2000?static_multipler:1);
 const uint32_t TIMER0_FREQ = 2;
-const uint32_t TIMER1_FREQ = 0x100;
+const uint32_t TIMER1_FREQ = 200;
+const uint32_t TIMEBASE_FREQ = 256;
 // cpu cycles per timer0 period (1/2 s).
 const uint32_t CYCLES_TIMER0 = CYCLES_SECOND / TIMER0_FREQ;
 // cpu cycles per timer1 period (1/256 s).
 const uint32_t CYCLES_TIMER1 = CYCLES_SECOND / TIMER1_FREQ;
+const uint32_t CYCLES_TIMEBASE = CYCLES_SECOND / TIMEBASE_FREQ;
 // speed up
 const uint32_t CYCLES_TIMER1_SPEED_UP = CYCLES_SECOND / TIMER1_FREQ / 20;
 // cpu cycles per ms (1/1000 s).

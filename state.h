@@ -42,6 +42,7 @@ struct nc1020_states_t{
 	uint64_t cycles;
 	uint64_t timer0_cycles;
 	uint64_t timer1_cycles;
+	uint64_t timebase_cycles;
 	uint64_t nmi_cycles;
 	/////////bool should_irq;
 

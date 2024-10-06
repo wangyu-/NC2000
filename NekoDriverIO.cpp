@@ -60,8 +60,9 @@ BYTE w0c_b45_TM0S = 0;       // timer0时钟周期, 在TMODE1下接入
 BYTE w0c_b23_TM1S = 0;       // timer1时钟周期, 在TMODE1下接入
 BYTE w0c_b345_TMS = 0;       // 其他模式下4个bit只有3个用上
 
+extern uint8_t * ram_io;
 // Temp
-unsigned char zpioregs[0x40];
+unsigned char *zpioregs=ram_io;
 
 int timer0ticks = 0;
 int timer1ticks = 0;
@@ -72,6 +73,7 @@ BYTE __iocallconv Read05StartTimer0( BYTE ) // 05
 {
     // SPDC1016
     qDebug("ggv wanna start timer0");
+    printf("ggv wanna start timer0\n");
     timer0run = true;
     timer0ticks = 0; // reset only on start. not on every write?
     
@@ -82,6 +84,7 @@ BYTE __iocallconv Read04StopTimer0( BYTE ) // 04
 {
     // SPDC1016
     qDebug("ggv wanna stop timer0");
+    printf("ggv wanna stop timer0\n");
     //BYTE r = zpioregs[io02_timer0_val];
     timer0run = false;
 
@@ -588,12 +591,14 @@ BYTE __iocallconv Read18Port4( BYTE )
 BYTE __iocallconv Read01IntStatus( BYTE )
 {
     BYTE r = zpioregs[io01_int_status];
+    //printf("read 01 %02x\n",r);
     zpioregs[io01_int_status] = r & ~0x3F;
     return r;
     }
 
 void __iocallconv Write01IntEnable( BYTE write, BYTE value )
 {
+    //printf("write 01 %02x\n",value);
     w01_int_enable = value;
     (void)write;
 }
