@@ -4,6 +4,7 @@
 #include "io.h"
 #include "nand.h"
 #include "sound.h"
+#include "NekoDriverIO.h"
 
 extern nc1020_states_t nc1020_states;
 
@@ -26,7 +27,28 @@ void init_io(){
 		io_read[i] = ReadXX;
 		io_write[i] = WriteXX;
 	}
-	io_read[0x06] = Read06;
+    
+    /*
+    //io_read[0x00] = Read00BankSwitch;
+    //io_read[0x01] = Read01IntStatus;
+    io_read[0x04] = Read04StopTimer0;
+    io_read[0x05] = Read05StartTimer0;
+    io_read[0x06] = Read06StopTimer1;
+    io_read[0x07] = Read07StartTimer1;
+    //io_read[0x08] = ReadPort0;
+    //io_read[0x09] = ReadPort1;
+    io_read[0x18] = Read18Port4;
+
+    io_write[0x01] = Write01IntEnable;
+    //io_write[0x04] = Write04GeneralCtrl;
+    io_write[0x07] =Write07PortConfig;
+    io_write[0x0B] =Write0BPort3LCDStartAddr;
+    io_write[0x0C] = Write0CTimer01Control;
+    io_write[0x15] = Write15Dir1;
+    io_write[0x18] = Write18Port4;
+    io_write[0x19] = Write19CkvSelect;*/
+    
+	////////io_read[0x06] = Read06;
 	io_read[0x3B] = Read3B;
 	io_read[0x3F] = Read3F;
 	io_write[0x00] = Write00;
@@ -44,9 +66,6 @@ void init_io(){
 }
 
 uint8_t IO_API ReadXX(uint8_t addr){
-	if(addr==0x18&&0){
-		return ram_io[0x18]&0xbc;
-	}
 	if(addr==0x29) {
         return read_nand();
 	}
