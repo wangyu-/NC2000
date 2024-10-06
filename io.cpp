@@ -28,9 +28,9 @@ void init_io(){
 		io_write[i] = WriteXX;
 	}
     
-    /*
+    
     //io_read[0x00] = Read00BankSwitch;
-    //io_read[0x01] = Read01IntStatus;
+    io_read[0x01] = Read01IntStatus;
     io_read[0x04] = Read04StopTimer0;
     io_read[0x05] = Read05StartTimer0;
     io_read[0x06] = Read06StopTimer1;
@@ -39,14 +39,15 @@ void init_io(){
     //io_read[0x09] = ReadPort1;
     io_read[0x18] = Read18Port4;
 
+    
     io_write[0x01] = Write01IntEnable;
-    //io_write[0x04] = Write04GeneralCtrl;
+    io_write[0x04] = Write04GeneralCtrl;
     io_write[0x07] =Write07PortConfig;
     io_write[0x0B] =Write0BPort3LCDStartAddr;
     io_write[0x0C] = Write0CTimer01Control;
     io_write[0x15] = Write15Dir1;
     io_write[0x18] = Write18Port4;
-    io_write[0x19] = Write19CkvSelect;*/
+    io_write[0x19] = Write19CkvSelect;
     
 	////////io_read[0x06] = Read06;
 	io_read[0x3B] = Read3B;
