@@ -105,6 +105,9 @@ const uint32_t CYCLES_TIMER1 = CYCLES_SECOND / TIMER1_FREQ;
 // speed up
 const uint32_t CYCLES_TIMER1_SPEED_UP = CYCLES_SECOND / TIMER1_FREQ / 20;
 // cpu cycles per ms (1/1000 s).
+const uint32_t CYCLES_NMI = CYCLES_SECOND / 2;
+
+
 const uint32_t CYCLES_MS = CYCLES_SECOND / 1000;
 
 const uint32_t DSP_AUDIO_HZ = 8000;

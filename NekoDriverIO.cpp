@@ -92,6 +92,8 @@ BYTE __iocallconv Read07StartTimer1( BYTE ) // 07
 {
     // SPDC1016
     qDebug("ggv wanna start timer1");
+
+    printf("ggv wanna start timer1\n");
     timer1run_tmie = true;
     timer1ticks = 0; // useless in 16bit TMODE2 and 8bit TMODE0
     gThreadFlags &= 0xFFFDu; // Remove 0x02
@@ -103,6 +105,7 @@ BYTE __iocallconv Read06StopTimer1( BYTE ) // 06
     // Stop timer1, and return time1 value
     // SPDC1016
     qDebug("ggv wanna stop timer1");
+    printf("ggv wanna stop timer1\n");
     timer1run_tmie = false;
     gThreadFlags |= 0x02; // Add 0x02
     return zpioregs[io03_timer1_val];
@@ -557,7 +560,7 @@ void __iocallconv Write18Port4( BYTE write, BYTE value )
     beeper_on_io_write(a);
 
     (void)write;
-        }
+    }
 
 BYTE __iocallconv Read18Port4( BYTE )
 {
