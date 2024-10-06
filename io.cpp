@@ -28,7 +28,7 @@ void init_io(){
 		io_write[i] = WriteXX;
 	}
     
-    
+    // 0x03 29 has special handle in readXX
     //io_read[0x00] = Read00BankSwitch;
     io_read[0x01] = Read01IntStatus;
     io_read[0x04] = Read04StopTimer0;
@@ -38,31 +38,33 @@ void init_io(){
     //io_read[0x08] = ReadPort0;
     //io_read[0x09] = ReadPort1;
     io_read[0x18] = Read18Port4;
+    io_read[0x3B] = Read3B;
+    io_read[0x3F] = Read3F;
 
-    
+    //0x29 30 32 33 has special handle
+    io_write[0x00] = Write00;
     io_write[0x01] = Write01IntEnable;
     io_write[0x04] = Write04GeneralCtrl;
-    io_write[0x07] =Write07PortConfig;
-    io_write[0x0B] =Write0BPort3LCDStartAddr;
+    io_write[0x05] = Write05; // clk, sleep related
+    //io_read[0x06] = Read06; //nothing special
+	io_write[0x06] = Write06; // lcd related
+    io_write[0x07] = Write07PortConfig;
+    io_write[0x08] = Write08; // keyboard related
+	io_write[0x09] = Write09; // keyboard related
+    io_write[0x0A] = Write0A;
+    io_write[0x0B] = Write0BPort3LCDStartAddr;
     io_write[0x0C] = Write0CTimer01Control;
+    io_write[0x0D] = Write0D;
+	io_write[0x0F] = Write0F;
     io_write[0x15] = Write15Dir1;
     io_write[0x18] = Write18Port4;
     io_write[0x19] = Write19CkvSelect;
-    
-	////////io_read[0x06] = Read06;
-	io_read[0x3B] = Read3B;
-	io_read[0x3F] = Read3F;
-	io_write[0x00] = Write00;
-	io_write[0x05] = Write05;
-	io_write[0x06] = Write06;
-	io_write[0x08] = Write08;
-	io_write[0x09] = Write09;
-	io_write[0x0A] = Write0A;
-	io_write[0x0D] = Write0D;
-	io_write[0x0F] = Write0F;
-	io_write[0x20] = Write20;
-	//io_write[0x23] = Write23;
+    io_write[0x20] = Write20;
+	io_write[0x23] = Write23;
 	io_write[0x3F] = Write3F;
+
+
+
 
 }
 
@@ -116,7 +118,7 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
         }
     }
 
-    if(addr==0x18){
+    if(addr==0x18&& false){
         int a= value>>7;
         if(a==0) a=-1;
         beeper_on_io_write(a);

@@ -345,7 +345,7 @@ void cpu_run(){
 				ram_io[0x3D] = 0x20;
 				nc1020_states.clock_flags &= 0xFD;
 			}
-			g_irq = true;
+			//g_irq = true;
 		}
 
 		/*
