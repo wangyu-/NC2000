@@ -139,21 +139,20 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 ### 已知问题
 
-1. 某些游戏速度不正常，大概是某个timer没有正确实现。 可以暂时用speed命令调整速度，让游戏正常。
+1. 某些游戏速度不正常。可以暂时用speed命令调整速度，让游戏正常。
+2. 秒表读数跳动。
 
 ### TODO
 
-1. 模拟器更多的I/O。
-2. nand代码非常tricky，主要是为了先跑通证明可行性，后面会重写。
+1. 模拟更多的I/O。
+2. 部分代码非常tricky（尤其nand），主要是为了先跑通证明可行性，后面会重写。
 
 # 代码基于以下项目
 
-原版： https://github.com/banxian/Sim800   （初始code）
+https://github.com/banxian/Sim800 sim800: cc800模拟器。 作者：曾半仙
 
-1改： https://github.com/hackwaly/jswqx   （用js重写，nc1020支持）
+https://github.com/hackwaly/NC1020 nc1020模拟器，应该是基于sim800开发。 (不确定URL是否是原作者）
 
-2改：https://github.com/hackwaly/NC1020  (上面版本用c++重写) （仅猜测，不确定，也有可能上一版本是参考这个。另外不确定URL是否是原作者repo） 
+https://github.com/Wang-Yue/NC1020 nc1020模拟器sdl版（上面版本移植到sdl）
 
-3改：https://github.com/Wang-Yue/NC1020 （上面版本移植到sdl） 
-
-（所以本作算4改版本）
+https://github.com/banxian/Wayback800iOS waybay800: cc800/pc1000模拟器。（sim800作者的新版）
