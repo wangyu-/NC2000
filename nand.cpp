@@ -1,4 +1,5 @@
 
+#include "ansi/w65c02.h"
 #include "comm.h"
 #include "state.h"
 #include <cassert>
@@ -30,11 +31,16 @@ void read_nand_file(){
     fclose(f);
     printf("<nand_file_size=%lu>\n",fsize);
 
-    //the value inside the real 0 nand 32k page. But it doesn't really matter
-    memcpy(&nand[0][0]+0x200+0x10 /*512+16=258*/,"ggv nc2000",strlen("ggv nc2000"));
-
+    //the value inside the real 0 nand 32k page. <del>But it doesn't really matter</del>
+    if(!use_phy_nor){
+        memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2000",strlen("ggv nc2000"));
+    }else{
+        //physical nor expect this to be "ggv nc2010\n"
+        memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2010\n",strlen("ggv nc2010\n"));
+    }
 
     if(use_phy_nand){
+        //memset(nand,0xff,sizeof(nand));
         memset(nand_ori,0xff,sizeof(nand_ori));
         char *p0= &nand_ori[0][0];
         FILE *f = fopen("./phy_nand.bin", "rb");
@@ -206,7 +212,7 @@ uint8_t read_nand(){
         nand_read_cnt++;
         char *p=&nand[0][0];
         //printf("final=%x\n",final);
-        //printf("erase!!! %x tick=%lld pc=%x %x\n",final,tick,nc1020_states.cpu.reg_pc, ram_io[0x00]);
+        printf("nand erase!!! %x tick=%lld pc=%x %x\n",final,tick, mPC, ram_io[0x00]);
         //assert(false);
 
         //final-=32*1024;
