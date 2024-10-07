@@ -128,7 +128,7 @@ void inject(){
 void CheckTimebaseAndSetIRQTBI()
 {
 	//////////TODO: remove the or true
-    if (zpioregs[io04_general_ctrl] & 0x0F ||true) {
+    if (zpioregs[io04_general_ctrl] & 0x0F) {
         gThreadFlags |= 0x10; // Add IRQ flag
         //irq = 0; // TODO: move to NMI check
         zpioregs[io01_int_status] |= 0x8; // TIMEBASE INTERRUPT
@@ -308,7 +308,7 @@ void cpu_run(){
 		bool needirq = false;
 		//don't use magic number
 		//////if (gDeadlockCounter == 6000) {
-		if (cycles >= timebase_cycles && false) {
+		if (cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
@@ -334,7 +334,7 @@ void cpu_run(){
 			CheckTimebaseSetTimer0IntStatusAddIRQFlag();
 		}
 
-		if (cycles >= unknown_timer_cycles) {
+		if (cycles >= unknown_timer_cycles &&false) {
 			unknown_timer_cycles += CYCLES_UNKNOWN_TIMER;
 			timer0_toggle = !timer0_toggle;
 			if (!timer0_toggle) {
@@ -349,7 +349,7 @@ void cpu_run(){
 			//g_irq = true;
 		}
 
-		if (cycles >= timebase_cycles) {
+		if (cycles >= timebase_cycles &&false) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
 			nc1020_states.clock_buff[4] ++;
