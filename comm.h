@@ -46,8 +46,8 @@ global switch
 const bool nc1020 = false;
 const bool nc2000 = !nc1020;
 
-const bool use_phy_nor = false;
-const bool use_phy_nand = false;
+const bool use_phy_nor = true;
+const bool use_phy_nand = true;
 
 const bool enabled_dsp=true;
 const bool enable_beeper=true;
