@@ -24,8 +24,13 @@ WqxRom nc1020_rom = {
 void ProcessBinary(uint8_t* dest, uint8_t* src, uint32_t size){
 	uint32_t offset = 0;
     while (offset < size) {
-        memcpy(dest + offset + 0x4000, src + offset, 0x4000);
-        memcpy(dest + offset, src + offset + 0x4000, 0x4000);
+        if(!use_phy_nor){
+            memcpy(dest + offset + 0x4000, src + offset, 0x4000);
+            memcpy(dest + offset, src + offset + 0x4000, 0x4000);
+        }else{
+            memcpy(dest + offset , src + offset, 0x4000);
+            memcpy(dest + offset + 0x4000, src + offset + 0x4000, 0x4000);
+        }
         offset += 0x8000;
     }
 }
