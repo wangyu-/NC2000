@@ -11,7 +11,7 @@ static uint8_t* ram_io = ram_buff;
 static uint64_t last_tick=0;
 static deque<uint8_t> nand_cmd;
 static int nand_read_cnt=0;
-//char nand_ori[65536][528];
+char nand_ori[65536][512];
 char nand[65536+64][528];
 //char nand_spare[65536+64][16];
 
@@ -32,6 +32,28 @@ void read_nand_file(){
 
     //the value inside the real 0 nand 32k page. But it doesn't really matter
     memcpy(&nand[0][0]+0x200+0x10 /*512+16=258*/,"ggv nc2000",strlen("ggv nc2000"));
+
+
+    if(use_phy_nand){
+        memset(nand_ori,0xff,sizeof(nand_ori));
+        char *p0= &nand_ori[0][0];
+        FILE *f = fopen("./phy_nand.bin", "rb");
+        if(f==0) {
+            printf("file ./phy_nand.bin not exist!\n");
+            exit(-1);
+        }
+        fseek(f, 0, SEEK_END);
+        long fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+        fread(p0, fsize, 1, f);
+        fclose(f);
+        printf("<phy_nand_file_size=%lu>\n",fsize);
+
+        for(int i=0;i<65536;i++){
+            memcpy(nand[i],nand_ori[i],512);
+        }
+
+    }
 }
 
 void write_nand_file(){
@@ -64,6 +86,20 @@ uint8_t read_nand(){
         return 0x40;
     }
 
+    if(nand_cmd[0]==0x90 && nand_cmd[1]==0x00 && nand_cmd.size()==2) {
+        if(nand_read_cnt==0) {
+            nand_read_cnt++;
+            return 0xec;
+        }
+        if(nand_read_cnt==1) {
+            nand_cmd.clear();
+            nand_read_cnt=0;
+            return 0x75;
+        }
+        assert(false);
+        return 0;
+    }
+
     /*
         robust check
     */
@@ -73,6 +109,7 @@ uint8_t read_nand(){
             printf("<%x>",(unsigned char)nand_cmd[i]);
         }
         printf("\n");
+        if(use_phy_nor) return 0;
         assert(false);
         return 0;
     }
