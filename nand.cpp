@@ -264,7 +264,7 @@ void nand_write(uint8_t value){
            //if(nand_cmd.size()==23) assert(nand_cmd[0]==0x50 && nand_cmd.back()==0x10);
            //else 
            
-           if(nand_cmd.size()==5) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50);
+           if(nand_cmd.size()==5) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50||nand_cmd[0]==0x60);
            else {
                 assert(false);
            }
