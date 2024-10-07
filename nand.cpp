@@ -109,7 +109,6 @@ uint8_t read_nand(){
             printf("<%x>",(unsigned char)nand_cmd[i]);
         }
         printf("\n");
-        if(use_phy_nor) return 0;
         assert(false);
         return 0;
     }
