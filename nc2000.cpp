@@ -128,9 +128,18 @@ void SetKey(uint8_t key_id, bool down_or_up){
 	if (key_id == 0x0F) {
 		bits = 0xFE;
 	}
+	extern uint8_t* ram_io;
 	if (down_or_up) {
 		keypad_matrix[row] |= bits;
+		//hack for now
+		if(key_id==0x25){
+			ram_io[0x8]=0x55;
+		}else if (key_id==0x35){
+			ram_io[0x8]=0x45;
+		}
 	} else {
+		//hack for now
+		ram_io[0x8]=0;
 		keypad_matrix[row] &= ~bits;
 	}
 
