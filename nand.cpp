@@ -39,7 +39,8 @@ void read_nand_file(){
         memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2010\n",strlen("ggv nc2010\n"));
     }
 
-    if(use_phy_nand){
+    //if(use_phy_nand){
+    if(false){
         //memset(nand,0xff,sizeof(nand));
         memset(nand_ori,0xff,sizeof(nand_ori));
         char *p0= &nand_ori[0][0];

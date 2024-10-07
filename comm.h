@@ -47,7 +47,9 @@ const bool nc1020 = false;
 const bool nc2000 = !nc1020;
 
 const bool use_phy_nor = true;
-const bool use_phy_nand = false;
+
+//not really needed
+//const bool use_phy_nand = false;
 
 const bool enabled_dsp=true;
 const bool enable_beeper=true;
