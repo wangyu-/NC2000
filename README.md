@@ -149,10 +149,23 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 # 代码基于以下项目
 
+模拟器主体：
+
 https://github.com/banxian/Sim800 sim800: cc800模拟器。 作者：曾半仙
+
+https://github.com/banxian/Wayback800iOS waybay800: cc800/pc1000模拟器。（sim800作者的新版）
+
+DSP功能：
+
+Pc1000emux。作者: Lee。
+
+部分IO参考了：
 
 https://github.com/hackwaly/NC1020 nc1020模拟器，应该是基于sim800开发。 (不确定URL是否是原作者）
 
-https://github.com/Wang-Yue/NC1020 nc1020模拟器sdl版（上面版本移植到sdl）
+SDL支持参考了：
 
-https://github.com/banxian/Wayback800iOS waybay800: cc800/pc1000模拟器。（sim800作者的新版）
+https://github.com/Wang-Yue/NC1020 nc1020模拟器SDL版。
+
+
+
