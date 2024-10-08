@@ -29,7 +29,7 @@ void init_io(){
 	}
     
     // 0x03 29 has special handle in readXX
-    //io_read[0x00] = Read00BankSwitch;
+    //io_read[0x00] = Read00BankSwitch;  //Read00BankSwitch is noop
     io_read[0x01] = Read01IntStatus;
     io_read[0x04] = Read04StopTimer0;
     io_read[0x05] = Read05StartTimer0;
@@ -39,33 +39,33 @@ void init_io(){
     io_read[0x08] = ReadPort0;
     io_read[0x09] = ReadPort1;
     io_read[0x18] = Read18Port4;
-    io_read[0x3B] = Read3B;
-    io_read[0x3F] = Read3F;
+    io_read[0x3B] = Read3B;//<----------from nc1020
+    io_read[0x3F] = Read3F;//<----------from nc1020
 
     //0x29 30 32 33 has special handle
-    io_write[0x00] = Write00;///////don't use wayback here
+    io_write[0x00] = Write00;///////don't use Write00BankSwitch here
     io_write[0x01] = Write01IntEnable;
     io_write[0x04] = Write04GeneralCtrl;
     //io_write[0x05] = Write05; // clk, sleep related
     io_write[0x05] = Write05ClockCtrl;
-	io_write[0x06] = Write06; // lcd related ; Write06LCDStartAddr inside
+	io_write[0x06] = Write06; // lcd related ; a wrapper of Write06LCDStartAddr
     io_write[0x07] = Write07PortConfig;
     //io_write[0x08] = Write08; // keyboard related
 	//io_write[0x09] = Write09; // keyboard related
     io_write[0x08] = Write08Port0; // keyboard related
 	io_write[0x09] = Write09Port1; // keyboard related
-    io_write[0x0A] = Write0A;///////don't use wayback here
+    io_write[0x0A] = Write0A;///////don't use Write0AROABBS here
     io_write[0x0B] = Write0BPort3LCDStartAddr;
     io_write[0x0C] = Write0CTimer01Control;
-    io_write[0x0D] = Write0D;///////don't use wayback here
-	io_write[0x0F] = Write0F;/////// wayback code merged in
+    io_write[0x0D] = Write0D;///////don't use Write0DVolumeIDLCDSegCtrl here (lcdwidth is local and not used at all)
+	io_write[0x0F] = Write0F;/////// WriteZeroPageBankswitch merged in
     io_write[0x15] = Write15Dir1;
     io_write[0x18] = Write18Port4;
     io_write[0x19] = Write19CkvSelect;
     //io_write[0x20] = Write20;
     io_write[0x20] =Write20JG;
-	io_write[0x23] = Write23;
-	io_write[0x3F] = Write3F;
+	io_write[0x23] = Write23;//<----------from nc1020
+	io_write[0x3F] = Write3F;//<----------from nc1020
 
 
 
@@ -192,21 +192,22 @@ void IO_API Write05(uint8_t addr, uint8_t value){
 
 
 void IO_API Write06(uint8_t addr, uint8_t value){
-    ram_io[addr] = value;
-    if (!lcd_addr||true) {
-    	lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
-		printf("lcd_addr=%x\n",lcd_addr);
-        if(lcd_addr==0x1380){
-            nc1020_states.grey_mode=1;
-        }else{
-             nc1020_states.grey_mode=0;
+    if(false){
+        ram_io[addr] = value;
+        if (!lcd_addr||true) {
+            lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
+            printf("lcd_addr=%x\n",lcd_addr);
+            if(lcd_addr==0x1380){
+                nc1020_states.grey_mode=1;
+            }else{
+                nc1020_states.grey_mode=0;
+            }
         }
+        ram_io[0x09] &= 0xFE;
     }
-    // WQXSIM related??
-    ////////////////ram_io[0x09] &= 0xFE;
     Write06LCDStartAddr(addr,value);
     extern unsigned short lcdbuffaddr;
-    lcdbuffaddr = lcd_addr;
+    lcd_addr = lcdbuffaddr;
 
 }
 
