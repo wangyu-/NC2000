@@ -28,7 +28,7 @@ void init_io(){
 		io_write[i] = WriteXX;
 	}
     
-    // 0x03 29 has special handle in readXX
+    // 0x29 has special handle in readXX
     //io_read[0x00] = Read00BankSwitch;  //Read00BankSwitch is noop
     io_read[0x01] = Read01IntStatus;
     io_read[0x04] = Read04StopTimer0;
@@ -79,7 +79,9 @@ uint8_t IO_API ReadXX(uint8_t addr){
 
     //printf("read unknow IO %02x ,value=%02x\n",addr, ram_io[addr]);
 
-    if(addr==0x03){
+    //introduced in fa33ed9cb, forgot the reason
+    //seems like it's for debug hgp browser
+    if(addr==0x03&&false){
         return 0xff;
     }
 	return ram_io[addr];

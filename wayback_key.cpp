@@ -32,7 +32,8 @@ extern unsigned /*char*/ keypadmatrix[8][8];
 TKeyItem* item[20][8] = {
         NULL,       // P10, P30
         NULL,       // P11, P30
-        new TKeyItem(18, 0x0F,  NULL, NULL, "ON/OFF", {SDLK_F12}),        // GND, P30
+        // 不确定是0x02还是0x0f
+        new TKeyItem(18, 0x02,  NULL, NULL, "ON/OFF", {SDLK_F12}),        // GND, P30
         NULL,       // P??, P30
         NULL,       // P??, P30
         NULL,       // P??, P30
@@ -54,7 +55,7 @@ TKeyItem* item[20][8] = {
         new TKeyItem(53, 0x3B, "跳出", "AC", NULL, {SDLK_ESCAPE}),     // P03, P12
         new TKeyItem(54, 0x3C, "符\n号", "0", "继续", {SDLK_0}),           // P04, P12
         new TKeyItem(55, 0x3D, ".", ".", "-", {SDLK_PERIOD}),      // P05, P12
-        new TKeyItem(56, 0x3E, "空格", "=", "✓", {SDLK_EQUALS}),       // P06, P12
+        new TKeyItem(56, 0x3E, "空格", "=", "✓", {SDLK_EQUALS,SDLK_SPACE}),       // P06, P12
         new TKeyItem(57, 0x3F, "←", "", NULL, {SDLK_LEFT,SDLK_BACKSPACE}),     // P07, P12
         
         new TKeyItem(40, 0x30, "Z", "(", ")",{SDLK_z}),           // P00, P13
@@ -102,8 +103,9 @@ TKeyItem* item[20][8] = {
         NULL,       // P06, P17
         NULL,       // P07, P17
         //newly added
-        new TKeyItem(16, 0x14, "xx", NULL, "xx",{SDLK_QUOTE}),
-        new TKeyItem(17, 0x15, "xx", NULL, "xx",{SDLK_SEMICOLON}),
+        new TKeyItem(0, 0x14, "xx", NULL, "xx",{SDLK_QUOTE}),
+        new TKeyItem(0, 0x15, "xx", NULL, "xx",{SDLK_SEMICOLON}),
+        new TKeyItem(0, 0x01, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
     };
 
 
@@ -138,11 +140,15 @@ uint8_t map_key_wayback(int32_t sym){
 }
 
 void SetKeyWayback(uint8_t key_id, bool down_or_up){
-    //unsigned int y = key_id / 16;
-    //unsigned int x = key_id % 16;
+    /*
+    unsigned int y = key_id / 16;
+    unsigned int x = key_id % 16;
+    if (y < 8 && x < 8) {
+        keypadmatrix[y][x] = down_or_up;
+    }*/
 
     // below make it compatible with nc1020's code
-    unsigned int y = key_id %8;
+    unsigned int y = key_id % 8;
     unsigned int x = key_id / 8;
     if (y < 8 && x < 8) {
         keypadmatrix[y][x] = down_or_up;

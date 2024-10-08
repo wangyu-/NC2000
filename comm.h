@@ -98,7 +98,7 @@ const uint32_t LCD_REFRESH_INTERVAL=50; //refresh every 50 ms
 cycles related
 ===================
 */
-const uint32_t static_multipler=1; //tmp fix for speed and crash
+const uint32_t static_multipler=5; //tmp fix for speed and crash
 
 // cpu cycles per second (cpu freq).
 const uint32_t CYCLES_SECOND = 5120000*(nc2000?static_multipler:1);

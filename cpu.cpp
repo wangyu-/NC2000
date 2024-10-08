@@ -349,7 +349,7 @@ void cpu_run(){
 			//g_irq = true;
 		}
 
-		if (cycles >= timebase_cycles ) {
+		if (cycles >= timebase_cycles &&false) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
 			nc1020_states.clock_buff[4] ++;
