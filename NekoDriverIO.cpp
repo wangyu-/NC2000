@@ -344,7 +344,10 @@ void UpdateKeypadRegisters()
                     xsend = true;
                 }
             }
-            if (ysend != xsend) {
+            ////////////TODO FIX HERE!!!!!!!!!!!!!!!!!!
+            //have to change here otherwise time key doesn't work
+            if (ysend != xsend || y==0 &&x==1) {
+            //if (ysend != xsend) {
                 if (ysend) {
                     // port1y-> port0x, and x is receive
                     if (keypadmatrix[y][x]==1 && ((port1data & port1controlbit) != 0)) {
