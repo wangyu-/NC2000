@@ -329,7 +329,10 @@ void UpdateKeypadRegisters()
                 port0controlbit = 0x80u;
             }
             bool xsend = ((port0control & port0controlbit) != 0);
-            if (y == 0) {
+
+            ////////////TODO FIX HERE!!!!!!!!!!!!!!!!!!
+            //have to change here otherwise time key doesn't work
+            if (y == 0 && false) {
                 // Special P30 "row"
                 if (x == 0) {
                     // P10
@@ -344,9 +347,7 @@ void UpdateKeypadRegisters()
                     xsend = true;
                 }
             }
-            ////////////TODO FIX HERE!!!!!!!!!!!!!!!!!!
-            //have to change here otherwise time key doesn't work
-            if (ysend != xsend || y==0 &&x==1) {
+            if (ysend != xsend) {
             //if (ysend != xsend) {
                 if (ysend) {
                     // port1y-> port0x, and x is receive
