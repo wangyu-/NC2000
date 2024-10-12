@@ -260,21 +260,30 @@ void handle_key(signed int sym, bool key_down){
 
 void RunGame() {
   bool loop = true;
+  bool power_save= false;
 
   uint64_t start_tick = SDL_GetTicks64();
   uint64_t expected_tick = 0;
 
+  uint64_t last_key_pressed_tick = 0;
+
   while (loop) {
-    RunTimeSlice(SLICE_INTERVAL, false);
+    if(power_save) {
+      SDL_Delay(200);
+    }
+    if(! power_save){
+      RunTimeSlice(SLICE_INTERVAL, false);
+    }
 
     SDL_Event event;
     map<signed int, bool> mp;
+    bool key_pressed= false;
     while (SDL_PollEvent(&event)) {
       if ( event.type == SDL_QUIT ) {
         loop = false;
       } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+        key_pressed = true;
         bool key_down = (event.type == SDL_KEYDOWN);
-
         //try to consolidate multiple key shoot into one
         //not sure if necessary. But it's helpful for debug
         mp[event.key.keysym.sym]= key_down;
@@ -285,13 +294,33 @@ void RunGame() {
     }
 
     if(expected_tick/LCD_REFRESH_INTERVAL != (expected_tick+SLICE_INTERVAL)/LCD_REFRESH_INTERVAL){
-      if (!CopyLcdBuffer(lcd_buf)) {
-        std::cout << "Failed to copy buffer renderer." << std::endl;
+      if(!power_save){
+        if (!CopyLcdBuffer(lcd_buf)) {
+          std::cout << "Failed to copy buffer renderer." << std::endl;
+        }
+        Render();
       }
-      Render();
     }
+
+    uint64_t current_time = SDL_GetTicks64();
+    if (key_pressed) {
+      last_key_pressed_tick = current_time;
+    }
+
+    if(current_time - last_key_pressed_tick >300*1000){
+      if(power_save == false){
+        power_save = true;
+        printf("enter power save\n");
+      }
+    }else{
+      if(power_save == true) {
+        power_save = false;
+        printf("get out of power save\n");
+      }
+    }
+
     expected_tick+=SLICE_INTERVAL;
-    uint64_t actual_tick= SDL_GetTicks64() - start_tick;
+    uint64_t actual_tick= current_time - start_tick;
 
   if(fast_forward) {
       expected_tick =actual_tick;
@@ -309,7 +338,7 @@ void RunGame() {
 
   if(actual_tick < expected_tick) {
     {SDL_Delay(expected_tick-actual_tick);}
-    long long exceed=SDL_GetTicks64()-start_tick  -expected_tick;
+    long long exceed=current_time -start_tick  -expected_tick;
     if(exceed>10){
       printf("oops sleep too much %lld\n",exceed);
     }
