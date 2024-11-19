@@ -31,7 +31,6 @@ static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
 
 void Initialize() {
-
 	if(enable_inject){
 		std::ifstream inject_bin("inject.bin");
 		std::stringstream buffer;

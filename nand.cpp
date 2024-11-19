@@ -12,8 +12,8 @@ static uint8_t* ram_io = ram_buff;
 static uint64_t last_tick=0;
 static deque<uint8_t> nand_cmd;
 static int nand_read_cnt=0;
-char nand_ori[65536][512];
-char nand[65536+64][528];
+char nand_ori[65536*2][512];
+char nand[65536*2+64][528];
 //char nand_spare[65536+64][16];
 
 void read_nand_file(){
