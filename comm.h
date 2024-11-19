@@ -132,7 +132,7 @@ const uint32_t BEEPER_AUDIO_HZ = 44100;
 rom related
 ===================
 */
-const uint32_t num_nor_pages =0x10+uint32_t(nc1020)*0x10+0x20;
+const uint32_t num_nor_pages =0x10+uint32_t(nc1020)*0x10+0x10;
 //const uint32_t num_nor_pages =0x20;
 const uint32_t num_rom_pages =0x300;
 static const uint32_t ROM_SIZE = 0x8000 * num_rom_pages;
