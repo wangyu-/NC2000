@@ -12,7 +12,7 @@ void LoadRom(const string romPath){
 	uint8_t* temp_buff = (uint8_t*)malloc(ROM_SIZE);
 	FILE* file = fopen(romPath.c_str(), "rb");
 	fread(temp_buff, 1, ROM_SIZE, file);
-	ProcessBinary(rom_buff, temp_buff, ROM_SIZE);
+	ProcessBinaryGGVSIM(rom_buff, temp_buff, ROM_SIZE);
 	free(temp_buff);
 	fclose(file);
 }

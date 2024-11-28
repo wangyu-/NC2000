@@ -17,20 +17,24 @@ bool injected=false;
 WqxRom nc1020_rom = {
     .romPath = "./obj_lu.bin",
     .norFlashPath = "./nc1020.fls",
-    .statesPath = "./nc1020.sts",
+    //.statesPath = "./nc1020.sts",
 };
 
 
-void ProcessBinary(uint8_t* dest, uint8_t* src, uint32_t size){
+void ProcessBinaryGGVSIM(uint8_t* dest, uint8_t* src, uint32_t size){
 	uint32_t offset = 0;
     while (offset < size) {
-        if(!use_phy_nor){
-            memcpy(dest + offset + 0x4000, src + offset, 0x4000);
-            memcpy(dest + offset, src + offset + 0x4000, 0x4000);
-        }else{
-            memcpy(dest + offset , src + offset, 0x4000);
-            memcpy(dest + offset + 0x4000, src + offset + 0x4000, 0x4000);
-        }
+        memcpy(dest + offset + 0x4000, src + offset, 0x4000);
+        memcpy(dest + offset, src + offset + 0x4000, 0x4000);
+        offset += 0x8000;
+    }
+}
+
+void ProcessBinaryLinear(uint8_t* dest, uint8_t* src, uint32_t size){
+	uint32_t offset = 0;
+    while (offset < size) {
+        memcpy(dest + offset , src + offset, 0x4000);
+        memcpy(dest + offset + 0x4000, src + offset + 0x4000, 0x4000);
         offset += 0x8000;
     }
 }

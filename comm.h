@@ -46,10 +46,14 @@ global switch
 const bool nc1020 = false;
 const bool nc2000 = !nc1020;
 
-const bool use_phy_nor = true;
-
-//not really needed
-//const bool use_phy_nand = false;
+const bool nc2000_nandmagic_ggvsim = false;
+enum NorFormat{
+    INVALID,
+    GGV_SIM,
+    Linear
+};
+const NorFormat nor_read_format = NorFormat::GGV_SIM;
+const NorFormat nor_write_format = NorFormat::GGV_SIM;
 
 const bool enabled_dsp=true;
 const bool enable_beeper=true;
@@ -146,11 +150,9 @@ const int int_inf=10*10000*10000;
 common functions
 ===================
 */
-/**
- * ProcessBinary
- * encrypt or decrypt wqx's binary file. just flip every bank.
- */
-void ProcessBinary(uint8_t* dest, uint8_t* src, uint32_t size);
+
+void ProcessBinaryGGVSIM(uint8_t* dest, uint8_t* src, uint32_t size);
+void ProcessBinaryLinear(uint8_t* dest, uint8_t* src, uint32_t size);
 
 //use vector char since string cannot store \0 well on mingw
 void read_file(string name,vector<char> &v);

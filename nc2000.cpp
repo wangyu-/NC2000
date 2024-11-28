@@ -32,9 +32,7 @@ void Initialize() {
 
 	if(nc2000){
     	nc1020_rom.norFlashPath= "./nor.bin";
-		if(use_phy_nor){
-			nc1020_rom.norFlashPath= "./phy_nor.bin";
-		}
+		//nc1020_rom.norFlashPath= "./phy_nor.bin";
   	}
 
 	if(enable_inject){

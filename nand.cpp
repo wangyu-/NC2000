@@ -31,8 +31,7 @@ void read_nand_file(){
     fclose(f);
     printf("<nand_file_size=%lu>\n",fsize);
 
-    //the value inside the real 0 nand 32k page. <del>But it doesn't really matter</del>
-    if(!use_phy_nor){
+    if(nc2000_nandmagic_ggvsim){
         memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2000",strlen("ggv nc2000"));
     }else{
         //physical nor expect this to be "ggv nc2010\n"
