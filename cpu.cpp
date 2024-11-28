@@ -334,7 +334,7 @@ void cpu_run(){
 			CheckTimebaseSetTimer0IntStatusAddIRQFlag();
 		}
 
-		if (cycles >= unknown_timer_cycles &&false) {
+		if (nc1020 && cycles >= unknown_timer_cycles) {
 			unknown_timer_cycles += CYCLES_UNKNOWN_TIMER;
 			timer0_toggle = !timer0_toggle;
 			if (!timer0_toggle) {
@@ -349,7 +349,7 @@ void cpu_run(){
 			//g_irq = true;
 		}
 
-		if (cycles >= timebase_cycles &&false) {
+		if (nc1020 && cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
 			nc1020_states.clock_buff[4] ++;
