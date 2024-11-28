@@ -12,6 +12,7 @@ struct cpu_states_t {
 struct nc1020_states_t{
 	uint32_t version;
 	////////////cpu_states_t cpu;
+	uint8_t ram_b[0x2000];
 	uint8_t ram[0x8000];
 	uint8_t ext_ram[0x8000];
 	//uint8_t ext_ram2[0x8000];

@@ -7,5 +7,6 @@ extern uint8_t* ram_io;
 extern uint8_t* ram_40;
 extern uint8_t* ram00;
 extern uint8_t* ram02;
-extern uint8_t* ram_b;
 extern uint8_t* ram04;
+extern uint8_t* ram06;
+extern uint8_t* ram_b;
