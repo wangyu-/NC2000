@@ -1,4 +1,5 @@
 #include "comm.h"
+#include "ram.h"
 #include "state.h"
 #include "mem.h"
 #include "nor.h"
@@ -65,14 +66,19 @@ void Store(uint16_t addr, uint8_t value) {
 		return;
 	}
 	uint8_t* page = memmap[addr >> 13];
-	if (page == ram_b/*ramb*/ || page == ram04/*ram04*/  ||page ==ram02||page==ram00) {
+	if (page == ram_b/*ramb*/ || page == ram04/*ram04*/ ||page == ram06 ||page ==ram02||page==ram00) {
 		page[addr & 0x1FFF] = value;
+		return;
+	}
+	if (page == ram08 ||page == ram0a ||page ==ram0c||page==ram0e) {
+		page[addr & 0x1FFF] = value;
+		printf("!!!!!\n");
 		return;
 	}
 	
 	if (page == nc1020_states.ext_ram|| page == nc1020_states.ext_ram+0x2000  ||page == nc1020_states.ext_ram+0x4000|| page == nc1020_states.ext_ram+0x6000) {
 		//printf("write!!!");
-		//assert(false);
+		assert(false);
 		page[addr & 0x1FFF] = value;
 		return;
 	}
@@ -98,6 +104,7 @@ uint8_t* GetBank(uint8_t bank_idx){
     if (bank_idx < num_nor_pages) {
     	return nor_banks[bank_idx];
     } else if (bank_idx >= 0x80) {
+		return NULL;
 
 	if(nc1020){
         if (volume_idx & 0x01) {
@@ -112,6 +119,11 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(nc2000){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
+			assert(false);
+			if(nc3000){
+				return NULL;
+			}
+
 			return nc1020_states.ext_ram;
 
 			/*
@@ -135,6 +147,32 @@ void SwitchBank(){
     memmap[3] = bank + 0x2000;
     memmap[4] = bank + 0x4000;
     memmap[5] = bank + 0x6000;
+
+	if(bank_idx==0 &&false){
+		memmap[2]=ram04;
+		memmap[3]=ram06;
+	}
+
+	if(nc3000&&false){
+		if (ram_io[0x0a]&80){
+			if (ram_io[0x00]==0){
+				   memmap[2] = ram04;
+    			   memmap[3] = ram06;
+    			   memmap[4] = ram00;
+                   memmap[5] = ram02;
+			}
+			
+			if (ram_io[0x00]==1){
+				   memmap[2] = ram0c;
+    			   memmap[3] = ram0e;
+    			   memmap[4] = ram08;
+                   memmap[5] = ram0a;
+			}
+		}
+
+	}
+
+
 }
 
 uint8_t** GetVolumm(uint8_t volume_idx){
@@ -166,7 +204,8 @@ void SwitchVolume(){
 
 	if(nc2000){
 		memmap[7] = nor_banks[0]+0x6000 -0x4000;
-		bool ramb=  (ram_io[0x0d]&0x04);
+		bool ramb=  (ram_io[0x0d]&0x04) ;
+		if(nc3000) ramb=false;
 		if(ramb){
 			memmap[1]=ram_b;
 		}else{
@@ -175,6 +214,9 @@ void SwitchVolume(){
 		uint8_t bbs = ram_io[0x0A]&0xf;
 		if (bbs==1) {
 			memmap[6]=ram04;
+			if(nc3000){
+				memmap[6]=ram06;
+			}
 		}else if (bbs==0){
 			memmap[6]=nor_banks[0]+0x4000  -0x4000;
 		}else if (bbs==2){

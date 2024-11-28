@@ -181,7 +181,9 @@ void IO_API Write00(uint8_t addr, uint8_t value){
     if (value != old_value) {
     	SwitchBank();
     }*/
-	super_switch();
+    if (value != old_value) {
+	    super_switch();
+    }
 }
 
 void IO_API Write05(uint8_t addr, uint8_t value){
@@ -262,7 +264,9 @@ void IO_API Write0A(uint8_t addr, uint8_t value){
     if (value != old_value) {
         memmap[6] = bbs_pages[value & 0x0F];
     }*/
-	super_switch();
+    if (value != old_value) {
+	    super_switch();
+    }
 }
 
 // switch volume
