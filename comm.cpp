@@ -15,11 +15,23 @@ bool wanna_inject=false;
 bool injected=false;
 
 WqxRom nc1020_rom = {
-    .romPath = "./obj_lu.bin",
-    .norFlashPath = "./nc1020.fls",
-    //.statesPath = "./nc1020.sts",
+    //.romPath = "./obj_lu.bin",
+    //.norFlashPath = "./nc1020.fls",
+    //.statesPath = "./nc1020.sts", //not used at all
 };
 
+
+void rom_switcher(){
+    if(nc1020){
+        nc1020_rom.romPath = "./obj_lu.bin";
+        nc1020_rom.norFlashPath = "./nc1020.fls";
+    }
+    if(nc2000){
+        nc1020_rom.romPath = "";
+        nc1020_rom.nandFlashPath = "./nand.bin";
+        nc1020_rom.norFlashPath = "./nor.bin";  
+    }
+}
 
 void ProcessBinaryGGVSIM(uint8_t* dest, uint8_t* src, uint32_t size){
 	uint32_t offset = 0;

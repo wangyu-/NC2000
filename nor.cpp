@@ -19,7 +19,7 @@ static uint8_t* fp_buff = nc1020_states.fp_buff;
 void LoadNor(){
 	uint8_t* temp_buff = (uint8_t*)malloc(NOR_SIZE);
 	FILE* file = fopen(nc1020_rom.norFlashPath.c_str(), "rb");
-	if(nc2000 && file==0){
+	if(file==0){
 		printf("nor file [%s] not exist!\n",nc1020_rom.norFlashPath.c_str());
 		exit(-1);
 	}

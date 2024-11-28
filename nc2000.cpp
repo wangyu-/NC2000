@@ -28,12 +28,9 @@ static uint32_t& lcd_addr = nc1020_states.lcd_addr;
 static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
-void Initialize() {
 
-	if(nc2000){
-    	nc1020_rom.norFlashPath= "./nor.bin";
-		//nc1020_rom.norFlashPath= "./phy_nor.bin";
-  	}
+
+void Initialize() {
 
 	if(enable_inject){
 		std::ifstream inject_bin("inject.bin");
@@ -43,17 +40,6 @@ void Initialize() {
 		inject_code=buffer.str();
 	}
 
-	/*
-	// bug: this doens't read full nand on windows
-	std::ifstream nand_bin("2600nand.bin");
-	std::stringstream nand_buffer;
-	nand_buffer << nand_bin.rdbuf();
-	printf("<size=%lu>\n",nand_buffer.str().size());*/
-
-	if(nc2000){
-		read_nand_file();
-	}
-	
 	init_io();
 
 //#ifdef DEBUG
@@ -87,7 +73,6 @@ void Reset() {
 }*/
 
 void LoadStates(){
-	ResetStates();
 	FILE* file = fopen(nc1020_rom.statesPath.c_str(), "rb");
 	if (file == NULL) {
 		return;
@@ -109,14 +94,19 @@ void SaveStates(){
 }
 
 void LoadNC1020(){
+	rom_switcher();
 	init_nor();
 	init_rom();
-	LoadStates();
+	if(nc2000) {
+		read_nand_file();
+	}
+	ResetStates();
+	//LoadStates();
 }
 
 void SaveNC1020(){
 	SaveNor();
-	SaveStates();
+	//SaveStates();
 }
 
 void SetKey(uint8_t key_id, bool down_or_up){

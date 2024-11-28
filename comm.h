@@ -166,8 +166,10 @@ typedef void (IO_API *io_write_func_t)(uint8_t, uint8_t);
 struct WqxRom {
     std::string romPath;
     std::string norFlashPath;
+    std::string nandFlashPath;
     std::string statesPath;
 };
+void rom_switcher();
 
 inline vector<string> split_s(const string &str, const string &sp) {
     vector<string> res;
