@@ -45,6 +45,7 @@ global switch
 
 const bool nc1020 = false;
 const bool nc2000 = !nc1020;
+const bool nc3000 = true;
 
 const bool nc2000_nandmagic_ggvsim = false;
 enum NorFormat{

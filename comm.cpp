@@ -4,10 +4,10 @@ string inject_code;
 uint64_t tick=0;
 
 bool enable_dyn_debug=false;
-bool enable_debug_nand=false;
+bool enable_debug_nand=true;
 
 bool enable_debug_switch=false;
-bool enable_debug_pc=false;
+bool enable_debug_pc=0;
 bool enable_oops=false;
 bool enable_inject=false;
 

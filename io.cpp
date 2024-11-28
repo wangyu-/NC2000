@@ -210,6 +210,7 @@ void IO_API Write06(uint8_t addr, uint8_t value){
     Write06LCDStartAddr(addr,value);
     extern unsigned short lcdbuffaddr;
     lcd_addr = lcdbuffaddr;
+    lcd_addr = 0x1380;
 
 }
 

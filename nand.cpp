@@ -37,6 +37,9 @@ void read_nand_file(){
         //physical nor expect this to be "ggv nc2010\n"
         memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2010\n",strlen("ggv nc2010\n"));
     }
+    if(nc3000){
+        memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc3000",strlen("ggv nc3000"));
+    }
 
     //if(use_phy_nand){
     if(false){
@@ -69,6 +72,7 @@ void write_nand_file(){
 }
 
 uint8_t read_nand(){
+    assert(false);
     //printf("tick=%lld, read %x  %02x\n",tick, addr, ram_io[addr]);
     uint8_t roa_bbs=ram_io[0x0a];
     uint8_t ramb_vol=ram_io[0x0d];
