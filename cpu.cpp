@@ -308,7 +308,7 @@ void cpu_run(){
 		bool needirq = false;
 		//don't use magic number
 		//////if (gDeadlockCounter == 6000) {
-		if (cycles >= timebase_cycles) {
+		if (nc2000 && cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
