@@ -146,8 +146,9 @@ uint8_t read_nand(){
         unsigned char low=nand_cmd[1];
         unsigned char mid=nand_cmd[2];
         unsigned char high=nand_cmd[3];
+        unsigned char a25=nand_cmd[4];
 
-        uint32_t pos=high*256u+mid;
+        uint32_t pos=a25*256u*256u+   high*256u+mid;
 
         /*
         if(nand_cmd.size()==5&&false){
@@ -203,7 +204,7 @@ uint8_t read_nand(){
         //assert(false);
         //return 0x40;
         //if(xxx==1) return 0x40;
-        unsigned int final= (mid*256u+low)*528u;
+        unsigned int final= (high*256u*256u + mid*256u+low)*528u;
         /*
         if(nand_read_cnt%100==0){
             printf("<cmd60> %d\n",nand_read_cnt);
@@ -297,8 +298,9 @@ void nand_write(uint8_t value){
                 unsigned char low=nand_cmd[2];
                 unsigned char mid=nand_cmd[3];
                 unsigned char high=nand_cmd[4];
+                unsigned char a25=nand_cmd[5];
 
-                uint32_t pos=high*256u+mid;
+                uint32_t pos=a25*256u*256u+high*256u+mid;
 
                 unsigned int x=pos;
                 unsigned int y=low;
@@ -321,8 +323,10 @@ void nand_write(uint8_t value){
                 unsigned char low=nand_cmd[2];
                 unsigned char mid=nand_cmd[3];
                 unsigned char high=nand_cmd[4];
+                unsigned char a25=nand_cmd[5];
 
-                uint32_t pos=high*256u+mid;
+
+                uint32_t pos=a25*256u*256u+high*256u+mid;
 
                 unsigned int x=pos;
                 unsigned int y=low;
