@@ -72,7 +72,6 @@ void write_nand_file(){
 }
 
 uint8_t read_nand(){
-    assert(false);
     //printf("tick=%lld, read %x  %02x\n",tick, addr, ram_io[addr]);
     uint8_t roa_bbs=ram_io[0x0a];
     uint8_t ramb_vol=ram_io[0x0d];

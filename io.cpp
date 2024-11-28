@@ -73,8 +73,17 @@ void init_io(){
 }
 
 uint8_t IO_API ReadXX(uint8_t addr){
-	if(addr==0x29) {
-        return read_nand();
+	if(nc2000){
+        if(nc3000){
+            if(addr==0x39) {
+                return read_nand();
+            } 
+        } 
+        if(!nc3000){
+            if(addr==0x29) {
+                return read_nand();
+            }
+        }
 	}
 
     //printf("read unknow IO %02x ,value=%02x\n",addr, ram_io[addr]);
@@ -105,8 +114,18 @@ uint8_t IO_API Read3F(uint8_t addr){
 }
 
 void IO_API WriteXX(uint8_t addr, uint8_t value){
-	if(addr==0x29) {
-        return nand_write(value);
+
+    if(nc2000){
+        if(nc3000){
+            if(addr==0x39) {
+                return nand_write(value);
+            } 
+        }
+        if(!nc3000) {
+            if(addr==0x29) {
+                return nand_write(value);
+            }
+        }
     }
 
     if(nc2000){
@@ -181,9 +200,7 @@ void IO_API Write00(uint8_t addr, uint8_t value){
     if (value != old_value) {
     	SwitchBank();
     }*/
-    if (value != old_value) {
-	    super_switch();
-    }
+	super_switch();
 }
 
 void IO_API Write05(uint8_t addr, uint8_t value){
@@ -212,7 +229,7 @@ void IO_API Write06(uint8_t addr, uint8_t value){
     Write06LCDStartAddr(addr,value);
     extern unsigned short lcdbuffaddr;
     lcd_addr = lcdbuffaddr;
-    lcd_addr = 0x1380;
+    //lcd_addr = 0x1380;
 
 }
 
@@ -264,9 +281,7 @@ void IO_API Write0A(uint8_t addr, uint8_t value){
     if (value != old_value) {
         memmap[6] = bbs_pages[value & 0x0F];
     }*/
-    if (value != old_value) {
-	    super_switch();
-    }
+	super_switch();
 }
 
 // switch volume

@@ -73,13 +73,11 @@ void Store(uint16_t addr, uint8_t value) {
 	}
 	if (page == ram08 ||page == ram0a ||page ==ram0c||page==ram0e) {
 		page[addr & 0x1FFF] = value;
-		printf("!!!!!\n");
 		return;
 	}
 	
 	if (page == nc1020_states.ext_ram|| page == nc1020_states.ext_ram+0x2000  ||page == nc1020_states.ext_ram+0x4000|| page == nc1020_states.ext_ram+0x6000) {
 		//printf("write!!!");
-		assert(false);
 		page[addr & 0x1FFF] = value;
 		return;
 	}
@@ -105,8 +103,9 @@ uint8_t* GetBank(uint8_t bank_idx){
     if (bank_idx < num_nor_pages) {
     	return nor_banks[bank_idx];
     } else if (bank_idx >= 0x80) {
-		return NULL;
-
+		if(nc3000){
+			return NULL;
+		}
 	if(nc1020){
         if (volume_idx & 0x01) {
         	return rom_volume1[bank_idx];
@@ -120,10 +119,6 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(nc2000){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
-			assert(false);
-			if(nc3000){
-				return NULL;
-			}
 
 			return nc1020_states.ext_ram;
 
