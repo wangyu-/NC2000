@@ -67,6 +67,7 @@ void Store(uint16_t addr, uint8_t value) {
 	}
 	uint8_t* page = memmap[addr >> 13];
 	if (page == ram_b/*ramb*/ || page == ram04/*ram04*/ ||page == ram06 ||page ==ram02||page==ram00) {
+		//printf("zxczxc\n");
 		page[addr & 0x1FFF] = value;
 		return;
 	}
@@ -148,13 +149,13 @@ void SwitchBank(){
     memmap[4] = bank + 0x4000;
     memmap[5] = bank + 0x6000;
 
-	if(bank_idx==0 &&false){
+	if(bank_idx==0){
 		memmap[2]=ram04;
 		memmap[3]=ram06;
 	}
 
-	if(nc3000&&false){
-		if (ram_io[0x0a]&80){
+	if(nc3000){
+		if (ram_io[0x0a]&0x80){
 			if (ram_io[0x00]==0){
 				   memmap[2] = ram04;
     			   memmap[3] = ram06;
