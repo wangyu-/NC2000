@@ -27,9 +27,13 @@ void rom_switcher(){
         nc1020_rom.norFlashPath = "./nc1020.fls";
     }
     if(nc2000){
-        nc1020_rom.romPath = "";
         nc1020_rom.nandFlashPath = "./nand.bin";
         nc1020_rom.norFlashPath = "./nor.bin";  
+    }
+
+    if(nc3000){
+        nc1020_rom.nandFlashPath = "./nc3000.nand";
+        nc1020_rom.norFlashPath = "./nc3000.nor"; 
     }
 }
 
