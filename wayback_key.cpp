@@ -34,18 +34,9 @@ TKeyItem::TKeyItem( int ID, int keycode, int code_y, int code_x, const char* gra
 }
 
 extern unsigned /*char*/ keypadmatrix[8][8];
-
-vector<TKeyItem*> items = {
-        NULL,       // P10, P30
-        NULL,       // P11, P30
-        // 不确定是0x02还是0x0f
+vector<TKeyItem*> items2000_1020 = {
         new TKeyItem(18, 0x02,2,0,  NULL, NULL, "ON/OFF", {SDLK_F12}),        // GND, P30
-        NULL,       // P??, P30
-        NULL,       // P??, P30
-        NULL,       // P??, P30
-        NULL,       // P??, P30
-        NULL,       // P??, P30
-        
+        new TKeyItem(0, 0x01, 1,0, NULL, NULL, "infra_red", {SDLK_BACKQUOTE}), 
         new TKeyItem(0, 0x0B, 3,1, "英汉", NULL, "汉英",{SDLK_F5}),          // P00, P30
         new TKeyItem(1, 0x0C, 4,1, "名片", NULL, "通讯",{SDLK_F6}),          // P01, P30
         new TKeyItem(2, 0x0D, 5,1, "计算", NULL, "换算",{SDLK_F7}),          // P02, P30
@@ -53,6 +44,36 @@ vector<TKeyItem*> items = {
         new TKeyItem(4, 0x09, 1,1, "资料", NULL, "游戏",{SDLK_F9}),          // P04, P30
         new TKeyItem(5, 0x08, 0,1, "时间", NULL, "其他",{SDLK_F10}),        // P05, P30
         new TKeyItem(6, 0x0E, 6,1, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
+};
+vector<TKeyItem*> items3000 = {
+        new TKeyItem(18, 0x0,0,0, "网络", NULL, "", {SDLK_F12}),        // GND, P30
+        new TKeyItem(0, 0x0, 1,0, "pda", NULL, "游戏", {SDLK_F5}), 
+        new TKeyItem(0, 0x0, 2,0, "计算", NULL, "换算",{SDLK_F6}),          // P00, P30
+        new TKeyItem(1, 0x0, 3,0, "时间", NULL, "系统",{SDLK_F7}),          // P01, P30
+        ///new TKeyItem(2, 0x0, 4,0, "开关？？？", NULL, "汉英",{SDLK_F8}),          // P02, P30
+        new TKeyItem(3, 0x0, 5,0, "英汉", NULL, "汉英",{SDLK_F9}),          // P03, P30
+        new TKeyItem(4, 0x0, 6,0, "ahd", NULL, "词库",{SDLK_F10}),          // P04, P30
+        new TKeyItem(5, 0x0, 7,0, "剑桥", NULL, "学习",{SDLK_F11}),        // P05, P30
+       // new TKeyItem(6, 0x0, 6,1, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
+};
+vector<TKeyItem*> items = {
+        NULL,       // P10, P30
+        NULL,       // P11, P30
+        // 不确定是0x02还是0x0f
+        //new TKeyItem(18, 0x02,2,0,  NULL, NULL, "ON/OFF", {SDLK_F12}),        // GND, P30
+        NULL,       // P??, P30
+        NULL,       // P??, P30
+        NULL,       // P??, P30
+        NULL,       // P??, P30
+        NULL,       // P??, P30
+        
+        //new TKeyItem(0, 0x0B, 3,1, "英汉", NULL, "汉英",{SDLK_F5}),          // P00, P30
+        //new TKeyItem(1, 0x0C, 4,1, "名片", NULL, "通讯",{SDLK_F6}),          // P01, P30
+        //new TKeyItem(2, 0x0D, 5,1, "计算", NULL, "换算",{SDLK_F7}),          // P02, P30
+        //new TKeyItem(3, 0x0A, 2,1, "行程", NULL, "记事",{SDLK_F8}),          // P03, P30
+        //new TKeyItem(4, 0x09, 1,1, "资料", NULL, "游戏",{SDLK_F9}),          // P04, P30
+        //new TKeyItem(5, 0x08, 0,1, "时间", NULL, "其他",{SDLK_F10}),        // P05, P30
+        //new TKeyItem(6, 0x0E, 6,1, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
         NULL,       // P07, P30
         
         new TKeyItem(50, 0x38, 0,7, "求助", NULL, NULL,{SDLK_LEFTBRACKET}),  // P00, P12
@@ -111,12 +132,17 @@ vector<TKeyItem*> items = {
         //newly added
         new TKeyItem(0, 0x14, 4,2, "xx", NULL, "xx",{SDLK_QUOTE}),
         new TKeyItem(0, 0x15, 5,2,"xx", NULL, "xx",{SDLK_SEMICOLON}),
-        new TKeyItem(0, 0x01, 1,0, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
+        //new TKeyItem(0, 0x01, 1,0, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
     };
 
 
 static map<int,pair<int,int> > sdl_to_item;
 void init_keyitems(){
+    if(!nc3000){
+      for(auto x: items2000_1020) items.push_back(x);
+    }else {
+      for(auto x: items3000) items.push_back(x);
+    }
       for (int i=0; i<items.size(); i++) {
             if (items[i] == NULL) {
                 //keypadmatrix[y][x] = 2;

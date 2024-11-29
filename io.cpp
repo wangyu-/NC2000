@@ -44,7 +44,9 @@ void init_io(){
     } else {
         io_read[0x08] = ReadPort0;
         io_read[0x09] = ReadPort1;
-        io_read[0x1e] = ReadPort6EXP;
+        if(nc3000){
+            io_read[0x1e] = ReadPort6EXP;
+        }
     }
     io_read[0x18] = Read18Port4;
     io_read[0x3B] = Read3B;//<----------from nc1020
@@ -90,7 +92,7 @@ uint8_t IO_API ReadXX(uint8_t addr){
         if(nc3000){
             if(addr==0x39) {
                 return read_nand();
-            } 
+            }
         } 
         if(!nc3000){
             if(addr==0x29) {
