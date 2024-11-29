@@ -16,7 +16,6 @@ struct nc1020_states_t{
 	uint8_t ram_b[0x2000];
 	uint8_t ram[0x8000*2];
 	uint8_t ext_ram[0x8000];
-	uint8_t ram_io[0x32];
 
 	//uint8_t bak_40[0x40];
 
