@@ -18,6 +18,8 @@ struct TKeyItem {
     vector<int> sdl_keys;
 };
 
+
+// ID keycode are no longer used, but they are kept for comparsion with wayback and nc1020
 TKeyItem::TKeyItem( int ID, int keycode, int code_y, int code_x, const char* graphic, const char* subscript, const char* label, vector<int> sdl_keys0)
     :// fRow(ID / 10)
     //, fColumn(ID % 10)
@@ -33,7 +35,7 @@ TKeyItem::TKeyItem( int ID, int keycode, int code_y, int code_x, const char* gra
 
 extern unsigned /*char*/ keypadmatrix[8][8];
 
-TKeyItem* item[20][8] = {
+vector<TKeyItem*> items = {
         NULL,       // P10, P30
         NULL,       // P11, P30
         // 不确定是0x02还是0x0f
@@ -115,10 +117,8 @@ TKeyItem* item[20][8] = {
 
 static map<int,pair<int,int> > sdl_to_item;
 void init_keyitems(){
-      for (int y = 0; y < 20; y++) {
-        for (int x = 0; x < 8; x++) {
-            //fKeyItems[y][x] = item[y][x];
-            if (item[y][x] == NULL) {
+      for (int i=0; i<items.size(); i++) {
+            if (items[i] == NULL) {
                 //keypadmatrix[y][x] = 2;
             } else {
                 //int row = item[y][x]->fRow;
@@ -128,14 +128,13 @@ void init_keyitems(){
                 //button.contentScaleFactor = 1;
                 //button.layer.contentsScale = 1;
                 //item[y][x]->tag = y * 0x10 + x;
-                assert(item[y][x]->code_y>=0);
-                assert(item[y][x]->code_x>=0);
-                for(auto e: item[y][x]->sdl_keys){
+                assert(items[i]->code_y>=0);
+                assert(items[i]->code_x>=0);
+                for(auto e: items[i]->sdl_keys){
                     //sdl_to_item[e]=item[y][x]->code;
-                    sdl_to_item[e]=pair<int,int>(item[y][x]->code_y, item[y][x]->code_x);
+                    sdl_to_item[e]=pair<int,int>(items[i]->code_y, items[i]->code_x);
                 }
             }
-        }
       }
 }
 
