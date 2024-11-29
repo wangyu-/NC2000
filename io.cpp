@@ -44,6 +44,7 @@ void init_io(){
     } else {
         io_read[0x08] = ReadPort0;
         io_read[0x09] = ReadPort1;
+        io_read[0x1e] = ReadPort6EXP;
     }
     io_read[0x18] = Read18Port4;
     io_read[0x3B] = Read3B;//<----------from nc1020

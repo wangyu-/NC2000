@@ -95,6 +95,7 @@ BYTE __iocallconv Read06StopTimer1 (BYTE read); // $06
 BYTE __iocallconv ReadPort0 (BYTE read); // $08
 BYTE __iocallconv ReadPort1 (BYTE read); // $09
 BYTE __iocallconv Read18Port4 (BYTE read); // $09
+BYTE __iocallconv ReadPort6EXP (BYTE read); // 0x1e //newly added
 
 BYTE __iocallconv Read00BankSwitch (BYTE read); // $00
 void __iocallconv Write00BankSwitch (BYTE write, BYTE value); // $00

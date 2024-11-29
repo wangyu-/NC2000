@@ -51,6 +51,7 @@ BYTE w15_port1_DIR107 = 0;// DIR10~DIR17
 // 实际流程既是: 先复制输出状态引脚, 再处理导电橡胶传导.
 BYTE w08_port0_OL = 0;  // output latch
 BYTE r08_port0_ID = 0;  // input data
+BYTE r1e_port0_ID_EXP = 0;  // newly added for 3000
 
 BYTE w09_port1_OL = 0;
 BYTE r09_port1_ID = 0;
@@ -423,7 +424,12 @@ void UpdateKeypadRegisters()
         qDebug("new [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, port1data, port0data);
     }
     r09_port1_ID = port1data;
-    r08_port0_ID = port0data;
+    if(!nc3000){
+        r08_port0_ID = port0data;
+    }else{
+        r08_port0_ID = (port0data &0x0c) | (port0data&0xf3);
+        r1e_port0_ID_EXP = (port0data &0xfc) | ((port0data&0x0c)>>2);
+    }
     if (tmpp30tv) {
         //有开机或热键按下, 应当改P30为0
         qDebug("P30 hotkey scan: %04X", tmpp30tv);
@@ -442,6 +448,15 @@ BYTE __iocallconv ReadPort0( BYTE read )
     return r08_port0_ID;
     (void)read;
 }
+
+BYTE __iocallconv ReadPort6EXP( BYTE read )
+{
+    UpdateKeypadRegisters();
+    //qDebug("ggv wanna read keypad port6, [%04x] -> %02x", read, mem[read]);
+    return r1e_port0_ID_EXP;
+    (void)read;
+}
+
 
 BYTE __iocallconv ReadPort1( BYTE read )
 {
