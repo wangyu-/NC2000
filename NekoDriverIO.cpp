@@ -430,6 +430,8 @@ void UpdateKeypadRegisters()
         r08_port0_ID = (port0data &0x0c) | (port0data&0xf3);
         r1e_port0_ID_EXP = (port0data &0xfc) | ((port0data&0x0c)>>2);
     }
+
+    //printf("<port0=%d port1=%d tmpp30tv=%d>\n",port0data,port1data, tmpp30tv);
     if (tmpp30tv) {
         //有开机或热键按下, 应当改P30为0
         qDebug("P30 hotkey scan: %04X", tmpp30tv);

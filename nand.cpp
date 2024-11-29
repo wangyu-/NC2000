@@ -267,7 +267,15 @@ void nand_write(uint8_t value){
            /* special handle of some invalid sequence in 空间整理*/
            //if(nand_cmd.size()==23) assert(nand_cmd[0]==0x50 && nand_cmd.back()==0x10);
            //else 
-           
+           if(nand_cmd.size()==6 && nand_cmd[5]==0xff) {
+                printf("oops run into an situation that needs hacky handling:");
+                for(int i=0;i<nand_cmd.size();i++){
+                    printf("<%02x>",(unsigned char)nand_cmd[i]);
+                }
+                printf("\n");
+              //some temp hack to trick it run
+              nand_cmd.pop_back();
+           }
            if(nand_cmd.size()==5) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50||nand_cmd[0]==0x60);
            else {
                 assert(false);
