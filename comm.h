@@ -45,7 +45,7 @@ global switch
 
 const bool nc1020 = false;
 const bool nc2000 = !nc1020;
-const bool nc3000 = false;
+const bool nc3000 = true;
 
 const bool use_legacy_key_io = true;
 

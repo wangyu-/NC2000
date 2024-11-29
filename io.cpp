@@ -250,18 +250,26 @@ void IO_API Write08(uint8_t addr, uint8_t value){
     ram_io[0x0B] &= 0xFE;
 }
 
+void key_helper(int value){
+    if(!nc3000){
+        ram_io[0x08]= value;
+    }else{
+        ram_io[0x08] = (ram_io[0x08] & 0x0c)| (value&0xf3);
+        ram_io[0x1e] = (ram_io[0x1e]&0xfc)| ((value&0x0c)>>2);
+    }
+}
 // keypad matrix.
 void IO_API Write09(uint8_t addr, uint8_t value){
     ram_io[addr] = value;
     switch (value){
-    case 0x01: ram_io[0x08] = keypad_matrix[0]; break;
-    case 0x02: ram_io[0x08] = keypad_matrix[1]; break;
-    case 0x04: ram_io[0x08] = keypad_matrix[2]; break;
-    case 0x08: ram_io[0x08] = keypad_matrix[3]; break;
-    case 0x10: ram_io[0x08] = keypad_matrix[4]; break;
-    case 0x20: ram_io[0x08] = keypad_matrix[5]; break;
-    case 0x40: ram_io[0x08] = keypad_matrix[6]; break;
-    case 0x80: ram_io[0x08] = keypad_matrix[7]; break;
+    case 0x01: key_helper(keypad_matrix[0]); break;
+    case 0x02: key_helper(keypad_matrix[1]); break;
+    case 0x04: key_helper(keypad_matrix[2]); break;
+    case 0x08: key_helper(keypad_matrix[3]); break;
+    case 0x10: key_helper(keypad_matrix[4]); break;
+    case 0x20: key_helper(keypad_matrix[5]); break;
+    case 0x40: key_helper(keypad_matrix[6]); break;
+    case 0x80: key_helper(keypad_matrix[7]); break;
     case 0:
         ram_io[0x0B] |= 1;
         if (keypad_matrix[7] == 0xFE) {
