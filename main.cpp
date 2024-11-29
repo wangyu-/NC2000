@@ -288,6 +288,7 @@ void RunGame() {
         //not sure if necessary. But it's helpful for debug
         mp[event.key.keysym.sym]= key_down;
         for(auto it=mp.begin();it!=mp.end();it++){
+          handle_key(it->first, it->second);
           handle_key_wayback(it->first,it->second);
         }
       }
