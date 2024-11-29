@@ -5,7 +5,7 @@ using namespace std;
 
 struct TKeyItem {
     //TKeyItem(int ID, const char* graphic, const char* subscript);
-    TKeyItem(int ID, int keycode, const char* graphic, const char* subscript, const char* label,vector<int>);
+    TKeyItem(int ID, int keycode,int code_y, int code_x, const char* graphic, const char* subscript, const char* label,vector<int>);
 
     //int fRow;
     //int fColumn;
@@ -13,10 +13,12 @@ struct TKeyItem {
     //const char* fSubscript;
     //const char* fSuperLabel; // label on top
     int code=0;
+    int code_y=-1;
+    int code_x=-1;
     vector<int> sdl_keys;
 };
 
-TKeyItem::TKeyItem( int ID, int keycode, const char* graphic, const char* subscript, const char* label, vector<int> sdl_keys0)
+TKeyItem::TKeyItem( int ID, int keycode, int code_y, int code_x, const char* graphic, const char* subscript, const char* label, vector<int> sdl_keys0)
     :// fRow(ID / 10)
     //, fColumn(ID % 10)
     //fGraphic(graphic)
@@ -25,6 +27,8 @@ TKeyItem::TKeyItem( int ID, int keycode, const char* graphic, const char* subscr
     sdl_keys(sdl_keys0)
 {
     code=keycode;
+    this->code_y = code_y;
+    this->code_x = code_x;
 }
 
 extern unsigned /*char*/ keypadmatrix[8][8];
@@ -33,83 +37,83 @@ TKeyItem* item[20][8] = {
         NULL,       // P10, P30
         NULL,       // P11, P30
         // 不确定是0x02还是0x0f
-        new TKeyItem(18, 0x02,  NULL, NULL, "ON/OFF", {SDLK_F12}),        // GND, P30
+        new TKeyItem(18, 0x02,2,0,  NULL, NULL, "ON/OFF", {SDLK_F12}),        // GND, P30
         NULL,       // P??, P30
         NULL,       // P??, P30
         NULL,       // P??, P30
         NULL,       // P??, P30
         NULL,       // P??, P30
         
-        new TKeyItem(0, 0x0B, "英汉", NULL, "汉英",{SDLK_F5}),          // P00, P30
-        new TKeyItem(1, 0x0C, "名片", NULL, "通讯",{SDLK_F6}),          // P01, P30
-        new TKeyItem(2, 0x0D, "计算", NULL, "换算",{SDLK_F7}),          // P02, P30
-        new TKeyItem(3, 0x0A, "行程", NULL, "记事",{SDLK_F8}),          // P03, P30
-        new TKeyItem(4, 0x09, "资料", NULL, "游戏",{SDLK_F9}),          // P04, P30
-        new TKeyItem(5, 0x08, "时间", NULL, "其他",{SDLK_F10}),        // P05, P30
-        new TKeyItem(6, 0x0E, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
+        new TKeyItem(0, 0x0B, 3,1, "英汉", NULL, "汉英",{SDLK_F5}),          // P00, P30
+        new TKeyItem(1, 0x0C, 4,1, "名片", NULL, "通讯",{SDLK_F6}),          // P01, P30
+        new TKeyItem(2, 0x0D, 5,1, "计算", NULL, "换算",{SDLK_F7}),          // P02, P30
+        new TKeyItem(3, 0x0A, 2,1, "行程", NULL, "记事",{SDLK_F8}),          // P03, P30
+        new TKeyItem(4, 0x09, 1,1, "资料", NULL, "游戏",{SDLK_F9}),          // P04, P30
+        new TKeyItem(5, 0x08, 0,1, "时间", NULL, "其他",{SDLK_F10}),        // P05, P30
+        new TKeyItem(6, 0x0E, 6,1, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
         NULL,       // P07, P30
         
-        new TKeyItem(50, 0x38, "求助", NULL, NULL,{SDLK_LEFTBRACKET}),  // P00, P12
-        new TKeyItem(51, 0x39, "中英数", NULL, "SHIFT",{SDLK_RIGHTBRACKET}),   // P01, P12
-        new TKeyItem(52, 0x3A, "输入法", NULL, "反查 CAPS",{SDLK_BACKSLASH}), // P02, P12
-        new TKeyItem(53, 0x3B, "跳出", "AC", NULL, {SDLK_ESCAPE}),     // P03, P12
-        new TKeyItem(54, 0x3C, "符\n号", "0", "继续", {SDLK_0}),           // P04, P12
-        new TKeyItem(55, 0x3D, ".", ".", "-", {SDLK_PERIOD}),      // P05, P12
-        new TKeyItem(56, 0x3E, "空格", "=", "✓", {SDLK_EQUALS,SDLK_SPACE}),       // P06, P12
-        new TKeyItem(57, 0x3F, "←", "", NULL, {SDLK_LEFT,SDLK_BACKSPACE}),     // P07, P12
+        new TKeyItem(50, 0x38, 0,7, "求助", NULL, NULL,{SDLK_LEFTBRACKET}),  // P00, P12
+        new TKeyItem(51, 0x39, 1,7, "中英数", NULL, "SHIFT",{SDLK_RIGHTBRACKET}),   // P01, P12
+        new TKeyItem(52, 0x3A, 2,7, "输入法", NULL, "反查 CAPS",{SDLK_BACKSLASH}), // P02, P12
+        new TKeyItem(53, 0x3B, 3,7, "跳出", "AC", NULL, {SDLK_ESCAPE}),     // P03, P12
+        new TKeyItem(54, 0x3C, 4,7, "符\n号", "0", "继续", {SDLK_0}),           // P04, P12
+        new TKeyItem(55, 0x3D, 5,7, ".", ".", "-", {SDLK_PERIOD}),      // P05, P12
+        new TKeyItem(56, 0x3E, 6,7, "空格", "=", "✓", {SDLK_EQUALS,SDLK_SPACE}),       // P06, P12
+        new TKeyItem(57, 0x3F, 7,7, "←", "", NULL, {SDLK_LEFT,SDLK_BACKSPACE}),     // P07, P12
         
-        new TKeyItem(40, 0x30, "Z", "(", ")",{SDLK_z}),           // P00, P13
-        new TKeyItem(41, 0x31, "X", "π", "X!",{SDLK_x}),           // P01, P13
-        new TKeyItem(42, 0x32, "C", "EXP", "。'\"",{SDLK_c}),           // P02, P13
-        new TKeyItem(43, 0x33, "V", "C",NULL,{SDLK_v}),           // P03, P13
-        new TKeyItem(44, 0x34, "B", "1",NULL,{SDLK_b,SDLK_1}),           // P04, P13
-        new TKeyItem(45, 0x35, "N", "2",NULL,{SDLK_n,SDLK_2}),           // P05, P13
-        new TKeyItem(46, 0x36, "M", "3",NULL,{SDLK_m,SDLK_3}),           // P06, P13
-        new TKeyItem(47, 0x37, "⇞", "税",NULL,{SDLK_COMMA}),   // P07, P13
+        new TKeyItem(40, 0x30, 0,6, "Z", "(", ")",{SDLK_z}),           // P00, P13
+        new TKeyItem(41, 0x31, 1,6, "X", "π", "X!",{SDLK_x}),           // P01, P13
+        new TKeyItem(42, 0x32, 2,6, "C", "EXP", "。'\"",{SDLK_c}),           // P02, P13
+        new TKeyItem(43, 0x33, 3,6, "V", "C",NULL,{SDLK_v}),           // P03, P13
+        new TKeyItem(44, 0x34, 4,6, "B", "1",NULL,{SDLK_b,SDLK_1}),           // P04, P13
+        new TKeyItem(45, 0x35, 5,6, "N", "2",NULL,{SDLK_n,SDLK_2}),           // P05, P13
+        new TKeyItem(46, 0x36, 6,6, "M", "3",NULL,{SDLK_m,SDLK_3}),           // P06, P13
+        new TKeyItem(47, 0x37, 7,6, "⇞", "税",NULL,{SDLK_COMMA}),   // P07, P13
         
-        new TKeyItem(30, 0x28, "A", "log", "10x",{SDLK_a}),       // P00, P14
-        new TKeyItem(31, 0x29, "S", "ln", "ex",{SDLK_s}),       // P01, P14
-        new TKeyItem(32, 0x2A, "D", "Xʸ", "y√x",{SDLK_d}),       // P02, P14
-        new TKeyItem(33, 0x2B, "F", "√", "X\u00B2",{SDLK_f}),       // P03, P14
-        new TKeyItem(34, 0x2C, "G", "4",NULL,{SDLK_g,SDLK_4}),       // P04, P14
-        new TKeyItem(35, 0x2D, "H", "5",NULL,{SDLK_h,SDLK_5}),       // P05, P14
-        new TKeyItem(36, 0x2E, "J", "6",NULL,{SDLK_j,SDLK_6}),       // P06, P14
-        new TKeyItem(37, 0x2F, "K", "±",NULL,{SDLK_k}),       // P07, P14
+        new TKeyItem(30, 0x28, 0,5, "A", "log", "10x",{SDLK_a}),       // P00, P14
+        new TKeyItem(31, 0x29, 1,5, "S", "ln", "ex",{SDLK_s}),       // P01, P14
+        new TKeyItem(32, 0x2A, 2,5, "D", "Xʸ", "y√x",{SDLK_d}),       // P02, P14
+        new TKeyItem(33, 0x2B, 3,5, "F", "√", "X\u00B2",{SDLK_f}),       // P03, P14
+        new TKeyItem(34, 0x2C, 4,5, "G", "4",NULL,{SDLK_g,SDLK_4}),       // P04, P14
+        new TKeyItem(35, 0x2D, 5,5, "H", "5",NULL,{SDLK_h,SDLK_5}),       // P05, P14
+        new TKeyItem(36, 0x2E, 6,5, "J", "6",NULL,{SDLK_j,SDLK_6}),       // P06, P14
+        new TKeyItem(37, 0x2F, 7,5, "K", "±",NULL,{SDLK_k}),       // P07, P14
         
-        new TKeyItem(20, 0x20, "Q", "sin", "sin-1",{SDLK_q}),       // P00, P15
-        new TKeyItem(21, 0x21, "W", "cos", "cos-1",{SDLK_w}),       // P01, P15
-        new TKeyItem(22, 0x22, "E", "tan", "tan-1",{SDLK_e}),       // P02, P15
-        new TKeyItem(23, 0x23, "R", "1/X", "hyp",{SDLK_r}),       // P03, P15
-        new TKeyItem(24, 0x24, "T", "7",NULL,{SDLK_t,SDLK_7}),       // P04, P15
-        new TKeyItem(25, 0x25, "Y", "8",NULL,{SDLK_y,SDLK_8}),       // P05, P15
-        new TKeyItem(26, 0x26, "U", "9",NULL,{SDLK_u,SDLK_9}),       // P06, P15
-        new TKeyItem(27, 0x27, "I", "%",NULL,{SDLK_i}),       // P07, P15
+        new TKeyItem(20, 0x20, 0,4, "Q", "sin", "sin-1",{SDLK_q}),       // P00, P15
+        new TKeyItem(21, 0x21, 1,4, "W", "cos", "cos-1",{SDLK_w}),       // P01, P15
+        new TKeyItem(22, 0x22, 2,4, "E", "tan", "tan-1",{SDLK_e}),       // P02, P15
+        new TKeyItem(23, 0x23, 3,4, "R", "1/X", "hyp",{SDLK_r}),       // P03, P15
+        new TKeyItem(24, 0x24, 4,4, "T", "7",NULL,{SDLK_t,SDLK_7}),       // P04, P15
+        new TKeyItem(25, 0x25, 5,4, "Y", "8",NULL,{SDLK_y,SDLK_8}),       // P05, P15
+        new TKeyItem(26, 0x26, 6,4, "U", "9",NULL,{SDLK_u,SDLK_9}),       // P06, P15
+        new TKeyItem(27, 0x27, 7,4, "I", "%",NULL,{SDLK_i}),       // P07, P15
         
-        new TKeyItem(28, 0x18, "O", "÷", "#",{SDLK_o}),           // P00, P16
-        new TKeyItem(38, 0x19, "L", "x", "*",{SDLK_l}),           // P01, P16
-        new TKeyItem(48, 0x1A, "▲", "-",NULL,{SDLK_UP}),         // P02, P16
-        new TKeyItem(58, 0x1B, "▼", "+",NULL,{SDLK_DOWN}),     // P03, P16
-        new TKeyItem(29, 0x1C, "P", "MC", "☎",{SDLK_p}),           // P04, P16
-        new TKeyItem(39, 0x1D, "输入", "MR",NULL,{SDLK_RETURN}),   // P05, P16
-        new TKeyItem(49, 0x1E, "⇟", "M-",NULL,{SDLK_SLASH}), // P06, P16
-        new TKeyItem(59, 0x1F, "→", "M+",NULL,{SDLK_RIGHT}),   // P07, P16
+        new TKeyItem(28, 0x18, 0,3, "O", "÷", "#",{SDLK_o}),           // P00, P16
+        new TKeyItem(38, 0x19, 1,3, "L", "x", "*",{SDLK_l}),           // P01, P16
+        new TKeyItem(48, 0x1A, 2,3, "▲", "-",NULL,{SDLK_UP}),         // P02, P16
+        new TKeyItem(58, 0x1B, 3,3, "▼", "+",NULL,{SDLK_DOWN}),     // P03, P16
+        new TKeyItem(29, 0x1C, 4,3, "P", "MC", "☎",{SDLK_p}),           // P04, P16
+        new TKeyItem(39, 0x1D, 5,3, "输入", "MR",NULL,{SDLK_RETURN}),   // P05, P16
+        new TKeyItem(49, 0x1E, 6,3, "⇟", "M-",NULL,{SDLK_SLASH}), // P06, P16
+        new TKeyItem(59, 0x1F, 7,3, "→", "M+",NULL,{SDLK_RIGHT}),   // P07, P16
         
         NULL,       // P00, P17
         NULL,       // P01, P17
-        new TKeyItem(12, 0x10, "F1", NULL, "插入",{SDLK_F1}),       // P02, P17
-        new TKeyItem(13, 0x11, "F2", NULL, "删除",{SDLK_F2}),       // P03, P17
-        new TKeyItem(14, 0x12, "F3", NULL, "查找",{SDLK_F3}),       // P04, P17
-        new TKeyItem(15, 0x13, "F4", NULL, "修改",{SDLK_F4}),       // P05, P17
+        new TKeyItem(12, 0x10, 0,2, "F1", NULL, "插入",{SDLK_F1}),       // P02, P17
+        new TKeyItem(13, 0x11, 1,2, "F2", NULL, "删除",{SDLK_F2}),       // P03, P17
+        new TKeyItem(14, 0x12, 2,2, "F3", NULL, "查找",{SDLK_F3}),       // P04, P17
+        new TKeyItem(15, 0x13, 3,2, "F4", NULL, "修改",{SDLK_F4}),       // P05, P17
         NULL,       // P06, P17
         NULL,       // P07, P17
         //newly added
-        new TKeyItem(0, 0x14, "xx", NULL, "xx",{SDLK_QUOTE}),
-        new TKeyItem(0, 0x15, "xx", NULL, "xx",{SDLK_SEMICOLON}),
-        new TKeyItem(0, 0x01, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
+        new TKeyItem(0, 0x14, 4,2, "xx", NULL, "xx",{SDLK_QUOTE}),
+        new TKeyItem(0, 0x15, 5,2,"xx", NULL, "xx",{SDLK_SEMICOLON}),
+        new TKeyItem(0, 0x01, 1,0, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
     };
 
 
-static map<int,uint> sdl_to_item;
+static map<int,pair<int,int> > sdl_to_item;
 void init_keyitems(){
       for (int y = 0; y < 20; y++) {
         for (int x = 0; x < 8; x++) {
@@ -124,22 +128,25 @@ void init_keyitems(){
                 //button.contentScaleFactor = 1;
                 //button.layer.contentsScale = 1;
                 //item[y][x]->tag = y * 0x10 + x;
+                assert(item[y][x]->code_y>=0);
+                assert(item[y][x]->code_x>=0);
                 for(auto e: item[y][x]->sdl_keys){
-                    sdl_to_item[e]=item[y][x]->code;
+                    //sdl_to_item[e]=item[y][x]->code;
+                    sdl_to_item[e]=pair<int,int>(item[y][x]->code_y, item[y][x]->code_x);
                 }
             }
         }
       }
 }
 
-uint8_t map_key_wayback(int32_t sym){
+pair<int,int> map_key_wayback(int32_t sym){
   if(sdl_to_item.find(sym)!=sdl_to_item.end()){
     return sdl_to_item[sym];
   }
-  return 0;
+  return pair<int,int>(-1,-1);
 }
 
-void SetKeyWayback(uint8_t key_id, bool down_or_up){
+void SetKeyWayback(int code_y,int code_x, bool down_or_up){
     /*
     unsigned int y = key_id / 16;
     unsigned int x = key_id % 16;
@@ -148,10 +155,11 @@ void SetKeyWayback(uint8_t key_id, bool down_or_up){
     }*/
 
     // below make it compatible with nc1020's code
-    unsigned int y = key_id % 8;
-    unsigned int x = key_id / 8;
-    if (y < 8 && x < 8) {
-        keypadmatrix[y][x] = down_or_up;
+    //unsigned int y = key_id % 8;
+    //unsigned int x = key_id / 8;
+
+    if (code_y < 8 && code_x < 8) {
+        keypadmatrix[code_y][code_x] = down_or_up;
     }
 
 }
@@ -160,9 +168,9 @@ void handle_key_wayback(signed int sym, bool key_down){
         /*if(enable_debug_key_shoot){
           printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
         }*/
-        uint8_t value=map_key_wayback(sym);
-        if(value!=0){
-           SetKeyWayback(value, key_down);
+        auto value=map_key_wayback(sym);
+        if(value.first!=-1 && value.second!=-1){
+           SetKeyWayback(value.first,value.second, key_down);
         }
         switch ( sym) {
           case SDLK_BACKQUOTE:
