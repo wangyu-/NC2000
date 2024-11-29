@@ -71,7 +71,7 @@ bool read_nor(uint16_t addr, uint8_t &value){
 void write_nor(uint16_t addr,uint8_t value){
     uint8_t bank_idx = ram_io[0x00];
 
-	if(nc2000){
+	if(nc2000||nc3000){
 		if (bank_idx >= 0x80 && addr>=0x4000 && addr<=0xbfff) {
 			printf("write2!!!");
 			/*
@@ -85,7 +85,7 @@ void write_nor(uint16_t addr,uint8_t value){
 
 	assert(bank_idx<num_nor_pages);
 
-    if(nc2000){
+    if(nc2000||nc3000){
 		//assert(addr>=0x4000&& addr<=0xbfff);
 	}
     if (bank_idx >= num_nor_pages) {

@@ -44,8 +44,8 @@ global switch
 */
 
 const bool nc1020 = false;
-const bool nc2000 = !nc1020;
-const bool nc3000 = true;
+const bool nc2000 = true;
+const bool nc3000 = false;
 
 const bool use_legacy_key_io = false;
 
@@ -108,7 +108,7 @@ cycles related
 const uint32_t static_multipler=5; //tmp fix for speed and crash
 
 // cpu cycles per second (cpu freq).
-const uint32_t CYCLES_SECOND = 5120000*(nc2000?static_multipler:1);
+const uint32_t CYCLES_SECOND = 5120000*( (nc2000||nc3000)?static_multipler:1);
 const uint32_t UNKNOWN_TIMER0_FREQ = 2;
 const uint32_t TIMER0_FREQ = 2; //not used now
 const uint32_t TIMER1_FREQ = 200;//not used now

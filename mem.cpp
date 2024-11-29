@@ -116,7 +116,7 @@ uint8_t* GetBank(uint8_t bank_idx){
         }
 		}
 
-		if(nc2000){
+		if(nc2000||nc3000){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
 
@@ -135,7 +135,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 void SwitchBank(){
 	uint8_t bank_idx = ram_io[0x00];
 	uint8_t* bank = GetBank(bank_idx);
-	if(nc2000){
+	if(nc2000||nc3000){
 		if(bank== NULL) return;
 		//assert(bank!=NULL);
 	}
@@ -198,7 +198,7 @@ void SwitchVolume(){
     memmap[6] = bbs_pages[roa_bbs & 0x0F];
 	}
 
-	if(nc2000){
+	if(nc2000||nc3000){
 		memmap[7] = nor_banks[0]+0x6000 -0x4000;
 		bool ramb=  (ram_io[0x0d]&0x04) ;
 		if(nc3000) ramb=false;
@@ -237,7 +237,7 @@ void super_switch(){
 			printf("ill bs %x\n",bs);
 		}
 	}
-	if(nc2000){
+	if(nc2000||nc3000){
 		//assert(bs<0x80);
 		if(bs<0x80 &&bs>=num_nor_pages) {
 			//printf("ill bs %x ; ",bs);

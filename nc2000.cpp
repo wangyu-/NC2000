@@ -96,7 +96,7 @@ void LoadNC1020(){
 	rom_switcher();
 	init_nor();
 	init_rom();
-	if(nc2000) {
+	if(nc2000||nc3000) {
 		read_nand_file();
 	}
 	ResetStates();
@@ -162,7 +162,7 @@ bool CopyLcdBuffer(uint8_t* buffer){
 	if (lcd_addr == 0) return false;
 	memcpy(buffer, ram_buff + lcd_addr, 1600);
 
-	if(nc2000){
+	if(nc2000||nc3000){
 		if(!is_grey_mode()){
 			memcpy(buffer, ram_buff + 0x19c0, 1600 );
 		}else{

@@ -88,18 +88,16 @@ void init_io(){
 }
 
 uint8_t IO_API ReadXX(uint8_t addr){
-	if(nc2000){
-        if(nc3000){
-            if(addr==0x39) {
-                return read_nand();
-            }
-        } 
-        if(!nc3000){
-            if(addr==0x29) {
-                return read_nand();
-            }
+    if(nc3000){
+        if(addr==0x39) {
+            return read_nand();
         }
-	}
+    } 
+    if(nc2000){
+        if(addr==0x29) {
+            return read_nand();
+        }
+    }
 
     //printf("read unknow IO %02x ,value=%02x\n",addr, ram_io[addr]);
 
@@ -130,20 +128,18 @@ uint8_t IO_API Read3F(uint8_t addr){
 
 void IO_API WriteXX(uint8_t addr, uint8_t value){
 
-    if(nc2000){
-        if(nc3000){
-            if(addr==0x39) {
-                return nand_write(value);
-            } 
-        }
-        if(!nc3000) {
-            if(addr==0x29) {
-                return nand_write(value);
-            }
+    if(nc3000){
+        if(addr==0x39) {
+            return nand_write(value);
+        } 
+    }
+    if(nc2000) {
+        if(addr==0x29) {
+            return nand_write(value);
         }
     }
 
-    if(nc2000){
+    if(nc2000||nc3000){
         if(addr==0x30){
             if (value==0x80 || value==0x40){
                 reset_dsp();
@@ -175,7 +171,7 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
     }*/
     
 
-    if(nc2000){
+    if(nc2000||nc3000){
         if(addr==0x32) {
         //fprintf(stderr,"0x%02x,",value);
         //printf("<w %02x>",value);
