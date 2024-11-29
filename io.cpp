@@ -36,8 +36,15 @@ void init_io(){
     //io_read[0x06] = Read06; //nothing special
     io_read[0x06] = Read06StopTimer1;
     io_read[0x07] = Read07StartTimer1;
-    //////io_read[0x08] = ReadPort0;
-    /////io_read[0x09] = ReadPort1;
+    if(use_legacy_key_io){
+        //use default
+        //io_read[0x08] = ReadPort0;
+        //io_read[0x09] = ReadPort1;
+        io_read[0x09] = ReadPort1; // looks like there is no harm to keep this?
+    } else {
+        io_read[0x08] = ReadPort0;
+        io_read[0x09] = ReadPort1;
+    }
     io_read[0x18] = Read18Port4;
     io_read[0x3B] = Read3B;//<----------from nc1020
     io_read[0x3F] = Read3F;//<----------from nc1020
@@ -50,10 +57,15 @@ void init_io(){
     io_write[0x05] = Write05ClockCtrl;
 	io_write[0x06] = Write06; // lcd related ; a wrapper of Write06LCDStartAddr
     io_write[0x07] = Write07PortConfig;
-    io_write[0x08] = Write08; // keyboard related
-	io_write[0x09] = Write09; // keyboard related
-    /////io_write[0x08] = Write08Port0; // keyboard related
-	/////io_write[0x09] = Write09Port1; // keyboard related
+    if(use_legacy_key_io){
+        io_write[0x08] = Write08Port0; // keyboard related, looks like no harm to keep???
+        ////////io_write[0x08] = Write08; // keyboard related
+	    io_write[0x09] = Write09; // keyboard related
+    }else{
+        io_write[0x08] = Write08Port0; // keyboard related
+	    io_write[0x09] = Write09Port1; // keyboard related
+    }
+
     io_write[0x0A] = Write0A;///////don't use Write0AROABBS here
     io_write[0x0B] = Write0BPort3LCDStartAddr;
     io_write[0x0C] = Write0CTimer01Control;
