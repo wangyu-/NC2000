@@ -148,11 +148,26 @@ uint8_t* GetBank(uint8_t bank_idx){
 
 void SwitchBank(){
 	uint8_t bank_idx = ram_io[0x00];
-	uint8_t* bank = GetBank(bank_idx);
-	if(nc2000||nc3000){
-		if(bank== NULL) return;
-		//assert(bank!=NULL);
+
+	if(nc3000) {
+		if(bank_idx ==0 && ram_io[0x0a]&0x80) {
+				memmap[2] = ram04;
+    			memmap[3] = ram06;
+    			memmap[4] = ram00;
+                memmap[5] = ram02;
+				return;
+		}
+		if(bank_idx ==1 && ram_io[0x0a]&0x80) {
+				memmap[2] = ram0c;
+    			memmap[3] = ram0e;
+    			memmap[4] = ram08;
+                memmap[5] = ram0a;
+				return;
+		}
 	}
+	uint8_t* bank = GetBank(bank_idx);
+	if(bank== NULL) return;
+	
     memmap[2] = bank;
     memmap[3] = bank + 0x2000;
     memmap[4] = bank + 0x4000;
@@ -161,25 +176,6 @@ void SwitchBank(){
 	if(bank_idx==0){
 		memmap[2]=ram04;
 		memmap[3]=ram06;
-	}
-
-	if(nc3000){
-		if (ram_io[0x0a]&0x80){
-			if (ram_io[0x00]==0){
-				   memmap[2] = ram04;
-    			   memmap[3] = ram06;
-    			   memmap[4] = ram00;
-                   memmap[5] = ram02;
-			}
-			
-			if (ram_io[0x00]==1){
-				   memmap[2] = ram0c;
-    			   memmap[3] = ram0e;
-    			   memmap[4] = ram08;
-                   memmap[5] = ram0a;
-			}
-		}
-
 	}
 
 
