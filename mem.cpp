@@ -233,7 +233,8 @@ void SwitchVolume(){
 		}
 	}
     uint8_t roa_bbs = ram_io[0x0A];
-    memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
+    //memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
+	memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
     memmap[6] = bbs_pages[roa_bbs & 0x0F];
 	}
 
