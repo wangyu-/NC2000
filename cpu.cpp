@@ -61,7 +61,7 @@ void reset_cpu_states(){
 	nc1020_states.cpu.reg_pc = PeekW(RESET_VEC);*/
 	nc1020_states.timer0_cycles = CYCLES_TIMER0;
 	nc1020_states.timer1_cycles = CYCLES_TIMER1;
-	nc1020_states.nmi_cycles = CYCLES_NMI;
+	nc1020_states.nmi_cycles = 0;
 	nc1020_states.unknown_timer_cycles = CYCLES_UNKNOWN_TIMER;
 	CpuInitialize();
 	setPS(0x24);
@@ -264,11 +264,15 @@ void cpu_run(){
 
 		//printf("%d\n",cycles);
 
-		
-		if (cycles >= nmi_cycles) {
-			nmi_cycles += CYCLES_NMI;
-			////////////TODO
-			////////////gThreadFlags |= 0x08; // Add NMIFlag
+		if(pc1000mode){
+			const uint32_t spdc1016freq=3686400;
+			if(nmi_cycles ==0 ){
+				nmi_cycles +=spdc1016freq/2;
+			}
+			if (cycles >= nmi_cycles) {
+				nmi_cycles += spdc1016freq/2;
+				gThreadFlags |= 0x08; // Add NMIFlag
+			}
 		}
 
 		// NMI > IRQ
