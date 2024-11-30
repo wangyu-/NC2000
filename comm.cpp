@@ -7,7 +7,7 @@ bool enable_dyn_debug=false;
 bool enable_debug_nand=false;
 
 bool enable_debug_switch=false;
-bool enable_debug_pc=true;
+bool enable_debug_pc=false;
 bool enable_oops=false;
 bool enable_inject=false;
 
