@@ -24,6 +24,15 @@ inline uint8_t & Peek8(uint8_t addr) {
 uint8_t & Peek16(uint16_t addr) {
 	return memmap[addr >> 13][addr & 0x1FFF];
 }
+
+uint8_t & Peek16Debug(uint16_t addr) {
+	if(addr<0x40){
+		return ram_io[addr];
+	}else if(addr<0x80){
+		return ram_40[addr-0x40];
+	}
+	return memmap[addr >> 13][addr & 0x1FFF];
+}
 uint16_t PeekW(uint16_t addr) {
 	return Peek16(addr) | (Peek16((uint16_t) (addr + 1)) << 8);
 }
@@ -35,8 +44,13 @@ uint8_t Load(uint16_t addr) {
 			return value;
 		}
 	}
+
 	if (addr < IO_LIMIT) {
 		return io_read[addr](addr);
+	}
+
+	if (addr <0x80) {
+		return ram_40[addr-0x40];
 	}
 
 	{
@@ -61,6 +75,12 @@ void Store(uint16_t addr, uint8_t value) {
 		io_write[addr](addr, value);
 		return;
 	}
+
+	if (addr <0x80) {
+		ram_40[addr-0x40] =value;
+		return;
+	}
+
 	if (addr < 0x4000) {
 		Peek16(addr) = value;
 		return;
@@ -323,7 +343,7 @@ void SwitchCheck(){
 	uint8_t bs=ram_io[0x00];
 	if(nc1020mode||pc1000mode){ 
 		if(bs<0x80 &&bs>=num_nor_pages) {
-			printf("ill bs %x\n",bs);
+			//////printf("ill bs %x\n",bs);
 		}
 	}
 	if(nc2000||nc3000){  

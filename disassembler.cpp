@@ -5,7 +5,7 @@ using namespace std;
 #include "disassembler.h"
 //adapted from https://gist.github.com/slembcke/4b746cb71d435f16c4763ae2de3201f3
 
-uint8_t & Peek16(uint16_t addr);
+uint8_t & Peek16Debug(uint16_t addr);
 
 // 6502 instruction tables.
 enum OPCODE {
@@ -129,7 +129,7 @@ string disassemble_next(unsigned char *c,uint16_t pc){
     while(res.size()<20) res.push_back(' ');
     output[0]=0;
     if(instruction_length >=2){
-        snprintf(output,sizeof(output), "; %04X -> %02X %02X", value, Peek16(value),Peek16(value+1));
+        snprintf(output,sizeof(output), "; %04X -> %02X %02X", value, Peek16Debug(value),Peek16Debug(value+1));
     }
     res+=output;
     return res;

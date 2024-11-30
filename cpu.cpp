@@ -257,13 +257,14 @@ void cpu_run(){
 		//if(tick>=6012850) enable_debug_pc=true;
 		//if(injected && reg_pc==0x2000) enable_debug_pc=true;
 		if(enable_debug_pc||enable_dyn_debug){
+			uint8_t & Peek16Debug(uint16_t addr);
 			unsigned char buf[10];
-			buf[0]=Peek16(reg_pc);
-			buf[1]=Peek16(reg_pc+1);
-			buf[2]=Peek16(reg_pc+2);
+			buf[0]=Peek16Debug(reg_pc);
+			buf[1]=Peek16Debug(reg_pc+1);
+			buf[2]=Peek16Debug(reg_pc+2);
 			buf[3]=0;
 			printf("tick=%lld ",tick /*, reg_pc*/);
-			printf("%02x %02x %02x %02x; ",Peek16(reg_pc), Peek16(reg_pc+1),Peek16(reg_pc+2),Peek16(reg_pc+3));
+			printf("%02x %02x %02x %02x; ",Peek16Debug(reg_pc), Peek16Debug(reg_pc+1),Peek16Debug(reg_pc+2),Peek16Debug(reg_pc+3));
 			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],mA,mX,mY,mSP,PS(),disassemble_next(buf,reg_pc).c_str());
 			printf("\n");
 
@@ -302,13 +303,14 @@ void cpu_run(){
 		uint32_t CpuTicks = CpuExecute();
 		cycles+=CpuTicks;
 
-		Store(1025, 0); //set idle time to zero, prevent sleep
-		
+		if(nc2000){
+			Store(1025, 0); //set idle time to zero, prevent sleep
+		}
 		gDeadlockCounter++;
 		bool needirq = false;
 		//don't use magic number
 		//////if (gDeadlockCounter == 6000) {
-		if ((nc2000||nc3000) && cycles >= timebase_cycles) {
+		if ((nc2000||nc3000||pc1000mode) && cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
@@ -334,7 +336,7 @@ void cpu_run(){
 			CheckTimebaseSetTimer0IntStatusAddIRQFlag();
 		}
 
-		if ((nc1020mode||pc1000mode) && cycles >= unknown_timer_cycles) {
+		if ((nc1020mode) && cycles >= unknown_timer_cycles) {
 			unknown_timer_cycles += CYCLES_UNKNOWN_TIMER;
 			timer0_toggle = !timer0_toggle;
 			if (!timer0_toggle) {
@@ -349,7 +351,7 @@ void cpu_run(){
 			//g_irq = true;
 		}
 
-		if ((nc1020mode||pc1000mode) && cycles >= timebase_cycles) {
+		if ((nc1020mode) && cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
 			nc1020_states.clock_buff[4] ++;
