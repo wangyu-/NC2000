@@ -5,6 +5,7 @@
 #include "nor.h"
 #include "rom.h"
 #include "io.h"
+#include <cassert>
 
 uint8_t* bbs_pages[0x10];
 uint8_t* memmap[8];
@@ -204,6 +205,7 @@ uint8_t** GetVolumm(uint8_t volume_idx){
 		}
 		assert(false);
 	}
+	assert(false);
 }
 
 void SwitchVolume(){
