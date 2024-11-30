@@ -100,16 +100,16 @@ void Store2(uint16_t addr, uint8_t value){
 
 uint8_t* GetBank(uint8_t bank_idx){
 	if (pc1000mode){
-		if(ram_io[0x0a] &80){
+		if(ram_io[0x0a] &0x80){
 			return nor_banks[bank_idx&0xf];
 		}else{
-			uint8_t volume_idx = ram_io[0x0D];
-			if (volume_idx & 0x01) {
+			if (ram_io[0x0D] & 0x01) {
 				return rom_volume1[bank_idx];
 			}else{
 				return rom_volume0[bank_idx];
 			}
 		}
+		return NULL;
 	}
 
 	uint8_t volume_idx = ram_io[0x0D];
@@ -172,9 +172,36 @@ void SwitchBank_2345(){
     memmap[4] = bank + 0x4000;
     memmap[5] = bank + 0x6000;
 
-	if(bank_idx==0){
-		memmap[2]=ram04;
-		memmap[3]=ram06;
+	if(nc3000){
+		if(bank_idx==0){
+			memmap[2]=ram04;
+			memmap[3]=ram06;
+		}
+	}
+	if(nc1020mode||nc2000){
+		if(bank_idx==0){
+			memmap[2]=ram04;
+			memmap[3]=ram04;
+		}
+	}
+
+
+	if(pc1000mode){
+		if(bank_idx==0){
+			memmap[2]=ram04;
+			memmap[3]=ram04;
+		}
+		if(bank_idx!=0 || ram_io[0x0a]&0x80){
+			//do nothing
+		}else{
+			if (ram_io[0x0d]&0x1){
+				memmap[2]=nor_banks[0];
+				memmap[3]=nor_banks[0] + 0x2000;
+			}else{
+				memmap[2]=ram04;
+				memmap[3]=ram04;
+			}
+		}
 	}
 
 
@@ -212,6 +239,9 @@ void Switch0x2000(){
 	if(nc3000){
 		memmap[1] = ram02;  //todo add RAMS (but it works without RAMS  logic)
 	}
+	if(pc1000mode){
+		memmap[1] = ram02;
+	}
 }
 
 void SwitchBbsBios_67(){
@@ -247,6 +277,14 @@ void SwitchBbsBios_67(){
 		}
 		if(nc3000){
 			memmap[6]=ram06;
+		}
+
+		if(pc1000mode){
+			if(ram_io[0x0d]){
+				memmap[6] = nor_banks[0]+0x2000;
+			}else{
+				memmap[6] = ram04;
+			}
 		}
 	}
 }
