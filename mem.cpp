@@ -7,7 +7,6 @@
 #include "io.h"
 #include <cassert>
 
-uint8_t* bbs_pages[0x10];
 uint8_t* memmap[8];
 
 
@@ -146,7 +145,7 @@ uint8_t* GetBank(uint8_t bank_idx){
     return NULL;
 }
 
-void SwitchBank(){
+void SwitchBank_2345(){
 	uint8_t bank_idx = ram_io[0x00];
 
 	if(nc3000) {
@@ -182,7 +181,6 @@ void SwitchBank(){
 }
 
 uint8_t** GetVolumm(uint8_t volume_idx){
-
 	if(nc1020mode){
 		if ((volume_idx & 0x03) == 0x01) {
 			return rom_volume1;
@@ -203,77 +201,81 @@ uint8_t** GetVolumm(uint8_t volume_idx){
 	}
 	assert(false);
 }
-
-void SwitchVolume(){
-	if(nc1020mode||pc1000mode){
-	uint8_t volume_idx = ram_io[0x0D];
-    uint8_t** volume = GetVolumm(volume_idx);
-    for (int i=0; i<4; i++) {
-        bbs_pages[i * 4] = volume[i];
-        bbs_pages[i * 4 + 1] = volume[i] + 0x2000;
-        bbs_pages[i * 4 + 2] = volume[i] + 0x4000;
-        bbs_pages[i * 4 + 3] = volume[i] + 0x6000;
-    }
+void Switch0x2000(){
 	if(nc1020mode){
-    	bbs_pages[1] = ram04;
-		memmap[7] = volume[0] + 0x2000;
+		//memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
+		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
 	}
-	if(pc1000mode){
-		if(volume_idx & 0x01) {
-			bbs_pages[1] = nor_banks[0]+0x2000;
-			memmap[7] = rom_volume1[0]+0x2000;
-		}
-		else{
-			bbs_pages[1] = ram04;
-			memmap[7] = rom_volume0[0]+0x2000;
-		}
+	if(nc2000){
+		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
 	}
-    uint8_t roa_bbs = ram_io[0x0A];
-    //memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
-	memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
-    memmap[6] = bbs_pages[roa_bbs & 0x0F];
+	if(nc3000){
+		memmap[1] = ram02;  //todo add RAMS (but it works without RAMS  logic)
+	}
+}
+
+void SwitchBbsBios_67(){
+	uint8_t** candidate_for_bbs;
+	uint8_t* bbs_pages[0x10];
+	if(nc1020mode||pc1000mode){
+		uint8_t volume_idx = ram_io[0x0D];
+		candidate_for_bbs = GetVolumm(volume_idx);
 	}
 
 	if(nc2000||nc3000){
-		memmap[7] = nor_banks[0]+0x6000 -0x4000;
-		bool ramb=  (ram_io[0x0d]&0x04) ;
-		if(nc3000) ramb=false;
-		if(ramb){
-			memmap[1]=ram_b;
-		}else{
-			memmap[1]=ram02;
-		}
-		uint8_t bbs = ram_io[0x0A]&0xf;
-		if (bbs==1) {
-			memmap[6]=ram04;
-			if(nc3000){
-				memmap[6]=ram06;
-			}
-		}else if (bbs==0){
-			memmap[6]=nor_banks[0]+0x4000  -0x4000;
-		}else if (bbs==2){
-			memmap[6]=nor_banks[0]+0x8000  -0x4000;
-		}else if (bbs==3) {
-			memmap[6]=nor_banks[0]+0xa000  -0x4000;
-		}else {
-			memmap[6]=nor_banks[bbs/4]+0x2000* (bbs%4);
-		}
+		candidate_for_bbs = nor_banks;
 	}
 
-}
+	for (int i=0; i<4; i++) {
+		bbs_pages[i * 4] = candidate_for_bbs[i];
+		bbs_pages[i * 4 + 1] = candidate_for_bbs[i] + 0x2000;
+		bbs_pages[i * 4 + 2] = candidate_for_bbs[i] + 0x4000;
+		bbs_pages[i * 4 + 3] = candidate_for_bbs[i] + 0x6000;
+	}
 
-void super_switch(){
+	uint8_t bbs_idx = ram_io[0x0A]&0x0f;
+	memmap[6] = bbs_pages[bbs_idx];
+	memmap[7] = bbs_pages[1];
+
+
+	if(bbs_idx ==1){
+		if(nc1020mode){
+			memmap[6] = ram04;
+		}
+		if(nc2000){
+			memmap[6]=ram04;
+		}
+		if(nc3000){
+			memmap[6]=ram06;
+		}
+	}
+}
+void SwitchZP40(){
+	uint8_t value= ram_io[0xf];
+	value&=0x7;
+	if(value!=0) {
+		//assert(false);
+	}
+	if(value==0) {
+		ram_40=ram_buff+0x40;
+	}else if(value==1||value==2||value==3){
+		ram_40=ram_buff;
+	}else{
+		uint8_t off=value-4;
+		ram_40=ram_buff+0x200+0x40*off;
+	}
+}
+void SwitchCheck(){
+	//only for checking, don't put switch code inside
 	uint8_t roa_bbs=ram_io[0x0a];
 	uint8_t ramb_vol=ram_io[0x0d];
 	uint8_t bs=ram_io[0x00];
-	///////////if(enable_debug_switch)printf("tick=%llx pc=%x bs=%x roa_bbs=%x ramb_vol=%x\n",tick, nc1020_states.cpu.reg_pc,bs, roa_bbs , ramb_vol);
-
-	if(nc1020mode||pc1000mode){
+	if(nc1020mode||pc1000mode){ 
 		if(bs<0x80 &&bs>=num_nor_pages) {
 			printf("ill bs %x\n",bs);
 		}
 	}
-	if(nc2000||nc3000){
+	if(nc2000||nc3000){  
 		//assert(bs<0x80);
 		if(bs<0x80 &&bs>=num_nor_pages) {
 			//printf("ill bs %x ; ",bs);
@@ -296,20 +298,12 @@ void super_switch(){
 			assert(false);
 		}
 	}
-
-	SwitchVolume();
-	SwitchBank();
-	uint8_t value= ram_io[0xf];
-	value&=0x7;
-	if(value!=0) {
-		//assert(false);
-	}
-	if(value==0) {
-		ram_40=ram_buff+0x40;
-	}else if(value==1||value==2||value==3){
-		ram_40=ram_buff;
-	}else{
-		uint8_t off=value-4;
-		ram_40=ram_buff+0x200+0x40*off;
-	}
+}
+void super_switch(){
+	///////////if(enable_debug_switch)printf("tick=%llx pc=%x bs=%x roa_bbs=%x ramb_vol=%x\n",tick, nc1020_states.cpu.reg_pc,bs, roa_bbs , ramb_vol);
+	SwitchCheck();
+	Switch0x2000();
+	SwitchBbsBios_67();
+	SwitchBank_2345();
+	SwitchZP40();
 }
