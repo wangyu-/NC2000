@@ -12,7 +12,7 @@ static bool& slept = nc1020_states.slept;
 static bool& should_wake_up = nc1020_states.should_wake_up;
 
 static uint8_t* keypad_matrix = nc1020_states.keypad_matrix;
-static uint32_t& lcd_addr = nc1020_states.lcd_addr;
+//static uint32_t& lcd_addr = nc1020_states.lcd_addr;
 
 static uint8_t* jg_wav_buff = nc1020_states.jg_wav_data;
 static uint8_t& jg_wav_flags = nc1020_states.jg_wav_flags;
@@ -225,6 +225,7 @@ void IO_API Write05(uint8_t addr, uint8_t value){
 
 void IO_API Write06(uint8_t addr, uint8_t value){
     if(false){
+        /*
         ram_io[addr] = value;
         if (!lcd_addr||true) {
             lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
@@ -235,11 +236,12 @@ void IO_API Write06(uint8_t addr, uint8_t value){
                 nc1020_states.grey_mode=0;
             }
         }
-        ram_io[0x09] &= 0xFE;
+        ram_io[0x09] &= 0xFE;*/
     }
     Write06LCDStartAddr(addr,value);
-    extern unsigned short lcdbuffaddr;
-    lcd_addr = lcdbuffaddr;
+    //extern unsigned short lcdbuffaddr;
+    //extern unsigned short lcdbuffaddrmask;
+    //lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
     //lcd_addr = 0x1380;
 
 }

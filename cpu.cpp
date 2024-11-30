@@ -256,20 +256,7 @@ void cpu_run(){
 
 		//if(tick>=6012850) enable_debug_pc=true;
 		//if(injected && reg_pc==0x2000) enable_debug_pc=true;
-		if(enable_debug_pc||enable_dyn_debug){
-			uint8_t & Peek16Debug(uint16_t addr);
-			unsigned char buf[10];
-			buf[0]=Peek16Debug(reg_pc);
-			buf[1]=Peek16Debug(reg_pc+1);
-			buf[2]=Peek16Debug(reg_pc+2);
-			buf[3]=0;
-			printf("tick=%lld ",tick /*, reg_pc*/);
-			printf("%02x %02x %02x %02x; ",Peek16Debug(reg_pc), Peek16Debug(reg_pc+1),Peek16Debug(reg_pc+2),Peek16Debug(reg_pc+3));
-			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],mA,mX,mY,mSP,PS(),disassemble_next(buf,reg_pc).c_str());
-			printf("\n");
 
-			//getchar();		
-		}
 		if(injected && tick%1==0){
 			//printf("bs=%x roa_bbs=%x pc=%x  %x %x %x %x \n",ram_io[0x00], ram_io[0x0a], reg_pc,  Peek16(reg_pc), Peek16(reg_pc+1),Peek16(reg_pc+2),Peek16(reg_pc+3));
 			//getchar();
@@ -300,6 +287,21 @@ void cpu_run(){
 			gDeadlockCounter--; // wrong behavior of wqxsim
 		}
 
+		if(enable_debug_pc||enable_dyn_debug){
+			uint8_t & Peek16Debug(uint16_t addr);
+			unsigned char buf[10];
+			buf[0]=Peek16Debug(reg_pc);
+			buf[1]=Peek16Debug(reg_pc+1);
+			buf[2]=Peek16Debug(reg_pc+2);
+			buf[3]=0;
+			printf("tick=%lld ",tick /*, reg_pc*/);
+			printf("%02x %02x %02x %02x; ",Peek16Debug(reg_pc), Peek16Debug(reg_pc+1),Peek16Debug(reg_pc+2),Peek16Debug(reg_pc+3));
+			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],mA,mX,mY,mSP,PS(),disassemble_next(buf,reg_pc).c_str());
+			printf("\n");
+
+			//getchar();		
+		}
+
 		uint32_t CpuTicks = CpuExecute();
 		cycles+=CpuTicks;
 
@@ -309,8 +311,8 @@ void cpu_run(){
 		gDeadlockCounter++;
 		bool needirq = false;
 		//don't use magic number
-		//////if (gDeadlockCounter == 6000) {
-		if ((nc2000||nc3000||pc1000mode) && cycles >= timebase_cycles) {
+		if (gDeadlockCounter == 6000) {
+		//if ((nc2000||nc3000) && cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
@@ -332,7 +334,7 @@ void cpu_run(){
 		}
 		
 		if (needirq) {
-			//printf("!!!!!\n");
+			//printf("needirq is true\n");
 			CheckTimebaseSetTimer0IntStatusAddIRQFlag();
 		}
 

@@ -23,7 +23,7 @@ static bool& slept = nc1020_states.slept;
 static bool& should_wake_up = nc1020_states.should_wake_up;
 
 static uint8_t* keypad_matrix = nc1020_states.keypad_matrix;
-static uint32_t& lcd_addr = nc1020_states.lcd_addr;
+//static uint32_t& lcd_addr = nc1020_states.lcd_addr;
 
 static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
@@ -159,6 +159,9 @@ bool is_grey_mode(){
 	return nc1020_states.grey_mode;
 }
 bool CopyLcdBuffer(uint8_t* buffer){
+    extern unsigned short lcdbuffaddr;
+    extern unsigned short lcdbuffaddrmask;
+    unsigned short lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
 	if (lcd_addr == 0) return false;
 	memcpy(buffer, ram_buff + lcd_addr, 1600);
 

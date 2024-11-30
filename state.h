@@ -48,7 +48,7 @@ struct nc1020_states_t{
 	uint64_t nmi_cycles;
 	/////////bool should_irq;
 
-	uint32_t lcd_addr;
+	//uint32_t lcd_addr;
 	uint8_t keypad_matrix[8];
 
 	bool grey_mode;
