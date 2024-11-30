@@ -309,7 +309,7 @@ void cpu_run(){
 		uint32_t CpuTicks = CpuExecute();
 		cycles+=CpuTicks;
 
-		if(nc2000){
+		if(nc2000||nc3000){
 			Store(1025, 0); //set idle time to zero, prevent sleep
 		}
 		gDeadlockCounter++;
