@@ -99,6 +99,19 @@ void Store2(uint16_t addr, uint8_t value){
 }
 
 uint8_t* GetBank(uint8_t bank_idx){
+	if (pc1000mode){
+		if(ram_io[0x0a] &80){
+			return nor_banks[bank_idx&0xf];
+		}else{
+			uint8_t volume_idx = ram_io[0x0D];
+			if (volume_idx & 0x01) {
+				return rom_volume1[bank_idx];
+			}else{
+				return rom_volume0[bank_idx];
+			}
+		}
+	}
+
 	uint8_t volume_idx = ram_io[0x0D];
     if (bank_idx < num_nor_pages) {
     	return nor_banks[bank_idx];
@@ -106,14 +119,14 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(nc3000){
 			return NULL;
 		}
-	if(nc1020){
-        if (volume_idx & 0x01) {
-        	return rom_volume1[bank_idx];
-        } else if (volume_idx & 0x02) {
-        	return rom_volume2[bank_idx];
-        } else {
-        	return rom_volume0[bank_idx];
-        }
+		if(nc1020mode){
+			if (volume_idx & 0x01) {
+				return rom_volume1[bank_idx];
+			} else if (volume_idx & 0x02) {
+				return rom_volume2[bank_idx];
+			} else {
+				return rom_volume0[bank_idx];
+			}
 		}
 
 		if(nc2000||nc3000){
@@ -172,17 +185,29 @@ void SwitchBank(){
 }
 
 uint8_t** GetVolumm(uint8_t volume_idx){
-	if ((volume_idx & 0x03) == 0x01) {
-		return rom_volume1;
-	} else if ((volume_idx & 0x03) == 0x03) {
-		return rom_volume2;
-	} else {
-		return rom_volume0;
+
+	if(nc1020mode){
+		if ((volume_idx & 0x03) == 0x01) {
+			return rom_volume1;
+		} else if ((volume_idx & 0x03) == 0x03) {
+			return rom_volume2;
+		} else {
+			return rom_volume0;
+		}
+		assert(false);
+	}
+	if(pc1000mode){
+		if ((volume_idx & 0x01) ) {
+			return rom_volume1;
+		} else {
+			return rom_volume0;
+		}
+		assert(false);
 	}
 }
 
 void SwitchVolume(){
-	if(nc1020){
+	if(nc1020mode||pc1000mode){
 	uint8_t volume_idx = ram_io[0x0D];
     uint8_t** volume = GetVolumm(volume_idx);
     for (int i=0; i<4; i++) {
@@ -191,8 +216,20 @@ void SwitchVolume(){
         bbs_pages[i * 4 + 2] = volume[i] + 0x4000;
         bbs_pages[i * 4 + 3] = volume[i] + 0x6000;
     }
-    bbs_pages[1] = ram04;
-    memmap[7] = volume[0] + 0x2000;
+	if(nc1020mode){
+    	bbs_pages[1] = ram04;
+		memmap[7] = volume[0] + 0x2000;
+	}
+	if(pc1000mode){
+		if(volume_idx & 0x01) {
+			bbs_pages[1] = nor_banks[0]+0x2000;
+			memmap[7] = rom_volume1[0]+0x2000;
+		}
+		else{
+			bbs_pages[1] = ram04;
+			memmap[7] = rom_volume0[0]+0x2000;
+		}
+	}
     uint8_t roa_bbs = ram_io[0x0A];
     memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
     memmap[6] = bbs_pages[roa_bbs & 0x0F];
@@ -232,7 +269,7 @@ void super_switch(){
 	uint8_t bs=ram_io[0x00];
 	///////////if(enable_debug_switch)printf("tick=%llx pc=%x bs=%x roa_bbs=%x ramb_vol=%x\n",tick, nc1020_states.cpu.reg_pc,bs, roa_bbs , ramb_vol);
 
-	if(nc1020){
+	if(nc1020mode||pc1000mode){
 		if(bs<0x80 &&bs>=num_nor_pages) {
 			printf("ill bs %x\n",bs);
 		}

@@ -22,7 +22,7 @@ WqxRom nc1020_rom = {
 
 
 void rom_switcher(){
-    if(nc1020){
+    if(nc1020mode){
         nc1020_rom.romPath = "./obj_lu.bin";
         nc1020_rom.norFlashPath = "./nc1020.fls";
     }
@@ -34,6 +34,11 @@ void rom_switcher(){
     if(nc3000){
         nc1020_rom.nandFlashPath = "./nc3000.nand";
         nc1020_rom.norFlashPath = "./nc3000.nor"; 
+    }
+
+    if(pc1000mode){
+        nc1020_rom.romPath = "./cc800/brom.bin";
+        nc1020_rom.norFlashPath = "./cc800/cc800.fls"; 
     }
 }
 

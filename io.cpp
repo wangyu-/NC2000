@@ -146,7 +146,7 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
             }
         }
     }
-    if(nc1020){
+    if(nc1020mode||pc1000mode){
         if(addr==0x20){
             if (value==0x80 || value==0x40){
                 reset_dsp();
@@ -188,7 +188,7 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
         //return;
         } 
     }
-    if(nc1020){
+    if(nc1020mode||pc1000mode){
         if(addr==0x23){
         //fprintf(stderr,"0x%02x,\n",value);
         //printf("[w %02x]\n",value);
