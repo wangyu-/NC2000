@@ -6,7 +6,7 @@ extern nc1020_states_t nc1020_states;
 extern WqxRom nc1020_rom;
 
 uint8_t nor_buff[NOR_SIZE];
-uint8_t* nor_banks[0x20];
+uint8_t* nor_banks[num_nor_pages];
 
 static uint8_t& fp_step = nc1020_states.fp_step;
 static uint8_t& fp_type = nc1020_states.fp_type;

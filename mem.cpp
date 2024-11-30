@@ -164,6 +164,40 @@ void SwitchBank_2345(){
 				return;
 		}
 	}
+
+	if(pc1000mode){
+		uint8_t* bank;
+		if(ram_io[0x0a]&0x80){
+			bank = nor_banks[bank_idx&0xf];
+		}else{
+			if (ram_io[0x0d]&0x1){
+				bank = rom_volume1[bank_idx];
+			}
+			else{
+				bank = rom_volume0[bank_idx];
+			}	
+		}
+
+		if(bank_idx!=0 || (ram_io[0x0a]&0x80)){
+			memmap[2] = bank;
+			memmap[3] = bank + 0x2000;
+		}else {
+			if (ram_io[0x0d]&0x1){
+				memmap[2] = nor_banks[0];
+				memmap[3] = nor_banks[0] + 0x2000;
+			}else {
+				memmap[2] = ram04;
+				memmap[3] = ram04;
+			}
+		}
+
+		memmap[4] = bank + 0x4000;
+		memmap[5] = bank + 0x6000;
+		return;
+	}
+
+
+
 	uint8_t* bank = GetBank(bank_idx);
 	if(bank== NULL) return;
 	
@@ -184,27 +218,6 @@ void SwitchBank_2345(){
 			memmap[3]=ram04;
 		}
 	}
-
-
-	if(pc1000mode){
-		if(bank_idx==0){
-			memmap[2]=ram04;
-			memmap[3]=ram04;
-		}
-		if(bank_idx!=0 || ram_io[0x0a]&0x80){
-			//do nothing
-		}else{
-			if (ram_io[0x0d]&0x1){
-				memmap[2]=nor_banks[0];
-				memmap[3]=nor_banks[0] + 0x2000;
-			}else{
-				memmap[2]=ram04;
-				memmap[3]=ram04;
-			}
-		}
-	}
-
-
 }
 
 uint8_t** GetVolumm(uint8_t volume_idx){
@@ -280,7 +293,7 @@ void SwitchBbsBios_67(){
 		}
 
 		if(pc1000mode){
-			if(ram_io[0x0d]){
+			if(ram_io[0x0d]&0x01){
 				memmap[6] = nor_banks[0]+0x2000;
 			}else{
 				memmap[6] = ram04;
