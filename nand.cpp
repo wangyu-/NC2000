@@ -87,6 +87,9 @@ uint8_t read_nand(){
         CLE = ram_io[0x18]&0x20;
         ALE = ram_io[0x18]&0x10;
         CE = ram_io[0x18]&0x04;
+        if(!CE) {
+            //printf("read while CE is false\n");
+        }
     }
     if(nc2000){
         CLE = ram_io[0x18]&0x01;
@@ -167,7 +170,7 @@ uint8_t read_nand(){
         unsigned char low=nand_addr[0];
         unsigned char mid=nand_addr[1];
         unsigned char high=nand_addr[2];
-        unsigned char a25=nand_addr[3];
+        unsigned char a25=nand_addr[3]&0x01;
 
         uint32_t pos=a25*256u*256u+   high*256u+mid;
 
@@ -221,7 +224,8 @@ uint8_t read_nand(){
         assert(nand_cmd.size()==2 && nand_cmd[1]==0xd0  &&nand_data.size()==0 && nand_addr.size()==4);
         unsigned char low=nand_addr[0];
         unsigned char mid=nand_addr[1];
-        unsigned char high=nand_addr[2];
+        unsigned char high=nand_addr[2]&0x01;
+        //unsigned char a25=nand_addr[3];
 
         //assert(false);
         //return 0x40;
@@ -243,6 +247,7 @@ uint8_t read_nand(){
 
         //final-=32*1024;
         assert(final%(32*528)==0);
+        assert(final +32*528 <= sizeof(nand));
         memset(p+final,0xff,32*528);
         clear_nand_status();
         return 0x40;
@@ -268,6 +273,9 @@ void nand_write(uint8_t value){
         CLE = ram_io[0x18]&0x20;
         ALE = ram_io[0x18]&0x10;
         CE = ram_io[0x18]&0x04;
+        if(!CE) {
+            //printf("write while CE is false\n");
+        }
     }
     if(nc2000){
         CLE = ram_io[0x18]&0x01;
@@ -284,6 +292,7 @@ void nand_write(uint8_t value){
     uint8_t bs=ram_io[0x00];
 
     if(CLE){
+        //note: the datasheet says 0xff doesn't need CLE, but in wqx code seems like CLE is always enabled when 0xff is used
         if(value ==0xff || value == 0x00|| value==0x01 || value ==0x50 ||value==0x60||value ==0x70||value==0x90){
             debug_show_nand_cmd();
             if(nand_cmd.size()>0){
@@ -304,7 +313,7 @@ void nand_write(uint8_t value){
                 unsigned char low=nand_addr[0];
                 unsigned char mid=nand_addr[1];
                 unsigned char high=nand_addr[2];
-                unsigned char a25=nand_addr[3];
+                unsigned char a25=nand_addr[3]&0x01;
 
                 uint32_t pos=a25*256u*256u+high*256u+mid;
 
@@ -327,7 +336,7 @@ void nand_write(uint8_t value){
                 unsigned char low=nand_addr[0];
                 unsigned char mid=nand_addr[1];
                 unsigned char high=nand_addr[2];
-                unsigned char a25=nand_addr[3];
+                unsigned char a25=nand_addr[3]&0x01;
 
                 uint32_t pos=a25*256u*256u+high*256u+mid;
 
