@@ -11,7 +11,7 @@ static uint8_t* ram_io = nc1020_states.ram_io;
 
 static uint64_t last_tick=0;
 static deque<uint8_t> nand_cmd;
-//static deque<uint8_t> nand_addr;
+static deque<uint8_t> nand_addr;
 static deque<uint8_t> nand_data;
 
 static int nand_read_cnt=0;
@@ -76,6 +76,7 @@ void write_nand_file(){
 void clear_nand_status(){
     nand_cmd.clear();
     nand_data.clear();
+    nand_addr.clear();
     nand_read_cnt = 0;
 }
 uint8_t read_nand(){
@@ -111,12 +112,12 @@ uint8_t read_nand(){
     /*
         special handle of read status after a long time
     */
-    if(nand_cmd[0]==0x70 && nand_cmd.size()==1) {
+    if(nand_cmd[0]==0x70 && nand_cmd.size()==1 && nand_addr.size()==0 &&nand_data.size()==0) {
         clear_nand_status();
         return 0x40;
     }
 
-    if(nand_cmd[0]==0x90 && nand_cmd[1]==0x00 && nand_cmd.size()==2) {
+    if(nand_cmd[0]==0x90 &&nand_cmd.size()==1 && nand_addr.size()==1 && nand_addr[0]==0x00 &&nand_data.size()==0) {
         if(nand_read_cnt==0) {
             nand_read_cnt++;
             return 0xec;
@@ -147,7 +148,7 @@ uint8_t read_nand(){
     */
     unsigned char cmd=nand_cmd[0];
     if(cmd ==0 ||cmd==1||cmd==0x50){
-        if(nand_cmd.size()!=5 ){
+        if(nand_cmd.size()!=1 || nand_addr.size()!=4  ||nand_data.size()!=0){
             printf("oops cmd size!=5\n");
             for(int i=0;i<nand_cmd.size();i++){
                 printf("<%x>",(unsigned char)nand_cmd[i]);
@@ -162,10 +163,11 @@ uint8_t read_nand(){
             return 0xff;
         }
 
-        unsigned char low=nand_cmd[1];
-        unsigned char mid=nand_cmd[2];
-        unsigned char high=nand_cmd[3];
-        unsigned char a25=nand_cmd[4];
+        assert(nand_cmd.size()==1 && nand_addr.size()==4 && nand_data.size()==0);
+        unsigned char low=nand_addr[0];
+        unsigned char mid=nand_addr[1];
+        unsigned char high=nand_addr[2];
+        unsigned char a25=nand_addr[3];
 
         uint32_t pos=a25*256u*256u+   high*256u+mid;
 
@@ -216,9 +218,10 @@ uint8_t read_nand(){
     */
     //printf("bs=%x roa_bbs=%x pc=%x  %x %x %x %x \n",ram_io[0x00], ram_io[0x0a], reg_pc,  Peek16(p), Peek16(p+1),Peek16(p+2),Peek16(p+3));
     if(cmd==0x60){
-        unsigned char low=nand_cmd[1];
-        unsigned char mid=nand_cmd[2];
-        unsigned char high=nand_cmd[3];
+        assert(nand_cmd.size()==2 && nand_cmd[1]==0xd0  &&nand_data.size()==0 && nand_addr.size()==4);
+        unsigned char low=nand_addr[0];
+        unsigned char mid=nand_addr[1];
+        unsigned char high=nand_addr[2];
 
         //assert(false);
         //return 0x40;
@@ -284,7 +287,8 @@ void nand_write(uint8_t value){
         if(value ==0xff || value == 0x00|| value==0x01 || value ==0x50 ||value==0x60||value ==0x70||value==0x90){
             debug_show_nand_cmd();
             if(nand_cmd.size()>0){
-                if(nand_cmd.size()==5) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50||nand_cmd[0]==0x60);
+                if(nand_cmd.size()==1 && nand_addr.size()==4 && nand_data.size()==0) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50);
+                else if(nand_cmd.size()==2 && nand_addr.size()==3 &&nand_data.size()==0) assert(nand_cmd[0]==0x60);
                 else assert(false);
             }
             clear_nand_status();
@@ -294,13 +298,13 @@ void nand_write(uint8_t value){
             goto out;
         }
         if(value ==0x10) {
-            if(nand_cmd[0]==0x50 && nand_cmd.size()== 6 && nand_data.size()==16) {
+            if(nand_cmd[0]==0x50 && nand_cmd.size()== 2&& nand_addr.size()==4 && nand_data.size()==16) {
                 assert(nand_cmd[1]==0x80);
 
-                unsigned char low=nand_cmd[2];
-                unsigned char mid=nand_cmd[3];
-                unsigned char high=nand_cmd[4];
-                unsigned char a25=nand_cmd[5];
+                unsigned char low=nand_addr[0];
+                unsigned char mid=nand_addr[1];
+                unsigned char high=nand_addr[2];
+                unsigned char a25=nand_addr[3];
 
                 uint32_t pos=a25*256u*256u+high*256u+mid;
 
@@ -317,13 +321,13 @@ void nand_write(uint8_t value){
                 printf("program spare!!!! final=%x\n",final);
                 clear_nand_status();
             }
-            else if(nand_cmd[0]==0x0 && nand_cmd.size()==6 && nand_data.size()==528){
+            else if(nand_cmd[0]==0x0 && nand_cmd.size()==2 && nand_addr.size()==4 && nand_data.size()==528){
                 assert(nand_cmd[1]==0x80);
 
-                unsigned char low=nand_cmd[2];
-                unsigned char mid=nand_cmd[3];
-                unsigned char high=nand_cmd[4];
-                unsigned char a25=nand_cmd[5];
+                unsigned char low=nand_addr[0];
+                unsigned char mid=nand_addr[1];
+                unsigned char high=nand_addr[2];
+                unsigned char a25=nand_addr[3];
 
                 uint32_t pos=a25*256u*256u+high*256u+mid;
 
@@ -350,10 +354,14 @@ void nand_write(uint8_t value){
             if(value==0xd0){
                 assert(nand_cmd.size()>=1);
                 assert(nand_cmd[0]==0x60);
+                assert(nand_addr.size()==3);
+                assert(nand_data.size()==0);
             }
             if(value==0x80){
                 assert(nand_cmd.size()>=1);
                 assert(nand_cmd[0]==0x50||nand_cmd[0]==0x00);
+                assert(nand_addr.size()==0);
+                assert(nand_data.size()==0);
             }
             nand_cmd.push_back(value);
             goto out;
@@ -367,7 +375,7 @@ void nand_write(uint8_t value){
             assert(false);
         }
 
-        nand_cmd.push_back(value);
+        nand_addr.push_back(value);
         goto out;
     }
  
