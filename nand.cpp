@@ -12,7 +12,7 @@ static uint8_t* ram_io = nc1020_states.ram_io;
 static uint64_t last_tick=0;
 static deque<uint8_t> nand_cmd;
 //static deque<uint8_t> nand_addr;
-//static deque<uint8_t> nand_data;
+static deque<uint8_t> nand_data;
 
 static int nand_read_cnt=0;
 char nand_ori[65536*2][512];
@@ -288,6 +288,7 @@ void nand_write(uint8_t value){
                 else assert(false);
             }
             nand_cmd.clear();
+            nand_data.clear();
             nand_read_cnt=0;
             if(value!=0xff){
                 nand_cmd.push_back(value);
@@ -295,7 +296,7 @@ void nand_write(uint8_t value){
             goto out;
         }
         if(value ==0x10) {
-            if(nand_cmd[0]==0x50 && nand_cmd.size()==22) {
+            if(nand_cmd[0]==0x50 && nand_cmd.size()== 6 && nand_data.size()==16) {
                 assert(nand_cmd[1]==0x80);
 
                 unsigned char low=nand_cmd[2];
@@ -313,14 +314,15 @@ void nand_write(uint8_t value){
 
                 char *p=&nand[0][0];
                 for(int i=0;i<16;i++){
-                    p[final+i]=nand_cmd[6+i];
+                    p[final+i]=nand_data[i];
                 }
                 printf("program spare!!!! final=%x\n",final);
 
                 nand_cmd.clear();
+                nand_data.clear();
                 nand_read_cnt=0;
             }
-            else if(nand_cmd[0]==0x0 && nand_cmd.size()==534){
+            else if(nand_cmd[0]==0x0 && nand_cmd.size()==6 && nand_data.size()==528){
                 assert(nand_cmd[1]==0x80);
 
                 unsigned char low=nand_cmd[2];
@@ -338,9 +340,10 @@ void nand_write(uint8_t value){
                 printf("program!!!! final=%x\n",final);
 
                 for(int i=0;i<528;i++){
-                    p[final+i]=nand_cmd[6+i];
+                    p[final+i]=nand_data[i];
                 }
                 nand_cmd.clear();
+                nand_data.clear();
                 nand_read_cnt=0;
             }
             else{
@@ -388,7 +391,7 @@ void nand_write(uint8_t value){
         }else{
             assert(false);
         }
-        nand_cmd.push_back(value);
+        nand_data.push_back(value);
     }
     else{
         for(int i=0;i<nand_cmd.size();i++){
