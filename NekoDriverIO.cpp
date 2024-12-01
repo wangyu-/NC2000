@@ -609,8 +609,12 @@ BYTE __iocallconv Read18Port4( BYTE )
         //qDebug("CLK%c:%d, DATA%c:%d", hotlinkios->w07_b5_DIR45?'O':'I', (zpioregs[io18_port4_data] & 0x20) != 0,  hotlinkios->w07_b6_DIR46?'O':'I', (zpioregs[io18_port4_data] & 0x40) != 0);
         qDebug("CLK%c: O%dI%d, DATA%c: O%dI%d", hotlinkios->w07_b5_DIR45?'O':'I', hotlinkios->w18_b5_P45OL,hotlinkios->r18_b5_P45ID,  hotlinkios->w07_b6_DIR46?'O':'I',  hotlinkios->w18_b6_P46OL,hotlinkios->r18_b6_P46ID);
     }
-    return zpioregs[io18_port4_data];
+    if(nc2000||nc3000){
+        //nc3000c-lee has it but seems like no need?
+        //return zpioregs[io18_port4_data]|0x20;
     }
+    return zpioregs[io18_port4_data];
+}
 
 BYTE __iocallconv Read01IntStatus( BYTE )
 {

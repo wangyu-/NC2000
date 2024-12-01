@@ -100,6 +100,10 @@ void LoadNC1020(){
 		read_nand_file();
 	}
 	ResetStates();
+	if(nc2000||nc3000){
+		//nc3000c-lee has it but seems like no need?
+		//ram_io[0x18]=0x20;
+	}
 	//LoadStates();
 }
 
