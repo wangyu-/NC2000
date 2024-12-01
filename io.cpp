@@ -58,7 +58,7 @@ void init_io(){
     io_write[0x04] = Write04GeneralCtrl;
     //io_write[0x05] = Write05; // clk, sleep related
     io_write[0x05] = Write05ClockCtrl;
-	io_write[0x06] = Write06; // lcd related ; a wrapper of Write06LCDStartAddr
+	io_write[0x06] = Write06LCDStartAddr; // lcd related ;
     io_write[0x07] = Write07PortConfig;
     if(use_legacy_key_io){
         io_write[0x08] = Write08Port0; // keyboard related, looks like no harm to keep???
@@ -224,26 +224,18 @@ void IO_API Write05(uint8_t addr, uint8_t value){
 
 
 void IO_API Write06(uint8_t addr, uint8_t value){
-    if(false){
-        /*
-        ram_io[addr] = value;
-        if (!lcd_addr||true) {
-            lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
-            printf("lcd_addr=%x\n",lcd_addr);
-            if(lcd_addr==0x1380){
-                nc1020_states.grey_mode=1;
-            }else{
-                nc1020_states.grey_mode=0;
-            }
+    /*
+    ram_io[addr] = value;
+    if (!lcd_addr||true) {
+        lcd_addr = ((ram_io[0x0C] & 0x03) << 12) | (value << 4);
+        printf("lcd_addr=%x\n",lcd_addr);
+        if(lcd_addr==0x1380){
+            nc1020_states.grey_mode=1;
+        }else{
+            nc1020_states.grey_mode=0;
         }
-        ram_io[0x09] &= 0xFE;*/
     }
-    Write06LCDStartAddr(addr,value);
-    //extern unsigned short lcdbuffaddr;
-    //extern unsigned short lcdbuffaddrmask;
-    //lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
-    //lcd_addr = 0x1380;
-
+    ram_io[0x09] &= 0xFE;*/
 }
 
 void IO_API Write08(uint8_t addr, uint8_t value){
