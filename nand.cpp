@@ -73,7 +73,11 @@ void write_nand_file(){
     fwrite(&nand[0][0]+ 64*528, sizeof(nand)-64*528, 1 , f);
     fclose(f);
 }
-
+void clear_nand_status(){
+    nand_cmd.clear();
+    nand_data.clear();
+    nand_read_cnt = 0;
+}
 uint8_t read_nand(){
     bool CLE;
     bool ALE;
@@ -108,8 +112,7 @@ uint8_t read_nand(){
         special handle of read status after a long time
     */
     if(nand_cmd[0]==0x70 && nand_cmd.size()==1) {
-        nand_cmd.clear();
-        nand_read_cnt=0;
+        clear_nand_status();
         return 0x40;
     }
 
@@ -119,8 +122,7 @@ uint8_t read_nand(){
             return 0xec;
         }
         if(nand_read_cnt==1) {
-            nand_cmd.clear();
-            nand_read_cnt=0;
+            clear_nand_status();
             return 0x75;
         }
         assert(false);
@@ -140,7 +142,6 @@ uint8_t read_nand(){
         return 0;
     }
 
-    
     /*
         read low/high and read spare
     */
@@ -240,8 +241,7 @@ uint8_t read_nand(){
         //final-=32*1024;
         assert(final%(32*528)==0);
         memset(p+final,0xff,32*528);
-        nand_cmd.clear();
-        nand_read_cnt=0;
+        clear_nand_status();
         return 0x40;
     }
 
@@ -287,9 +287,7 @@ void nand_write(uint8_t value){
                 if(nand_cmd.size()==5) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50||nand_cmd[0]==0x60);
                 else assert(false);
             }
-            nand_cmd.clear();
-            nand_data.clear();
-            nand_read_cnt=0;
+            clear_nand_status();
             if(value!=0xff){
                 nand_cmd.push_back(value);
             }
@@ -317,10 +315,7 @@ void nand_write(uint8_t value){
                     p[final+i]=nand_data[i];
                 }
                 printf("program spare!!!! final=%x\n",final);
-
-                nand_cmd.clear();
-                nand_data.clear();
-                nand_read_cnt=0;
+                clear_nand_status();
             }
             else if(nand_cmd[0]==0x0 && nand_cmd.size()==6 && nand_data.size()==528){
                 assert(nand_cmd[1]==0x80);
@@ -342,9 +337,7 @@ void nand_write(uint8_t value){
                 for(int i=0;i<528;i++){
                     p[final+i]=nand_data[i];
                 }
-                nand_cmd.clear();
-                nand_data.clear();
-                nand_read_cnt=0;
+                clear_nand_status();
             }
             else{
                 debug_show_nand_cmd();
@@ -403,124 +396,6 @@ void nand_write(uint8_t value){
     }
     goto out;
 
-    //printf("write to nand without CLE without ALE %02x\n",value);
-    //assert(false);
-
-   if(false)
-    {
-        if(nand_cmd.size()==0 && value==0xff) {
-            assert(false);
-            nand_read_cnt=0;
-            goto out;
-        }
-
-        /*
-            ideally we should emulate the CLE ALE CE WE RE etc accodring to the datasheet
-            but the blow code works pretty stable on official firmware
-            so I am delaying this and going to implement other important features first
-        */
-        if(nand_cmd.size()>0 && tick-last_tick>=40) {    // some magic timeout,  which should be removed after the 018h IO is emulated
-            if(nand_read_cnt!=0&& enable_debug_nand) {
-                printf("<nand reads %d>\n",nand_read_cnt);
-            }
-            if(enable_debug_nand)
-            {
-                for(int i=0;i<nand_cmd.size();i++){
-                    printf("<%02x>",(unsigned char)nand_cmd[i]);
-                }
-                printf("\n");
-            }
-
-            // robust check: what we dumped is indeed as expected
-            //if(nand_cmd.size()==7) assert(nand_cmd[6]==0xff);
-            //else 
-           /* special handle of some invalid sequence in 空间整理*/
-           //if(nand_cmd.size()==23) assert(nand_cmd[0]==0x50 && nand_cmd.back()==0x10);
-           //else 
-           if(nand_cmd.size()==6 && nand_cmd[5]==0xff) {
-                printf("oops run into an situation that needs hacky handling:");
-                for(int i=0;i<nand_cmd.size();i++){
-                    printf("<%02x>",(unsigned char)nand_cmd[i]);
-                }
-                printf("\n");
-              //some temp hack to trick it run
-              nand_cmd.pop_back();
-           }
-           if(nand_cmd.size()==5) assert(nand_cmd[0]==0x00||nand_cmd[0]==0x01||nand_cmd[0]==0x50||nand_cmd[0]==0x60);
-           else {
-                assert(false);
-           }
-            nand_cmd.clear();
-            nand_read_cnt=0;
-            if(value==0xff) goto out;
-        }
-        last_tick=tick;
-        nand_cmd.push_back(value);
-
-        if(nand_cmd.size()>6) {
-            if(nand_cmd[0]==0x00) {
-                assert(nand_cmd[1]==0x80); 
-                assert(nand_cmd.size()<=535);
-            }
-            else if(nand_cmd[0]==0x50) {
-                assert(nand_cmd[1]==0x80);
-                assert(nand_cmd.size()<=23);
-            }
-            else assert(false);
-
-            if(nand_cmd[0]!=0x00&& nand_cmd.size()==23) {
-                assert(nand_cmd[nand_cmd.size()-1]==0x10);
-                assert(nand_cmd[1]==0x80);
-                assert(nand_cmd[0]==0x50);
-                
-                unsigned char low=nand_cmd[2];
-                unsigned char mid=nand_cmd[3];
-                unsigned char high=nand_cmd[4];
-                unsigned char a25=nand_cmd[5];
-
-                uint32_t pos=a25*256u*256u+high*256u+mid;
-
-                unsigned int x=pos;
-                unsigned int y=low;
-                unsigned int final= pos*528u+ y +512;
-
-                assert((final-512)%(528)==0);
-
-                char *p=&nand[0][0];
-                for(int i=0;i<16;i++){
-                    p[final+i]=nand_cmd[6+i];
-                }
-                printf("program spare!!!! final=%x\n",final);
-
-                nand_cmd.clear();
-                nand_read_cnt=0;
-            }
-            if(nand_cmd.size()==535){
-                assert(nand_cmd[nand_cmd.size()-1]==0x10);
-                assert(nand_cmd[0]==0 && nand_cmd[1]==0x80);
-                unsigned char low=nand_cmd[2];
-                unsigned char mid=nand_cmd[3];
-                unsigned char high=nand_cmd[4];
-                unsigned char a25=nand_cmd[5];
-
-
-                uint32_t pos=a25*256u*256u+high*256u+mid;
-
-                unsigned int x=pos;
-                unsigned int y=low;
-                unsigned int final= pos*528u+ y;
-                assert(final%(528)==0);
-                char *p=&nand[0][0];
-                printf("program!!!! final=%x\n",final);
-
-                for(int i=0;i<528;i++){
-                    p[final+i]=nand_cmd[6+i];
-                }
-                nand_cmd.clear();
-                nand_read_cnt=0;
-            }
-        }
-    }
     out:;
 
     // the out label here is for put some print cmd for debug
