@@ -44,8 +44,8 @@ global switch
 */
 
 const bool nc1020mode = false;
-const bool nc2000 = true;
-const bool nc3000 = false;
+const bool nc2000 = false;
+const bool nc3000 = true;
 const bool pc1000mode = false;
 
 const bool use_legacy_key_io = false;

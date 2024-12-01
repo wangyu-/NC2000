@@ -273,6 +273,7 @@ void nand_write(uint8_t value){
     }
     assert(!CLE || ! ALE);
 
+    //printf("tick=%llu write $29 %x  CLE=%d ALE=%d %d\n",tick%10000,value,CLE,ALE,(int)nand_cmd.size());
     if(enable_debug_nand) printf("tick=%llu write $29 %x  CLE=%d ALE=%d\n",tick%10000,value,CLE,ALE);
     //printf("tick=%lld, write %x  %02x\n",tick, addr, value);
     uint8_t roa_bbs=ram_io[0x0a];
@@ -350,6 +351,14 @@ void nand_write(uint8_t value){
             goto out;
         }
         if(value==0xd0||value==0x80){
+            if(value==0xd0){
+                assert(nand_cmd.size()>=1);
+                assert(nand_cmd[0]==0x60);
+            }
+            if(value==0x80){
+                assert(nand_cmd.size()>=1);
+                assert(nand_cmd[0]==0x50||nand_cmd[0]==0x00);
+            }
             nand_cmd.push_back(value);
             goto out;
         }
@@ -357,12 +366,35 @@ void nand_write(uint8_t value){
     }
 
     if(ALE){
+        if(nand_cmd.size()==0){
+            printf("got addr %02x while nand_cmd is empty\n",value);
+            assert(false);
+        }
+
         nand_cmd.push_back(value);
         goto out;
     }
+ 
 
-    if(nand_cmd.size()!=0) nand_cmd.push_back(value);
+    if(nand_cmd.size()!=0) {
+        if(nand_cmd[0]==0x50) {
+            assert(nand_cmd.size()>=2);
+            assert(nand_cmd[1]==0x80);
+            assert(nand_cmd.size()<22);
+        }else if (nand_cmd[0]==0x00){
+            assert(nand_cmd.size()>=2);
+            assert(nand_cmd[1]==0x80);
+            assert(nand_cmd.size()<534);
+        }else{
+            assert(false);
+        }
+        nand_cmd.push_back(value);
+    }
     else{
+        for(int i=0;i<nand_cmd.size();i++){
+            printf("<%02x>",nand_cmd[i]);
+        }
+        printf("[%02x]\n",value);
         printf("got data %02x while nand_cmd is empty\n",value);
         assert(false);
     }
