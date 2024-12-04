@@ -34,11 +34,20 @@ void read_nand_file(){
     fclose(f);
     printf("<nand_file_size=%lu>\n",fsize);
 
-    if(nc2000_nandmagic_ggvsim){
-        memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2000",strlen("ggv nc2000"));
-    }else{
-        //physical nor expect this to be "ggv nc2010\n"
-        memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2010\n",strlen("ggv nc2010\n"));
+    if(nc2000){
+        if(!nc2000_use_2600_rom){
+            //if it's not 2600 rom, then it should always be this
+            memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2000",strlen("ggv nc2000"));
+        }
+        else{
+            if(!nc2600_nandmagic_ggvsim){
+                //2600 physical nor expect this to be "ggv nc2010"
+                //nc2kutil dump shows there is a '\n' or 0x0A. But this doesn't matter. It boots either with or without `\n`
+                memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2010\n",strlen("ggv nc2010\n"));
+            }else{
+                memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2000",strlen("ggv nc2000"));
+            }
+        }
     }
     if(nc3000){
         memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc3000",strlen("ggv nc3000"));

@@ -48,9 +48,13 @@ const bool nc2000 = true;
 const bool nc3000 = false;
 const bool pc1000mode = false;
 
+const bool nc2000_use_2600_rom = true;
+
 const bool use_legacy_key_io = false;
 
-const bool nc2000_nandmagic_ggvsim = false;
+//enable when you use 2600 nor/nand from ggvsim
+const bool nc2600_nandmagic_ggvsim = false;
+
 enum NorFormat{
     INVALID,
     GGV_SIM,
