@@ -141,6 +141,10 @@ rom related
 ===================
 */
 const uint32_t num_nor_pages =0x10+uint32_t(nc1020mode)*0x10+uint32_t(nc3000)*0x10;
+
+//this is the nand pages of 528byte each
+const uint32_t num_nand_pages = 0+ uint32_t(nc2000)*65536  + uint32_t(nc3000)*65536*2;
+
 //const uint32_t num_nor_pages =0x20;
 const uint32_t num_rom_pages =0x300;
 static const uint32_t ROM_SIZE = 0x8000 * num_rom_pages;

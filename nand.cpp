@@ -79,7 +79,8 @@ void read_nand_file(){
 
 void write_nand_file(){
     FILE *f = fopen(nc1020_rom.nandFlashPath.c_str(), "wb");
-    fwrite(&nand[0][0]+ 64*528, sizeof(nand)-64*528, 1 , f);
+    fwrite(&nand[0][0]+ 64*528, num_nand_pages*528, 1 , f);
+    assert(num_nand_pages*528 + 64*528 <= sizeof(nand));
     fclose(f);
 }
 void clear_nand_status(){
