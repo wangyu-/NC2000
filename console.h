@@ -13,7 +13,9 @@ string get_message();
 
 // compile below with 6502 macroassembler and simulator,
 // "save code" as intel-hex format, then use convert.sh 
-
+/*=======
+nc2600
+=======*/
 //for put:
 /*
 INT:.MACRO INT_PARAM
@@ -96,9 +98,9 @@ END: INT $0527  ;open file manager
 */
 
 
-/*
+/*=======
 nc2000
-*/
+=======*/
 //for put
 /*
 INT:.MACRO INT_PARAM
@@ -136,4 +138,47 @@ PREEND:
      INT $0517
 END: INT $0528
      JMP END   
+*/
+
+
+/*=======
+nc3000
+========*/
+//put
+/*
+INT:.MACRO INT_PARAM
+    .DB $00
+    .DW INT_PARAM
+    .ENDM
+ .ORG $3000
+CREATE:   
+   LDA #$70
+   STA $08c9
+   LDA #$EF
+   STA $08ca
+   STA $08cb
+   INT $0515
+WRITE:
+   LDA #$00
+   STA $3f6
+   LDA $3FFF
+   CMP #$00
+   BEQ PREEND
+   LDA $3FFF
+   STA $3200
+   LDA #$00
+   STA $e0
+   LDA #$32
+   STA $e1
+   LDA #$1
+   STA $08c6
+   LDA #$0
+   STA $08c7  
+   STA $08c8
+   INT $0518
+   JMP WRITE
+PREEND:
+     INT $0517
+END: INT $0527
+     JMP END  
 */
