@@ -2,6 +2,7 @@
 
 #include "nand.h"
 #include "nor.h"
+#include <cstdio>
 #include <time.h>
 
 #include <mutex>
@@ -37,7 +38,7 @@ string get_message(){
 
 deque<char> queue;
 int32_t dummy_io_cnt=-1;
-bool dummy_io(uint16_t addr, uint8_t &value){
+bool dummy_io_for_read(uint16_t addr, uint8_t &value){
 	if(addr!=0x3fff) return false;
 	if(dummy_io_cnt== -1) return false;
 	if(queue.empty()) {
@@ -56,10 +57,65 @@ bool dummy_io(uint16_t addr, uint8_t &value){
 	return true;
 }
 
+deque<char> queue_for_write;
+string file_name_for_write;
+int32_t dummy_io_write_cnt=-1;
+bool dummy_io_for_write(uint16_t addr, uint8_t value){
+	if(addr!=0x3fff) return false;
+
+	if(dummy_io_write_cnt== -1) {
+		printf("write value=%02x pc=%04x!!\n",value,mPC);
+		printf("but dummy io is closed\n");
+		return false;
+	}
+	if(dummy_io_write_cnt++%2==0) {
+		if(value==1) {
+			//printf("continue!!\n");
+			//do nothing
+		}
+		else if(value==0) {
+			printf("dummy_io_for_write closed, size=%d\n",(int)queue_for_write.size());
+			if(dummy_io_write_cnt!=-1){
+				auto fp=fopen(file_name_for_write.c_str(),"wb");
+				for(auto c: queue_for_write){
+					fwrite(&c,1,1,fp);
+				}
+				fclose(fp);
+				queue_for_write.clear();
+			}
+			dummy_io_write_cnt=-1;
+
+		}else{
+			printf("got invalid value for dummy_io");
+			assert(false);
+		}
+	}else{
+		//printf("got char %02x\n",value);
+		queue_for_write.push_back(value);
+		if(queue_for_write.size()%10000==0) {
+			printf("got %d bytes\n",(int)queue_for_write.size());
+		}
+	}
+	//printf("<dummy read %02x>\n",value);
+	return true;
+}
+
 void copy_to_addr(uint16_t addr, uint8_t * buf,uint16_t size){
 	for(uint32_t i=0;i<size;i++){
 		Peek16(addr+i)=buf[i];
 	}
+}
+
+std::string HexToBytes(const std::string& hex) {
+  std::string bytes;
+
+  for (unsigned int i = 0; i < hex.length(); i += 2) {
+    std::string byteString = hex.substr(i, 2);
+    char byte = (char) strtol(byteString.c_str(), NULL, 16);
+    bytes.push_back(byte);
+  }
+
+  return bytes;
 }
 
 void handle_cmd(string & str){
@@ -106,15 +162,20 @@ void handle_cmd(string & str){
 		return;
 	}
 
-	if(cmds[0]=="create_dir"){
+	if(cmds[0]=="create_dir" || cmds[0]=="create_dir_hex"){
 			printf("<pc=%x>\n",mPC);
 			mPC = 0x3000;
-			copy_to_addr(0x08d6, (uint8_t*)cmds[1].c_str(), cmds[1].size()+1);
+			string dir_name=cmds[1];
+			if(cmds[0]=="create_dir_hex"){
+				dir_name=HexToBytes(dir_name);
+			}
+			copy_to_addr(0x08d6, (uint8_t*)dir_name.c_str(), dir_name.size()+1);
 			Peek16(0x0912)=0x02;
 			uint8_t buf[]={0x00,0x0b,0x05,0x00,0x27,0x05,0x18,0x90,0xfa};
 			copy_to_addr(0x3000, buf, sizeof buf);
 			return;
 	}
+
 
 	if(cmds[0]=="wqxhex"){
 			vector<char> wqxhex;
@@ -136,6 +197,23 @@ void handle_cmd(string & str){
 	}
 	if(cmds[0]=="log"){
 			enable_dyn_debug^=0x1;
+			return;
+	}
+	if(cmds[0]=="get"){
+			string src=cmds[1];
+			string target=cmds[1];
+			if(cmds.size()>2) target=cmds[2];
+			file_name_for_write=target;
+			dummy_io_write_cnt = 0;
+			copy_to_addr(0x08d6, (uint8_t*)src.c_str(), src.size()+1);
+			uint8_t buf[]={0xA9,0x80,0x8D,0x12,0x09,0xA9,0xEF,0x8D,0x13,0x09,0x8D,0x14,0x09,0x00,0x14,0x05,
+0xA9,0x00,0x8D,0xF6,0x03,0xA9,0x00,0x85,0xDD,0xA9,0x32,0x85,0xDE,0xA9,0x01,0x8D,
+0x0F,0x09,0xA9,0x00,0x8D,0x10,0x09,0x8D,0x11,0x09,0x00,0x15,0x05,0xAD,0x0F,0x09,
+0xF0,0x0E,0xA9,0x01,0x8D,0xFF,0x3F,0xAD,0x00,0x32,0x8D,0xFF,0x3F,0x4C,0x10,0x30,
+0xA9,0x00,0x8D,0xFF,0x3F,0x00,0x16,0x05,0x00,0x27,0x05,0x4C,0x48,0x30};
+			copy_to_addr(0x3000,buf,sizeof(buf));
+			mPC=0x3000;
+			//enable_dyn_debug=true;
 			return;
 	}
 	if(cmds[0]=="put"){

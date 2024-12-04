@@ -38,9 +38,9 @@ uint16_t PeekW(uint16_t addr) {
 }
 uint8_t Load(uint16_t addr) {
 	{
-		bool dummy_io(uint16_t addr, uint8_t &value);
+		bool dummy_io_for_read(uint16_t addr, uint8_t &value);
 		uint8_t value;
-		if(dummy_io(addr, value)){
+		if(dummy_io_for_read(addr, value)){
 			return value;
 		}
 	}
@@ -71,6 +71,12 @@ uint8_t Load(uint16_t addr) {
 	return Peek16(addr);
 }
 void Store(uint16_t addr, uint8_t value) {
+	{
+		bool dummy_io_for_write(uint16_t addr, uint8_t value);
+		if(dummy_io_for_write(addr, value)){
+			return;
+		}
+	}
 	if (addr < IO_LIMIT) {
 		io_write[addr](addr, value);
 		return;
