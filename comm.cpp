@@ -32,7 +32,7 @@ void rom_switcher(){
 
         if (nc2000_use_2600_rom){
                 nc1020_rom.nandFlashPath = "./phy_ggvsimformat_2600.nand";
-                nc1020_rom.norFlashPath = "phy_ggvsimformat_2600.nor";  
+                nc1020_rom.norFlashPath = "./phy_ggvsimformat_2600.nor";  
         }
     }
 

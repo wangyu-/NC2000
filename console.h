@@ -94,3 +94,46 @@ PREEND:
 END: INT $0527  ;open file manager
      JMP END  
 */
+
+
+/*
+nc2000
+*/
+//for put
+/*
+INT:.MACRO INT_PARAM
+    .DB $00
+    .DW INT_PARAM
+    .ENDM
+ .ORG $3000
+CREATE:   
+   LDA #$70
+   STA $08fa
+   LDA #$EF
+   STA $08fb
+   STA $08fc 
+   INT $0515
+WRITE:
+   LDA #$00
+   STA $3f6
+   LDA $3FFF
+   CMP #$00
+   BEQ PREEND
+   LDA $3FFF
+   STA $3200
+   LDA #$00
+   STA $DD
+   LDA #$32
+   STA $DE
+   LDA #$1
+   STA $08f7
+   LDA #$0
+   STA $08f8  
+   STA $08f9  ;not really needed maybe
+   INT $0518
+   JMP WRITE
+PREEND:
+     INT $0517
+END: INT $0528
+     JMP END   
+*/
