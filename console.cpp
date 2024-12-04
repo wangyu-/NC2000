@@ -166,6 +166,10 @@ void handle_cmd(string & str){
 				copy_to_addr(0x3000, buf, sizeof buf);
 			}
 		}
+		if(nc3000){
+				uint8_t buf[]={0x00,0x28,0x05,0x18,0x90,0xfa};
+				copy_to_addr(0x3000, buf, sizeof buf);
+		}
 		return;
 	}
 
@@ -187,6 +191,12 @@ void handle_cmd(string & str){
 					uint8_t buf[]={0x00,0x0b,0x05,0x00,0x28,0x05,0x18,0x90,0xfa};
 					copy_to_addr(0x3000, buf, sizeof buf);
 				}
+			}
+
+			if(nc3000){
+					copy_to_addr(0x088d, (uint8_t*)dir_name.c_str(), dir_name.size()+1);
+					uint8_t buf[]={0x00,0x0b,0x05,0x00,0x28,0x05,0x18,0x90,0xfa};
+					copy_to_addr(0x3000, buf, sizeof buf);	
 			}
 			return;
 	}
