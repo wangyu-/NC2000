@@ -15,7 +15,7 @@ static deque<uint8_t> nand_addr;
 static deque<uint8_t> nand_data;
 
 static int nand_read_cnt=0;
-char nand_ori[65536*2][512];
+//char nand_ori[65536*2][512];
 char nand[65536*2+64][528];
 //char nand_spare[65536+64][16];
 
@@ -33,6 +33,7 @@ void read_nand_file(){
     fread(p0, fsize, 1, f);
     fclose(f);
     printf("<nand_file_size=%lu>\n",fsize);
+    assert(fsize + 64*528 <= sizeof(nand));
 
     if(nc2000){
         if(!nc2000_use_2600_rom){
@@ -53,28 +54,6 @@ void read_nand_file(){
         memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc3000",strlen("ggv nc3000"));
     }
 
-    //if(use_phy_nand){
-    if(false){
-        //memset(nand,0xff,sizeof(nand));
-        memset(nand_ori,0xff,sizeof(nand_ori));
-        char *p0= &nand_ori[0][0];
-        FILE *f = fopen("./phy_nand.bin", "rb");
-        if(f==0) {
-            printf("file ./phy_nand.bin not exist!\n");
-            exit(-1);
-        }
-        fseek(f, 0, SEEK_END);
-        long fsize = ftell(f);
-        fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-        fread(p0, fsize, 1, f);
-        fclose(f);
-        printf("<phy_nand_file_size=%lu>\n",fsize);
-
-        for(int i=0;i<65536;i++){
-            memcpy(nand[i],nand_ori[i],512);
-        }
-
-    }
 }
 
 void write_nand_file(){
