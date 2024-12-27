@@ -96,7 +96,7 @@ uint8_t read_nand(){
      if(enable_debug_nand) printf("tick=%llu read $29\n",tick%10000);
 
     if(nand_cmd.size()==0) {
-        printf("oops! no nand cmd\n");
+        printf("oops! no nand cmd %d %d %d\n",CLE,ALE,CE);
         return 0xff;
     }
     assert(nand_cmd.size()>0);
