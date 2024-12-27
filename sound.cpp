@@ -1,5 +1,5 @@
 #include "comm.h"
-#include "dsp.h"
+#include "dsp/dsp.h"
 #include "state.h"
 #include <SDL2/SDL.h>
 
@@ -207,6 +207,6 @@ void init_audio(){
 	if(enable_dsp_test){
 		//dsp_test();
 		//dsp_test2();
-		dsp_test3();
+		//dsp_test3();
 	}
 }

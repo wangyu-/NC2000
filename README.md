@@ -147,6 +147,16 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 1. 模拟更多的I/O。
 2. 部分代码非常tricky（尤其nand），主要是为了先跑通证明可行性，后面会重写。
 
+### Note on compile
+
+```
+git clone https://github.com/wangyu-/NC2000.git
+cd NC2000
+git clone https://github.com/wangyu-/wqxdsp.git dsp
+cmake .
+make
+```
+
 # 代码基于以下项目
 
 模拟器主体：
@@ -166,6 +176,4 @@ https://github.com/hackwaly/NC1020 nc1020模拟器，应该是基于sim800开发
 SDL支持参考了：
 
 https://github.com/Wang-Yue/NC1020 nc1020模拟器SDL版。
-
-
 
