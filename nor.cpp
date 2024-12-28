@@ -7,10 +7,11 @@ extern WqxRom nc1020_rom;
 
 uint8_t nor_buff[NOR_SIZE];
 uint8_t* nor_banks[num_nor_pages];
+extern uint8_t* memmap[8];
 
 static uint8_t& fp_step = nc1020_states.fp_step;
 static uint8_t& fp_type = nc1020_states.fp_type;
-static uint8_t& fp_bank_idx = nc1020_states.fp_bank_idx;
+//static uint8_t& fp_bank_idx = nc1020_states.fp_bank_idx;
 static uint8_t& fp_bak1 = nc1020_states.fp_bak1;
 static uint8_t& fp_bak2 = nc1020_states.fp_bak2;
 static uint8_t* fp_buff = nc1020_states.fp_buff;
@@ -92,7 +93,7 @@ void write_nor(uint16_t addr,uint8_t value){
         return;
     }
 
-    uint8_t* bank = nor_banks[bank_idx];
+    //uint8_t* bank = nor_banks[bank_idx];
 
     if (fp_step == 0) {
         if (addr == 0x5555 && value == 0xAA) {
@@ -118,9 +119,9 @@ void write_nor(uint16_t addr,uint8_t value){
             if (fp_type) {
                 if (fp_type == 1) {
 					assert(false);
-                    fp_bank_idx = bank_idx;
-                    fp_bak1 = bank[0x4000];
-                    fp_bak2 = bank[0x4001];
+                    //fp_bank_idx = bank_idx;
+                    //fp_bak1 = bank[0x0000];
+                    //fp_bak2 = bank[0x0001];
                 }
                 fp_step = 3;
                 return;
@@ -129,13 +130,13 @@ void write_nor(uint16_t addr,uint8_t value){
     } else if (fp_step == 3) {
         if (fp_type == 1) {
             if (value == 0xF0) {
-                bank[0x4000] = fp_bak1;
-                bank[0x4001] = fp_bak2;
+                //bank[0x0000] = fp_bak1;
+                //bank[0x0001] = fp_bak2;
                 fp_step = 0;
                 return;
             }
         } else if (fp_type == 2) {
-            bank[addr - 0x4000] &= value;
+            memmap[addr>>13][addr&0x1fff] &= value;
             fp_step = 4;
             return;
         } else if (fp_type == 4) {
@@ -163,7 +164,7 @@ void write_nor(uint16_t addr,uint8_t value){
                 memset(nor_banks[i], 0xFF, 0x8000);
             }
             if (fp_type == 5) {
-                printf("wanna erase size 256 A\n");
+                printf("wanna erase infoblock size 256 A\n");
                 memset(fp_buff, 0xFF, 0x100);
             }
             fp_step = 6;
@@ -171,8 +172,14 @@ void write_nor(uint16_t addr,uint8_t value){
         }
         if (fp_type == 3) {
             if (value == 0x30) {
-				printf("wanna erase size 2048\n");
-                memset(bank + (addr - (addr % 0x800) - 0x4000), 0xFF, 0x800);
+                if(nc2000mode||nc1020mode){
+                    printf("wanna erase size 2048, addr= %04x\n",addr);
+                    //memset(bank + (addr - (addr % 0x800) - 0x4000), 0xFF, 0x800);
+                    memset(&memmap[addr>>13][addr&0x1800],0xff,0x800);
+                }else if(pc1000mode||nc3000mode){
+                    printf("wanna erase size 4096, addr= %04x\n",addr);
+                    memset(&memmap[addr>>13][addr&0x1000],0xff,0x1000);
+                }else assert(false);
                 fp_step = 6;
                 return;
             }

@@ -56,16 +56,16 @@ BYTE r1e_port0_ID_EXP = 0;  // newly added for 3000
 BYTE w09_port1_OL = 0;
 BYTE r09_port1_ID = 0;
 
+extern uint8_t * ram_io;
+// Temp
+unsigned char *zpioregs=ram_io;
+
 timer01_u* rw023_timer01val = (timer01_u*)&zpioregs[io02_timer0_val];
 
 BYTE w0c_b67_TMODESL = 0;    // 01一起的计数方式
 BYTE w0c_b45_TM0S = 0;       // timer0时钟周期, 在TMODE1下接入
 BYTE w0c_b23_TM1S = 0;       // timer1时钟周期, 在TMODE1下接入
 BYTE w0c_b345_TMS = 0;       // 其他模式下4个bit只有3个用上
-
-extern uint8_t * ram_io;
-// Temp
-unsigned char *zpioregs=ram_io;
 
 int timer0ticks = 0;
 int timer1ticks = 0;
