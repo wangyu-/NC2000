@@ -26,7 +26,7 @@ void rom_switcher(){
         nc1020_rom.romPath = "./obj_lu.bin";
         nc1020_rom.norFlashPath = "./nc1020.fls";
     }
-    if(nc2000){
+    if(nc2000mode){
         nc1020_rom.nandFlashPath = "./phy_ggvsimformat_2000.nand";
         nc1020_rom.norFlashPath = "./phy_ggvsimformat_2000.nor";  
 
@@ -36,7 +36,7 @@ void rom_switcher(){
         }
     }
 
-    if(nc3000){
+    if(nc3000mode){
         nc1020_rom.nandFlashPath = "./nc3000.nand";
         nc1020_rom.norFlashPath = "./nc3000.nor"; 
     }

@@ -212,10 +212,10 @@ vector<TKeyItem*> items1000 = {
 
 static map<int,pair<int,int> > sdl_to_item;
 void init_keyitems(){
-    if(nc1020mode||nc2000){
+    if(nc1020mode||nc2000mode){
       for(auto x: items2000_1020) items.push_back(x);
     }
-    if(nc3000) {
+    if(nc3000mode) {
       for(auto x: items3000) items.push_back(x);
     }
     if(pc1000mode){

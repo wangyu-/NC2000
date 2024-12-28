@@ -44,8 +44,8 @@ global switch
 */
 
 const bool nc1020mode = false;
-const bool nc2000 = false;
-const bool nc3000 = true;
+const bool nc2000mode = false;
+const bool nc3000mode = true;
 const bool pc1000mode = false;
 
 const bool nc2000_use_2600_rom = true;
@@ -113,7 +113,7 @@ cycles related
 const uint32_t static_multipler=5; //tmp fix for speed and crash
 
 // cpu cycles per second (cpu freq).
-const uint32_t CYCLES_SECOND = 5120000*( (nc2000||nc3000)?static_multipler:1);
+const uint32_t CYCLES_SECOND = 5120000*( (nc2000mode||nc3000mode)?static_multipler:1);
 const uint32_t UNKNOWN_TIMER0_FREQ = 2;
 const uint32_t TIMER0_FREQ = 2; //not used now
 const uint32_t TIMER1_FREQ = 200;//not used now
@@ -140,10 +140,10 @@ const uint32_t BEEPER_AUDIO_HZ = 44100;
 rom related
 ===================
 */
-const uint32_t num_nor_pages =0x10+uint32_t(nc1020mode)*0x10+uint32_t(nc3000)*0x10;
+const uint32_t num_nor_pages =0x10+uint32_t(nc1020mode)*0x10+uint32_t(nc3000mode)*0x10;
 
 //this is the nand pages of 528byte each
-const uint32_t num_nand_pages = 0+ uint32_t(nc2000)*65536  + uint32_t(nc3000)*65536*2;
+const uint32_t num_nand_pages = 0+ uint32_t(nc2000mode)*65536  + uint32_t(nc3000mode)*65536*2;
 
 //const uint32_t num_nor_pages =0x20;
 const uint32_t num_rom_pages =0x300;

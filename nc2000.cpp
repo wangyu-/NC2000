@@ -96,11 +96,11 @@ void LoadNC1020(){
 	rom_switcher();
 	init_nor();
 	init_rom();
-	if(nc2000||nc3000) {
+	if(nc2000mode||nc3000mode) {
 		read_nand_file();
 	}
 	ResetStates();
-	if(nc2000||nc3000){
+	if(nc2000mode||nc3000mode){
 		//nc3000c-lee has it but seems like no need?
 		//ram_io[0x18]=0x20;
 	}
@@ -169,7 +169,7 @@ bool CopyLcdBuffer(uint8_t* buffer){
 	if (lcd_addr == 0) return false;
 	memcpy(buffer, ram_buff + lcd_addr, 1600);
 
-	if(nc2000||nc3000){
+	if(nc2000mode||nc3000mode){
 		if(!is_grey_mode()){
 			memcpy(buffer, ram_buff + 0x19c0, 1600 );
 		}else{

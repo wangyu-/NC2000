@@ -142,7 +142,7 @@ uint8_t* GetBank(uint8_t bank_idx){
     if (bank_idx < num_nor_pages) {
     	return nor_banks[bank_idx];
     } else if (bank_idx >= 0x80) {
-		if(nc3000){
+		if(nc3000mode){
 			return NULL;
 		}
 		if(nc1020mode){
@@ -155,7 +155,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 			}
 		}
 
-		if(nc2000||nc3000){
+		if(nc2000mode||nc3000mode){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
 
@@ -174,7 +174,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 void SwitchBank_2345(){
 	uint8_t bank_idx = ram_io[0x00];
 
-	if(nc3000) {
+	if(nc3000mode) {
 		if(bank_idx ==0 && ram_io[0x0a]&0x80) {
 				memmap[2] = ram04;
     			memmap[3] = ram06;
@@ -232,13 +232,13 @@ void SwitchBank_2345(){
     memmap[4] = bank + 0x4000;
     memmap[5] = bank + 0x6000;
 
-	if(nc3000){
+	if(nc3000mode){
 		if(bank_idx==0){
 			memmap[2]=ram04;
 			memmap[3]=ram06;
 		}
 	}
-	if(nc1020mode||nc2000){
+	if(nc1020mode||nc2000mode){
 		if(bank_idx==0){
 			memmap[2]=ram04;
 			memmap[3]=ram04;
@@ -272,10 +272,10 @@ void Switch0x2000(){
 		//memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
 		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
 	}
-	if(nc2000){
+	if(nc2000mode){
 		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
 	}
-	if(nc3000){
+	if(nc3000mode){
 		memmap[1] = ram02;  //todo add RAMS (but it works without RAMS  logic)
 	}
 	if(pc1000mode){
@@ -291,7 +291,7 @@ void SwitchBbsBios_67(){
 		candidate_for_bbs = GetVolumm(volume_idx);
 	}
 
-	if(nc2000||nc3000){
+	if(nc2000mode||nc3000mode){
 		candidate_for_bbs = nor_banks;
 	}
 
@@ -311,10 +311,10 @@ void SwitchBbsBios_67(){
 		if(nc1020mode){
 			memmap[6] = ram04;
 		}
-		if(nc2000){
+		if(nc2000mode){
 			memmap[6]=ram04;
 		}
-		if(nc3000){
+		if(nc3000mode){
 			memmap[6]=ram06;
 		}
 
@@ -352,7 +352,7 @@ void SwitchCheck(){
 			//////printf("ill bs %x\n",bs);
 		}
 	}
-	if(nc2000||nc3000){  
+	if(nc2000mode||nc3000mode){  
 		//assert(bs<0x80);
 		if(bs<0x80 &&bs>=num_nor_pages) {
 			//printf("ill bs %x ; ",bs);

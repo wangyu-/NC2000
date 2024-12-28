@@ -157,7 +157,7 @@ void handle_cmd(string & str){
 
 	if(cmds[0]=="file_manager"){
 		mPC = 0x3000;
-		if(nc2000){
+		if(nc2000mode){
 			if(nc2000_use_2600_rom){
 				uint8_t buf[]={0x00,0x27,0x05,0x18,0x90,0xfa};
 				copy_to_addr(0x3000, buf, sizeof buf);
@@ -166,7 +166,7 @@ void handle_cmd(string & str){
 				copy_to_addr(0x3000, buf, sizeof buf);
 			}
 		}
-		if(nc3000){
+		if(nc3000mode){
 				uint8_t buf[]={0x00,0x28,0x05,0x18,0x90,0xfa};
 				copy_to_addr(0x3000, buf, sizeof buf);
 		}
@@ -180,7 +180,7 @@ void handle_cmd(string & str){
 			if(cmds[0]=="create_dir_hex"){
 				dir_name=HexToBytes(dir_name);
 			}
-			if(nc2000){
+			if(nc2000mode){
 				if(nc2000_use_2600_rom){
 					copy_to_addr(0x08d6, (uint8_t*)dir_name.c_str(), dir_name.size()+1);
 					//Peek16(0x0912)=0x02; //not really useful?
@@ -193,7 +193,7 @@ void handle_cmd(string & str){
 				}
 			}
 
-			if(nc3000){
+			if(nc3000mode){
 					copy_to_addr(0x088d, (uint8_t*)dir_name.c_str(), dir_name.size()+1);
 					uint8_t buf[]={0x00,0x0b,0x05,0x00,0x28,0x05,0x18,0x90,0xfa};
 					copy_to_addr(0x3000, buf, sizeof buf);	
@@ -230,7 +230,7 @@ void handle_cmd(string & str){
 			if(cmds.size()>2) target=cmds[2];
 			file_name_for_write=target;
 			dummy_io_write_cnt = 0;
-			if(nc2000){
+			if(nc2000mode){
 				if(nc2000_use_2600_rom){
 					copy_to_addr(0x08d6, (uint8_t*)src.c_str(), src.size()+1);
 					uint8_t buf[]={0xA9,0x80,0x8D,0x12,0x09,0xA9,0xEF,0x8D,0x13,0x09,0x8D,0x14,0x09,0x00,0x14,0x05,
@@ -258,7 +258,7 @@ void handle_cmd(string & str){
 			}
 			dummy_io_cnt=0;
 
-			if(nc2000){
+			if(nc2000mode){
 				if(nc2000_use_2600_rom){
 					copy_to_addr(0x08d6, (uint8_t*)target.c_str(), target.size()+1);
 
@@ -290,7 +290,7 @@ void handle_cmd(string & str){
 				
 				
 			}
-			if(nc3000){
+			if(nc3000mode){
 					copy_to_addr(0x088d, (uint8_t*)target.c_str(), target.size()+1);
 					uint8_t buf[]={0xA9,0x70,0x8D,0xC9,0x08,0xA9,0xEF,0x8D,0xCA,0x08,0x8D,0xCB,0x08,0x00,0x15,0x05,
 0xA9,0x00,0x8D,0xF6,0x03,0xAD,0xFF,0x3F,0xC9,0x00,0xF0,0x21,0xAD,0xFF,0x3F,0x8D,

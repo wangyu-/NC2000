@@ -35,7 +35,7 @@ void read_nand_file(){
     printf("<nand_file_size=%lu>\n",fsize);
     assert(fsize + 64*528 <= sizeof(nand));
 
-    if(nc2000){
+    if(nc2000mode){
         if(!nc2000_use_2600_rom){
             //if it's not 2600 rom, then it should always be this
             memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc2000",strlen("ggv nc2000"));
@@ -50,7 +50,7 @@ void read_nand_file(){
             }
         }
     }
-    if(nc3000){
+    if(nc3000mode){
         memcpy(&nand[0][0]+0x200+0x10 /*512+16=528*/,"ggv nc3000",strlen("ggv nc3000"));
     }
 
@@ -72,7 +72,7 @@ uint8_t read_nand(){
     bool CLE;
     bool ALE;
     bool CE;
-    if(nc3000){
+    if(nc3000mode){
         CLE = ram_io[0x18]&0x20;
         ALE = ram_io[0x18]&0x10;
         CE = ram_io[0x18]&0x04;
@@ -80,7 +80,7 @@ uint8_t read_nand(){
             //printf("read while CE is false\n");
         }
     }
-    if(nc2000){
+    if(nc2000mode){
         CLE = ram_io[0x18]&0x01;
         ALE = ram_io[0x18]&0x02;
         CE = ram_io[0x18]&0x02;
@@ -258,7 +258,7 @@ void nand_write(uint8_t value){
     bool CLE;
     bool ALE;
     bool CE;
-    if(nc3000){
+    if(nc3000mode){
         CLE = ram_io[0x18]&0x20;
         ALE = ram_io[0x18]&0x10;
         CE = ram_io[0x18]&0x04;
@@ -266,7 +266,7 @@ void nand_write(uint8_t value){
             //printf("write while CE is false\n");
         }
     }
-    if(nc2000){
+    if(nc2000mode){
         CLE = ram_io[0x18]&0x01;
         ALE = ram_io[0x18]&0x02;
         CE = ram_io[0x18]&0x02;
