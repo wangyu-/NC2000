@@ -205,20 +205,20 @@ void SwitchBank_2345(){
 		}
 
 		if(bank_idx!=0 || (ram_io[0x0a]&0x80)){
-			memmap[2] = bank;
-			memmap[3] = bank + 0x2000;
+			memmap[2] = bank + 0x4000;
+			memmap[3] = bank + 0x6000;
 		}else {
 			if (ram_io[0x0d]&0x1){
-				memmap[2] = nor_banks[0];
-				memmap[3] = nor_banks[0] + 0x2000;
+				memmap[2] = nor_banks[0] + 0x4000;
+				memmap[3] = nor_banks[0] + 0x6000;
 			}else {
 				memmap[2] = ram04;
 				memmap[3] = ram04;
 			}
 		}
 
-		memmap[4] = bank + 0x4000;
-		memmap[5] = bank + 0x6000;
+		memmap[4] = bank + 0x0000;
+		memmap[5] = bank + 0x2000;
 		return;
 	}
 
@@ -227,10 +227,10 @@ void SwitchBank_2345(){
 	uint8_t* bank = GetBank(bank_idx);
 	if(bank== NULL) return;
 	
-    memmap[2] = bank;
-    memmap[3] = bank + 0x2000;
-    memmap[4] = bank + 0x4000;
-    memmap[5] = bank + 0x6000;
+    memmap[2] = bank+ 0x4000;
+    memmap[3] = bank + 0x6000;
+    memmap[4] = bank + 0x0000;
+    memmap[5] = bank + 0x2000;
 
 	if(nc3000mode){
 		if(bank_idx==0){
@@ -296,10 +296,10 @@ void SwitchBbsBios_67(){
 	}
 
 	for (int i=0; i<4; i++) {
-		bbs_pages[i * 4] = candidate_for_bbs[i];
-		bbs_pages[i * 4 + 1] = candidate_for_bbs[i] + 0x2000;
-		bbs_pages[i * 4 + 2] = candidate_for_bbs[i] + 0x4000;
-		bbs_pages[i * 4 + 3] = candidate_for_bbs[i] + 0x6000;
+		bbs_pages[i * 4] = candidate_for_bbs[i]+0x4000;
+		bbs_pages[i * 4 + 1] = candidate_for_bbs[i] + 0x6000;
+		bbs_pages[i * 4 + 2] = candidate_for_bbs[i] + 0x0000;
+		bbs_pages[i * 4 + 3] = candidate_for_bbs[i] + 0x2000;
 	}
 
 	uint8_t bbs_idx = ram_io[0x0A]&0x0f;
@@ -320,7 +320,7 @@ void SwitchBbsBios_67(){
 
 		if(pc1000mode){
 			if(ram_io[0x0d]&0x01){
-				memmap[6] = nor_banks[0]+0x2000;
+				memmap[6] = nor_banks[0]+0x6000;
 			}else{
 				memmap[6] = ram04;
 			}

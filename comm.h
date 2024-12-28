@@ -57,20 +57,18 @@ const bool nc2600_nandmagic_ggvsim = false;
 
 enum NorFormat{
     INVALID,
-    GGV_SIM,
-    Linear
+    PHYSICAL_ORDER,
+    WQX2KUTIL
 };
-const NorFormat nor_read_format = NorFormat::GGV_SIM;
-const NorFormat nor_write_format = NorFormat::GGV_SIM;
+const NorFormat nor_read_format = NorFormat::PHYSICAL_ORDER;
+const NorFormat nor_write_format = NorFormat::PHYSICAL_ORDER;
 
 const bool enabled_dsp=true;
 const bool enable_beeper=true;
 //const bool dsp_only=false;
 const bool enable_dsp_test=true;
-const bool delay_between_syllable=false;
 
 const bool enable_debug_beeper=false;
-const bool enable_debug_dsp=false;
 /*
 ===================
 cpu related
@@ -163,7 +161,7 @@ common functions
 ===================
 */
 
-void ProcessBinaryGGVSIM(uint8_t* dest, uint8_t* src, uint32_t size);
+void ProcessBinaryRev(uint8_t* dest, uint8_t* src, uint32_t size);
 void ProcessBinaryLinear(uint8_t* dest, uint8_t* src, uint32_t size);
 
 //use vector char since string cannot store \0 well on mingw

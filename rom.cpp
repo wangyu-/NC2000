@@ -20,8 +20,12 @@ void LoadRom(const string romPath){
 	}
 	uint8_t* temp_buff = (uint8_t*)malloc(rom_size);
 	FILE* file = fopen(romPath.c_str(), "rb");
+	if(file==0) {
+        printf("file %s not exist!\n",romPath.c_str());
+        exit(-1);
+    }
 	fread(temp_buff, 1, rom_size, file);
-	ProcessBinaryGGVSIM(rom_buff, temp_buff, rom_size);
+	ProcessBinaryLinear(rom_buff, temp_buff, rom_size);
 	free(temp_buff);
 	fclose(file);
 }

@@ -24,10 +24,10 @@ void LoadNor(){
 		exit(-1);
 	}
 	fread(temp_buff, 1, NOR_SIZE, file);
-    if(nor_read_format== GGV_SIM){
-	    ProcessBinaryGGVSIM(nor_buff, temp_buff, NOR_SIZE);
-    }else if(nor_read_format== Linear){
-        ProcessBinaryLinear(nor_buff, temp_buff, NOR_SIZE);
+    if(nor_read_format== PHYSICAL_ORDER){
+	    ProcessBinaryLinear(nor_buff, temp_buff, NOR_SIZE);
+    }else if(nor_read_format== WQX2KUTIL){
+        ProcessBinaryRev(nor_buff, temp_buff, NOR_SIZE);
     }
     else assert(false);
 	free(temp_buff);
@@ -37,11 +37,11 @@ void LoadNor(){
 void SaveNor(){
 	uint8_t* temp_buff = (uint8_t*)malloc(NOR_SIZE);
 	FILE* file = fopen(nc1020_rom.norFlashPath.c_str(), "wb");
-    if(nor_write_format== GGV_SIM){
-	    ProcessBinaryGGVSIM(temp_buff, nor_buff, NOR_SIZE);
+    if(nor_write_format== PHYSICAL_ORDER){
+	    ProcessBinaryLinear(temp_buff, nor_buff, NOR_SIZE);
     }
-    else if(nor_write_format== Linear){
-        ProcessBinaryLinear(temp_buff, nor_buff, NOR_SIZE);
+    else if(nor_write_format== WQX2KUTIL){
+        ProcessBinaryRev(temp_buff, nor_buff, NOR_SIZE);
     }else assert(false);
 	fwrite(temp_buff, 1, NOR_SIZE, file);
 	fflush(file);

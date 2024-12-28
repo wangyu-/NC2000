@@ -47,7 +47,7 @@ void rom_switcher(){
     }
 }
 
-void ProcessBinaryGGVSIM(uint8_t* dest, uint8_t* src, uint32_t size){
+void ProcessBinaryRev(uint8_t* dest, uint8_t* src, uint32_t size){
 	uint32_t offset = 0;
     while (offset < size) {
         memcpy(dest + offset + 0x4000, src + offset, 0x4000);
