@@ -118,6 +118,10 @@ bool read_nor(uint16_t addr, uint8_t &value){
     return false;
 }
 
+void reset_nor_status(){
+    fp_step=0;
+    fp_type=NOR_CMD::NONE;
+}
 
 void write_nor0(uint16_t addr,uint8_t value){
 
@@ -203,10 +207,12 @@ void write_nor0(uint16_t addr,uint8_t value){
         if (fp_type == NOR_CMD::BYTE_PROGRAM) {
             memmap[addr>>13][addr&0x1fff] &= value;
             fp_step = 4;
+            if(pc1000mode) reset_nor_status();
             return;
         } else if (fp_type == NOR_CMD::INFO_BYTE_PROGRAM) {
             nor_info_block[addr & 0xFF] &= value;
             fp_step = 4;
+            if(pc1000mode) reset_nor_status();
             return;
         } else if (fp_type == NOR_CMD::BLOCK_OR_MASS_ERASE || fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) {
             if (addr_is_0x5555 && value == 0xAA) {
@@ -235,6 +241,7 @@ void write_nor0(uint16_t addr,uint8_t value){
                 memset(nor_info_block, 0xFF, 0x100);
             }
             fp_step = 6;
+            if(pc1000mode) reset_nor_status();
             return;
         }
         else if (fp_type == BLOCK_OR_MASS_ERASE) {
@@ -248,6 +255,7 @@ void write_nor0(uint16_t addr,uint8_t value){
                     memset(&memmap[addr>>13][addr&0x1000],0xff,0x1000);
                 }else assert(false);
                 fp_step = 6;
+                if(pc1000mode) reset_nor_status();
                 return;
             }
         } else if (fp_type == INFO_OR_BMASS_ERASE) {
@@ -255,17 +263,17 @@ void write_nor0(uint16_t addr,uint8_t value){
                 printf("wanna erase infoblock size 256 B\n");
                 memset(nor_info_block, 0xFF, 0x100);
                 fp_step = 6;
+                if(pc1000mode) reset_nor_status();
                 return;
             }
         }
     }
     if (value == 0xF0) {
         //printf("writing 0xf0 to addr=%04x\n",addr);
-        fp_step = 0;
-        fp_type = 0;
+        reset_nor_status();
         return;
     }
-
+    
     printf("error occurs when operate in flash! addr=%04x value=%02x; fp_step=%d tp_type=%d\n",addr,value,fp_step,fp_type);
 }
 
