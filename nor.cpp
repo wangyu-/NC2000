@@ -1,6 +1,7 @@
 #include "comm.h"
 #include "state.h"
 #include "mem.h"
+#include <cassert>
 
 extern nc1020_states_t nc1020_states;
 extern WqxRom nc1020_rom;
@@ -27,6 +28,9 @@ enum NOR_CMD{
     INFO_BYTE_PROGRAM=4,
     INFO_OR_BMASS_ERASE=5,
     INFO_READ=6,
+    POLL_STATUS=7,
+    PAGE_PROGRAM=8,
+    INFO_PAGE_PROGRAM=9
 };
 void LoadNor(){
 	uint8_t* temp_buff = (uint8_t*)malloc(NOR_SIZE);
@@ -82,6 +86,27 @@ bool read_nor(uint16_t addr, uint8_t &value){
     if(fp_type==NOR_CMD::INFO_READ && fp_step ==3){
         printf("read fp_type=%d fp_step=%d addr=%04x\n",fp_type,fp_step,addr);
         value=nor_info_block[addr%0x100];
+        return true;
+    }
+    if(fp_type == NOR_CMD::SW_ID && fp_step==3){
+        printf("FIXME, got NOR_CMD::SW_ID !!!!!!!! addr=%04x",addr);
+        assert(false);
+        if(addr==0x8000) {
+            if(pc1000mode){
+                value= 0xBF; //from wayback
+            }else if(nc2000mode){
+                value= 0xC7;// from datasheet but not sure if it's exactly same database
+            }else assert(false);
+            return true;
+        }else if (addr==0x8001){
+            value= 0xD7;
+            return true;
+        }else assert(false);
+    }
+    if(fp_type == NOR_CMD::POLL_STATUS && fp_step==3){
+        value=0x88;
+        printf("got NOR_CMD::POLL_STATUS, addr=%04x",addr);
+        assert(false);
         return true;
     }
     if (((fp_type == NOR_CMD::BYTE_PROGRAM && fp_step == 4) ||
@@ -147,32 +172,35 @@ void write_nor0(uint16_t addr,uint8_t value){
         	case 0xA8: fp_type = NOR_CMD::INFO_BYTE_PROGRAM; break;
         	case 0x88: fp_type = NOR_CMD::INFO_OR_BMASS_ERASE; break;
         	case 0x78: fp_type = NOR_CMD::INFO_READ; break;
+            case 0x70: fp_type = NOR_CMD::POLL_STATUS; break;
+            //case 0xb0: fp_type = NOR_CMD::PAGE_PROGRAM; break;
+            //case 0xb8: fp_type = NOR_CMD::INFO_PAGE_PROGRAM; break;
             //default: printf("no new fp type\n");
         	}
             //printf("new fp type=%d\n",fp_type);
             if (fp_type) {
-                if (fp_type == NOR_CMD::SW_ID) {
+                /*if (fp_type == NOR_CMD::SW_ID) {
 					assert(false);
                     //fp_bank_idx = bank_idx;
                     //fp_bak1 = bank[0x0000];
                     //fp_bak2 = bank[0x0001];
-                }
+                }*/
                 fp_step = 3;
                 return;
             }
         }
     } else if (fp_step == 3) {
-        if (fp_type == NOR_CMD::SW_ID) {
+        /*if (fp_type == NOR_CMD::SW_ID) {
             assert(false);
-            /*
             if (value == 0xF0) {
                 //bank[0x0000] = fp_bak1;
                 //bank[0x0001] = fp_bak2;
                 fp_step = 0;
                 fp_type = 0;
                 return;
-            }*/
-        } else if (fp_type == NOR_CMD::BYTE_PROGRAM) {
+            }
+        } else*/ 
+        if (fp_type == NOR_CMD::BYTE_PROGRAM) {
             memmap[addr>>13][addr&0x1fff] &= value;
             fp_step = 4;
             return;
@@ -232,7 +260,7 @@ void write_nor0(uint16_t addr,uint8_t value){
         }
     }
     if (value == 0xF0) {
-        printf("writing 0xf0 to addr=%04x\n",addr);
+        //printf("writing 0xf0 to addr=%04x\n",addr);
         fp_step = 0;
         fp_type = 0;
         return;
