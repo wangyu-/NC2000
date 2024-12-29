@@ -28,8 +28,6 @@ static uint8_t* keypad_matrix = nc1020_states.keypad_matrix;
 static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
-
-
 void Initialize() {
 	if(enable_inject){
 		std::ifstream inject_bin("inject.bin");
@@ -191,7 +189,11 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	//auto old=sound_stream.size();
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (nc1020_states.cycles < target_cycles) {
-		cpu_run();
+		if(use_pc1000emux_cpu){
+			cpu_run2();
+		}else{
+			cpu_run();
+		}
 	}
 
 	post_cpu_run_sound_handling();
