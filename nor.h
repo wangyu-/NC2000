@@ -6,6 +6,6 @@ extern uint8_t nor_buff[NOR_SIZE];
 void SaveNor();
 
 bool read_nor(uint16_t addr, uint8_t &value);
-void write_nor(uint16_t addr,uint8_t value);
+bool write_nor(uint16_t addr,uint8_t value);
 
 void init_nor();

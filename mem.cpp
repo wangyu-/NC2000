@@ -45,6 +45,13 @@ uint8_t Load(uint16_t addr) {
 		}
 	}
 
+	{
+		uint8_t value;
+		if (read_nor(addr,value)){
+			return value;
+		}
+	}
+
 	if (addr < IO_LIMIT) {
 		return io_read[addr](addr);
 	}
@@ -53,12 +60,7 @@ uint8_t Load(uint16_t addr) {
 		return ram_40[addr-0x40];
 	}
 
-	{
-		uint8_t value;
-		if (read_nor(addr,value)){
-			return value;
-		}
-	}
+
 
 	{
 		bool& wake_up_pending = nc1020_states.pending_wake_up;
@@ -77,6 +79,13 @@ void Store(uint16_t addr, uint8_t value) {
 			return;
 		}
 	}
+
+	// write to nor_flash address space.
+    // there must select a nor_bank.
+	if (write_nor(addr,value)){
+		return;
+	}
+
 	if (addr < IO_LIMIT) {
 		io_write[addr](addr, value);
 		return;
@@ -92,17 +101,16 @@ void Store(uint16_t addr, uint8_t value) {
 		return;
 	}
 	uint8_t* page = memmap[addr >> 13];
-	if (page == ram_b/*ramb*/ || page == ram04/*ram04*/ ||page == ram06 ||page ==ram02||page==ram00) {
-		//printf("zxczxc\n");
+	if (page == nc1020_states.ram_b/*ramb*/) {
 		page[addr & 0x1FFF] = value;
 		return;
 	}
-	if (page == ram08 ||page == ram0a ||page ==ram0c||page==ram0e) {
+	if (page >=nc1020_states.ram && page<nc1020_states.ram+ sizeof(nc1020_states.ram) ) {
 		page[addr & 0x1FFF] = value;
 		return;
 	}
 	
-	if (page == nc1020_states.ext_ram|| page == nc1020_states.ext_ram+0x2000  ||page == nc1020_states.ext_ram+0x4000|| page == nc1020_states.ext_ram+0x6000) {
+	if (page >= nc1020_states.ext_ram && page < nc1020_states.ext_ram+sizeof(nc1020_states.ext_ram)) {
 		//printf("write!!!");
 		page[addr & 0x1FFF] = value;
 		return;
@@ -110,9 +118,7 @@ void Store(uint16_t addr, uint8_t value) {
 	if (addr >= 0xE000) {
 		return;
 	}
-    // write to nor_flash address space.
-    // there must select a nor_bank.
-	return write_nor(addr,value);
+
 
 }
 extern "C"{

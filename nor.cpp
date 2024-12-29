@@ -12,10 +12,13 @@ extern uint8_t* memmap[8];
 static uint8_t& fp_step = nc1020_states.fp_step;
 static uint8_t& fp_type = nc1020_states.fp_type;
 //static uint8_t& fp_bank_idx = nc1020_states.fp_bank_idx;
-static uint8_t& fp_bak1 = nc1020_states.fp_bak1;
-static uint8_t& fp_bak2 = nc1020_states.fp_bak2;
-static uint8_t* fp_buff = nc1020_states.fp_buff;
+//static uint8_t& fp_bak1 = nc1020_states.fp_bak1;
+//static uint8_t& fp_bak2 = nc1020_states.fp_bak2;
+//static uint8_t* fp_buff = nc1020_states.fp_buff;
 
+static uint8_t nor_info_block[0x100]={
+0xdb,0xf0,0xd4,0xb6,0xbc,0xfb,'N','C','2','0','0','0',1,1,1,1,1,1,1,1
+};
 
 void LoadNor(){
 	uint8_t* temp_buff = (uint8_t*)malloc(NOR_SIZE);
@@ -57,11 +60,24 @@ void init_nor(){
 		nor_banks[i] = nor_buff + (0x8000 * i);
 	}
 }
-
+bool in_nor_range(uint16_t addr){
+    uint8_t* page = memmap[addr >> 13];
+    if(page< nor_buff || page>= nor_buff +sizeof(nor_buff)){
+        return false;
+    }
+    return true;
+}
 bool read_nor(uint16_t addr, uint8_t &value){
+    // the "read any byte" on datasheet should mean "any byte in nor address"
+    if (!in_nor_range(addr)) return false;
+
+    if(fp_type==6 && fp_step ==3){
+        printf("read fp_type=%d fp_step=%d addr=%04x\n",fp_type,fp_step,addr);
+        value=nor_info_block[addr%0x100];
+        return true;
+    }
     if (((fp_step == 4 && fp_type == 2) ||
-		(fp_step == 6 && fp_type == 3)) &&
-		(addr >= 0x4000 && addr < 0xC000)) {
+		(fp_step == 6 && fp_type == 3))) {
 		fp_step = 0;
         value=0x88;
 		return true;
@@ -69,7 +85,9 @@ bool read_nor(uint16_t addr, uint8_t &value){
     return false;
 }
 
-void write_nor(uint16_t addr,uint8_t value){
+
+void write_nor0(uint16_t addr,uint8_t value){
+
     uint8_t bank_idx = ram_io[0x00];
 
 	if(nc2000mode||nc3000mode){
@@ -95,8 +113,10 @@ void write_nor(uint16_t addr,uint8_t value){
 
     //uint8_t* bank = nor_banks[bank_idx];
 
+    bool addr_is_0x5555 = (addr == 0x5555)||(addr == 0xd555);
+
     if (fp_step == 0) {
-        if (addr == 0x5555 && value == 0xAA) {
+        if (addr_is_0x5555 && value == 0xAA) {
             fp_step = 1;
         }
         return;
@@ -107,7 +127,7 @@ void write_nor(uint16_t addr,uint8_t value){
             return;
         }
     } else if (fp_step == 2) {
-        if (addr == 0x5555) {
+        if (addr_is_0x5555) {
         	switch (value) {
         	case 0x90: fp_type = 1; break;
         	case 0xA0: fp_type = 2; break;
@@ -115,7 +135,9 @@ void write_nor(uint16_t addr,uint8_t value){
         	case 0xA8: fp_type = 4; break;
         	case 0x88: fp_type = 5; break;
         	case 0x78: fp_type = 6; break;
+            //default: printf("no new fp type\n");
         	}
+            //printf("new fp type=%d\n",fp_type);
             if (fp_type) {
                 if (fp_type == 1) {
 					assert(false);
@@ -133,6 +155,7 @@ void write_nor(uint16_t addr,uint8_t value){
                 //bank[0x0000] = fp_bak1;
                 //bank[0x0001] = fp_bak2;
                 fp_step = 0;
+                fp_type = 0;
                 return;
             }
         } else if (fp_type == 2) {
@@ -140,11 +163,11 @@ void write_nor(uint16_t addr,uint8_t value){
             fp_step = 4;
             return;
         } else if (fp_type == 4) {
-            fp_buff[addr & 0xFF] &= value;
+            nor_info_block[addr & 0xFF] &= value;
             fp_step = 4;
             return;
         } else if (fp_type == 3 || fp_type == 5) {
-            if (addr == 0x5555 && value == 0xAA) {
+            if (addr_is_0x5555 && value == 0xAA) {
                 fp_step = 4;
                 return;
             }
@@ -158,14 +181,14 @@ void write_nor(uint16_t addr,uint8_t value){
         }
     } else if (fp_step == 5) {
 		
-        if (addr == 0x5555 && value == 0x10) {
+        if (addr_is_0x5555 && value == 0x10) {
         	for (uint32_t i=0; i<num_nor_pages; i++) {
 				printf("wanna erase all\n");
                 memset(nor_banks[i], 0xFF, 0x8000);
             }
             if (fp_type == 5) {
                 printf("wanna erase infoblock size 256 A\n");
-                memset(fp_buff, 0xFF, 0x100);
+                memset(nor_info_block, 0xFF, 0x100);
             }
             fp_step = 6;
             return;
@@ -186,16 +209,31 @@ void write_nor(uint16_t addr,uint8_t value){
         } else if (fp_type == 5) {
             if (value == 0x48) {
                 printf("wanna erase size 256 B\n");
-                memset(fp_buff, 0xFF, 0x100);
+                memset(nor_info_block, 0xFF, 0x100);
                 fp_step = 6;
                 return;
             }
         }
     }
-    if (addr == 0x8000 && value == 0xF0) {
+    if (value == 0xF0) {
+        printf("writing 0xf0 to addr=%04x\n",addr);
         fp_step = 0;
+        fp_type = 0;
         return;
     }
 
-    printf("error occurs when operate in flash!");
+    printf("error occurs when operate in flash! addr=%04x value=%02x; fp_step=%d tp_type=%d\n",addr,value,fp_step,fp_type);
+}
+
+bool write_nor(uint16_t addr, uint8_t value){
+    uint8_t* page = memmap[addr >> 13];
+    if(value==0xf0){
+        //printf("writing 0xf0 to addr=%04x\n",addr);
+    }
+    /*if(fp_type==6&&fp_step==3){
+        write_nor0(addr,value);
+    }*/
+    if (!in_nor_range(addr)) return false;
+    write_nor0(addr,value);
+    return true;
 }

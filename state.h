@@ -29,10 +29,10 @@ struct nc1020_states_t{
 
 	uint8_t fp_step;
 	uint8_t fp_type;
-	uint8_t fp_bank_idx;
-	uint8_t fp_bak1;
-	uint8_t fp_bak2;
-	uint8_t fp_buff[0x100];
+	//uint8_t fp_bank_idx;
+	//uint8_t fp_bak1;
+	//uint8_t fp_bak2;
+	//uint8_t fp_buff[0x100];
 
 	bool slept;
 	bool should_wake_up;
