@@ -1,15 +1,10 @@
 #pragma once
 
+#include "ibus6502.h"
+
 typedef bool boolean;
 typedef long long __int64;
 typedef unsigned char byte;
-
-class IBus6502 {
-public:
-	virtual int read(int address)=0;
-    virtual void write(int address, int value)=0;
-};
-
 
 class C6502 {
 public:
