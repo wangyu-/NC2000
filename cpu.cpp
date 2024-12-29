@@ -406,7 +406,6 @@ void cpu_run2(){
 	}
 	tick++;
 
-
 	if(pc1000mode){
 		const uint32_t spdc1016freq=3686400;
 		if(nmi_cycles ==0 ){
@@ -426,7 +425,7 @@ void cpu_run2(){
 		qDebug("ggv wanna NMI.");
 		//fprintf(stderr, "ggv wanna NMI.\n");
 		gDeadlockCounter--; // wrong behavior of wqxsim
-	} else if (((PS() & AF_INTERRUPT) == 0) && ((gThreadFlags & TF_IRQFLAG) != 0)) {
+	} else if ((gThreadFlags & TF_IRQFLAG) != 0) {
 		gThreadFlags &= 0xFFEFu; // remove 0x10 IRQ Flag
 		g_irq = TRUE; // B flag (AF_BREAK) will remove in CpuExecute
 		cpu->IRQ();
@@ -434,8 +433,23 @@ void cpu_run2(){
 		gDeadlockCounter--; // wrong behavior of wqxsim
 	}
 
-	cpu->exec(1000);
-	uint32_t CpuTicks=cpu->getTotalCycles()-cycles;
+	if(enable_debug_pc||enable_dyn_debug){
+		uint8_t & Peek16Debug(uint16_t addr);
+		unsigned char buf[10];
+		buf[0]=Peek16Debug(cpu->PC);
+		buf[1]=Peek16Debug(cpu->PC+1);
+		buf[2]=Peek16Debug(cpu->PC+2);
+		buf[3]=0;
+		printf("tick=%lld ",tick /*, reg_pc*/);
+		printf("%02x %02x %02x %02x; ",Peek16Debug(cpu->PC), Peek16Debug(cpu->PC+1),Peek16Debug(cpu->PC+2),Peek16Debug(cpu->PC+3));
+		printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],cpu->A,cpu->X,cpu->Y,cpu->SP,cpu->P,disassemble_next(buf,cpu->PC).c_str());
+		printf("\n");
+
+		//getchar();		
+	}
+
+	
+	uint32_t CpuTicks=cpu->exec_one();
 	cycles+=CpuTicks;
 
 	gDeadlockCounter++;

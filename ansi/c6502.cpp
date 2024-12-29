@@ -1,4 +1,5 @@
 #include "c6502.h"
+#include <cassert>
 #include <cstdio>
 #include <cstring>
 
@@ -80,6 +81,30 @@ void C6502::exec(int cycle) {
     total_cycles += cycle;
     clk -= cycle;
 }
+
+int C6502::exec_one() {
+    //this can be false since IRQ() can be called externally
+    //assert(clk==0);
+    if (irqPending && (P & 4) == 0) {
+        irqPending = false;
+        doIRQ();
+    }
+    if (nmiPending) {
+        nmiPending = false;
+        nmiRequest = true;
+    }
+    doCode(getCode());
+    if (nmiRequest) {
+        nmiRequest = false;
+        doNMI();
+    }
+    int res=clk;
+    lineclk += clk;
+    total_cycles += clk;
+    clk=0;
+    return res;
+}
+
 
 void C6502::NMI() {
     nmiPending = true;

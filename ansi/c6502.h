@@ -28,6 +28,7 @@ public:
 	C6502(IBus6502* bus);
 	void reset();
 	void exec(int cycle);
+	int exec_one();
 	void NMI();
 	void IRQ();
 	__int64 getTotalCycles();
