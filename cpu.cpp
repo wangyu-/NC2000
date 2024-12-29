@@ -398,7 +398,7 @@ void cpu_run2(){
 		cpu=new C6502(&bus);
 		cpu->reset();
 	}
-	assert(cycles==cpu->getTotalCycles());
+	assert(cycles==cpu->getTotalCycles()/12);
 
 	string msg=get_message();
 	if(!msg.empty()){
@@ -449,7 +449,7 @@ void cpu_run2(){
 	}
 
 	
-	uint32_t CpuTicks=cpu->exec_one();
+	uint32_t CpuTicks=cpu->exec_one()/12;
 	cycles+=CpuTicks;
 
 	gDeadlockCounter++;

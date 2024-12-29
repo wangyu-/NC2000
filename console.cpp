@@ -64,8 +64,8 @@ bool dummy_io_for_write(uint16_t addr, uint8_t value){
 	if(addr!=0x3fff) return false;
 
 	if(dummy_io_write_cnt== -1) {
-		printf("write value=%02x pc=%04x!!\n",value,mPC);
-		printf("but dummy io is closed\n");
+		//printf("write value=%02x pc=%04x!!\n",value,mPC);
+		//printf("but dummy io is closed\n");
 		return false;
 	}
 	if(dummy_io_write_cnt++%2==0) {
