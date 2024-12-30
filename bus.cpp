@@ -96,7 +96,28 @@ int BusPC1000::in(int address) {
     }
 }
 
+extern unsigned short lcdbuffaddr;
+extern unsigned short lcdbuffaddrmask;
 void BusPC1000::out(int address, int value) {
+    if(address==0x06){
+        unsigned short t = (value << 4);
+        lcdbuffaddr &= ~0x0FF0; // 去掉中间8bit
+        lcdbuffaddr |= t;
+    }else if(address==0x07){
+        unsigned short t = ((value & 0x3) << 12); // lc12~lc13
+        //t = t | (zpioregs[io06_lcd_config] << 4); // lc4~lc11
+        lcdbuffaddr &= ~0x3000;
+        lcdbuffaddr |= t;
+    }else if(address==0x0b){
+        // 控制LCD地址有效位数
+        unsigned short b6b5 = (value & 0x60) >> 5;
+        // CPU   A15 A14 A13 A12 A11 A10 A9 A8 A7 A6 A5 A4
+        // LCD   0   0   L13 L12 L11 L10 L9 L8 L7 L6 L5 L4     for LCDX1=0  LCDX0=0 3FFF
+        // LCD   0   0   0   L12 L11 L10 L9 L8 L7 L6 L5 L4     for LCDX1=0  LCDX0=1 1FFF
+        // LCD   0   0   0   0   L11 L10 L9 L8 L7 L6 L5 L4     for LCDX1=1  LCDX0=0 0FFF
+        // LCD   0   0   0   0   0   L10 L9 L8 L7 L6 L5 L4     for LCDX1=1  LCDX0=1 07FF
+        lcdbuffaddrmask = 0x3FFF >> b6b5;
+    }
     switch (address) {
         case IO_INT_ENABLE:
             ioReg[O_INT_ENABLE] = value;
