@@ -128,6 +128,13 @@ void BusPC1000::out(int address, int value) {
             if (isPlayMusic) {
                 musicSample = (value & 0x80) == 0 ? -1 : 1;
             }
+            {
+                int a=value &0x80;
+                if (a==0) a=-1;
+                void beeper_on_io_write(int);
+                beeper_on_io_write(a);
+            }
+
             break;
         case IO_PORT_CONFIG:
         case IO_CTV_SELECT:
