@@ -43,7 +43,7 @@ void rom_switcher(){
 
     if(pc1000mode){
         nc1020_rom.romPath = "./cc800/brom.bin";
-        nc1020_rom.norFlashPath = "./cc800/cc800.fls"; 
+        nc1020_rom.norFlashPath = "./cc800/pc1000emux.fls"; 
     }
 }
 
