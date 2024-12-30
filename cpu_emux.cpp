@@ -22,34 +22,45 @@ void cpu_init_emux(){
 	bus->cpu=cpu;
 	cpu->reset();
 }
+
+bool trigger_every_x_ms(int x){
+	uint32_t target_cycles=  CYCLES_SECOND*x/1000;
+	return (cycles/target_cycles > last_cycles/target_cycles);
+}
+
+bool trigger_x_times_per_s(int x){
+	uint32_t target_cycles=CYCLES_SECOND/x;
+	return (cycles/target_cycles > last_cycles/target_cycles);
+}
+
+void setTime() {
+	const int ADDR_POWER_UP_FLAG = 0x435;
+	const int ADDR_WATCH_DOG = 0x468;
+	const int ADDR_IDLESEC = 0x471;
+    const int ADDR_HOUR = 0x469;
+    const int ADDR_YEAR = 0x46c;
+
+    bus->write(ADDR_IDLESEC, 0); //设置idlesec为0，禁止自动关机
+    int year = bus->read(ADDR_YEAR) + 1881;
+    if (year == 2000) {
+		/*SYSTEMTIME sys;
+		GetLocalTime(&sys);
+        bus->write(ADDR_YEAR, sys.wYear - 1881);
+        bus->write(ADDR_YEAR + 1, sys.wMonth - 1);
+        bus->write(ADDR_YEAR + 2, sys.wDay - 1);
+        bus->write(ADDR_HOUR, sys.wHour);
+        bus->write(ADDR_HOUR + 1, sys.wMinute);
+        bus->write(ADDR_HOUR + 2, sys.wSecond * 2);*/
+    }
+}
 void cpu_run_emux(){
-	assert(cycles==cpu->getTotalCycles()/12);
+	//assert(cycles==cpu->getTotalCycles()/12);
 
 	string msg=get_message();
 	if(!msg.empty()){
 		handle_cmd(msg);
 	}
 	tick++;
-
-	if(pc1000mode){
-		const uint32_t spdc1016freq=3686400;
-		const uint32_t cycles_nmi=spdc1016freq/2;
-		if (cycles/cycles_nmi > last_cycles/cycles_nmi) {
-			gThreadFlags |= 0x08; // Add NMIFlag
-		}
-	}
-
-	if ((gThreadFlags & 0x08) != 0) {
-		gThreadFlags &= 0xFFF7u; // remove 0x08 NMI Flag
-		// FIXME: NO MORE REVERSE
-		cpu->NMI();
-		qDebug("ggv wanna NMI.");
-		//fprintf(stderr, "ggv wanna NMI.\n");
-	} else if ((gThreadFlags & 0x10) != 0) {
-		gThreadFlags &= 0xFFEFu; // remove 0x10 IRQ Flag
-		cpu->IRQ();
-		qDebug("ggv wanna IRQ.");
-	}
 
 	if(enable_debug_pc||enable_dyn_debug){
 		uint8_t & Peek16Debug(uint16_t addr);
@@ -65,33 +76,42 @@ void cpu_run_emux(){
 
 		//getchar();		
 	}
-
-	
 	uint32_t CpuTicks=cpu->exec_one()/12;
 	last_cycles=cycles;
 	cycles+=CpuTicks;
 
-    void CheckTimebaseAndSetIRQTBI();
-    bool KeepTimer01( unsigned int cpuTick );
-    void CheckTimebaseSetTimer0IntStatusAddIRQFlag();
-
-	bool needirq = false;
-	if ((nc2000mode||nc3000mode||pc1000mode) && cycles/CYCLES_TIMEBASE >last_cycles/CYCLES_TIMEBASE) {
-		if ((gThreadFlags & 0x80u) == 0) {
-			// CheckTimerbaseAndEnableIRQnEXIE1
-
-			CheckTimebaseAndSetIRQTBI();//??? timebase doesn't trigger needirq??
-			needirq = KeepTimer01(CpuTicks);
-		} else {
-			assert(false);
-		}
-	} else {
-		needirq = KeepTimer01(CpuTicks);
+	if(trigger_x_times_per_s(576*50)){
+		//printf("trigger1!\n");
+		bus->setTimer();
+		if (bus->setTimer0()) {
+            //timer0用于录放音，蜂鸣器音乐
+            bus->setIrqTimer0();
+			//printf("irq1!\n");
+            cpu->IRQ();
+        }
+		if (bus->setTimer1()) {
+            //timer1用于秒表的百分之一秒，每秒200次
+            bus->setIrqTimer1();
+            cpu->IRQ();
+			//printf("irq2!\n");
+        }
 	}
-	
-	if (needirq) {
-		//printf("needirq is true\n");
-		CheckTimebaseSetTimer0IntStatusAddIRQFlag();
+
+	if(trigger_every_x_ms(4)){
+		if (bus->timeBaseEnable()) {
+            //timebase中断为4ms一次，主要用于键盘扫描
+            bus->setIrqTimeBase();
+            cpu->IRQ();
+        }
+	}
+
+	if(trigger_x_times_per_s(2)){
+		//NMI每半秒发生一次
+        setTime();
+        if (bus->nmiEnable()){
+            cpu->NMI();
+			//printf("nmi!\n");
+		}
 	}
 
 }
