@@ -43,10 +43,10 @@ global switch
 ===================
 */
 
-const bool nc1020mode = false;
+const bool nc1020mode = true;
 const bool nc2000mode = false;
 const bool nc3000mode = false;
-const bool pc1000mode = true;
+const bool pc1000mode = false;
 
 const bool use_emux_cpu =true;
 const bool use_emux_io = true;

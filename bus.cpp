@@ -64,7 +64,17 @@ void BusPC1000::write(int address, int value) {
     Store(address,value);
 }
 
+uint8_t IO_API Read3B(uint8_t addr);
+uint8_t IO_API Read3F(uint8_t addr);
+
 int BusPC1000::in(int address) {
+    if(nc1020mode||nc2000mode||nc3000mode){
+        if(address==0x3b){
+            return Read3B(address);
+        }else if(address==0x3f){
+            return Read3F(address);
+        }
+    }
     int t;
     switch (address) {
         case IO_INT_STATUS:
@@ -98,6 +108,8 @@ int BusPC1000::in(int address) {
 
 extern unsigned short lcdbuffaddr;
 extern unsigned short lcdbuffaddrmask;
+void Write23(uint8_t addr, uint8_t value);
+void Write3F(uint8_t addr, uint8_t value);
 void BusPC1000::out(int address, int value) {
     if(address==0x06){
         unsigned short t = (value << 4);
@@ -117,6 +129,14 @@ void BusPC1000::out(int address, int value) {
         // LCD   0   0   0   0   L11 L10 L9 L8 L7 L6 L5 L4     for LCDX1=1  LCDX0=0 0FFF
         // LCD   0   0   0   0   0   L10 L9 L8 L7 L6 L5 L4     for LCDX1=1  LCDX0=1 07FF
         lcdbuffaddrmask = 0x3FFF >> b6b5;
+    }
+    if(nc1020mode||nc2000mode||nc3000mode){
+        if(address==0x23){
+            return Write23(address,value);
+        }
+        if(address==0x3f){
+            return Write3F(address,value);
+        }
     }
     switch (address) {
         case IO_INT_ENABLE:

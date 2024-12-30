@@ -1,4 +1,5 @@
 #include "ansi/c6502.h"
+#include "comm.h"
 #include "mem.h"
 #include "console.h"
 #include "state.h"
@@ -98,6 +99,9 @@ void cpu_run_emux(){
 	}
 
 	if(trigger_every_x_ms(4)){
+		if(nc1020mode){
+			nc1020_states.clock_buff[4] ++;
+		}
 		if (bus->timeBaseEnable()) {
             //timebase中断为4ms一次，主要用于键盘扫描
             bus->setIrqTimeBase();
@@ -106,11 +110,29 @@ void cpu_run_emux(){
 	}
 
 	if(trigger_x_times_per_s(2)){
-		//NMI每半秒发生一次
-        setTime();
-        if (bus->nmiEnable()){
-            cpu->NMI();
-			//printf("nmi!\n");
+		if(nc1020mode){
+			void AdjustTime();
+			bool IsCountDown(void);
+			static bool& timer0_toggle = nc1020_states.timer0_toggle;
+			timer0_toggle = !timer0_toggle;
+			if (!timer0_toggle) {
+				AdjustTime();
+			}
+			if (!IsCountDown() || timer0_toggle) {
+				ram_io[0x3D] = 0;
+			} else {
+				ram_io[0x3D] = 0x20;
+				nc1020_states.clock_flags &= 0xFD;
+			}
+			//g_irq = true;
+		}
+		if(pc1000mode){
+			//NMI每半秒发生一次
+			setTime();
+			if (bus->nmiEnable()){
+				cpu->NMI();
+				//printf("nmi!\n");
+			}
 		}
 	}
 
