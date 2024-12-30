@@ -126,6 +126,9 @@ void cpu_run_emux(){
 			}
 			//g_irq = true;
 		}
+		if(nc2000mode||nc3000mode){
+			Store(1025, 0); //set idle time to zero, prevent sleep
+		}
 		if(pc1000mode){
 			//NMI每半秒发生一次
 			setTime();

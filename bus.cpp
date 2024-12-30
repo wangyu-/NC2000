@@ -5,6 +5,7 @@
 #include "comm.h"
 #include "mem.h"
 #include "state.h"
+#include "nand.h"
 extern nc1020_states_t nc1020_states;
 extern Dsp dsp;
 
@@ -75,6 +76,16 @@ int BusPC1000::in(int address) {
             return Read3F(address);
         }
     }
+    if(nc3000mode){
+        if(address==0x39) {
+            return read_nand();
+        }
+    } 
+    if(nc2000mode){
+        if(address==0x29) {
+            return read_nand();
+        }
+    }
     int t;
     switch (address) {
         case IO_INT_STATUS:
@@ -111,6 +122,16 @@ extern unsigned short lcdbuffaddrmask;
 void Write23(uint8_t addr, uint8_t value);
 void Write3F(uint8_t addr, uint8_t value);
 void BusPC1000::out(int address, int value) {
+    if(nc3000mode){
+        if(address==0x39) {
+            return nand_write(value);
+        } 
+    }
+    if(nc2000mode) {
+        if(address==0x29) {
+            return nand_write(value);
+        }
+    }
     if(address==0x06){
         unsigned short t = (value << 4);
         lcdbuffaddr &= ~0x0FF0; // 去掉中间8bit
