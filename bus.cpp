@@ -2,6 +2,7 @@
 #include <memory.h>
 #include <stdio.h>
 #include "ansi/c6502.h"
+#include "comm.h"
 
 typedef long long __int64;
 
@@ -48,12 +49,13 @@ void BusPC1000::getInfo(char info[]) {
 }
 
 int BusPC1000::read(int address) {
-    ////////////////todo
-    return -111;
+    uint8_t Load(uint16_t addr);
+    return Load(address);
 }
 
 void BusPC1000::write(int address, int value) {
-    //////////////todo
+    void Store(uint16_t addr, uint8_t value);
+    Store(address,value);
 }
 
 int BusPC1000::in(int address) {

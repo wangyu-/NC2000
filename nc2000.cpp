@@ -61,6 +61,7 @@ void ResetStates(){
 	memset(&nc1020_states,0,sizeof(nc1020_states_t));
 	init_mem();
 	reset_cpu_states();
+	cpu_init_emux();
 }
 
 /*

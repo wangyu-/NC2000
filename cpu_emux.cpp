@@ -3,6 +3,7 @@
 #include "console.h"
 #include "state.h"
 #include "disassembler.h"
+#include "bus.h"
 
 #define qDebug(...)
 
@@ -12,24 +13,16 @@ extern nc1020_states_t nc1020_states;
 static uint64_t& cycles = nc1020_states.cycles;
 static uint64_t& last_cycles = nc1020_states.last_cycles;
 
-struct Bus:IBus6502{
-	Bus(){
-	}
-	int read(int address){
-		return Load(address);
-	}
-    void write(int address, int value){
-		Store(address,value);
-	}
-}bus;
+struct BusPC1000 *bus;
 C6502 *cpu;
-bool cpu_emux_initalized;
+
+void cpu_init_emux(){
+	bus=new BusPC1000();
+	cpu=new C6502(bus);
+	bus->cpu=cpu;
+	cpu->reset();
+}
 void cpu_run_emux(){
-	if(!cpu_emux_initalized){
-		cpu_emux_initalized=true;
-		cpu=new C6502(&bus);
-		cpu->reset();
-	}
 	assert(cycles==cpu->getTotalCycles()/12);
 
 	string msg=get_message();
