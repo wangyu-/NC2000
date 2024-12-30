@@ -88,29 +88,29 @@ int BusPC1000::in(int address) {
     }
     int t;
     switch (address) {
-        case IO_INT_STATUS:
+        case IO_INT_STATUS://0x01
             t = ioReg[IO_INT_STATUS];
             ioReg[IO_INT_STATUS] &= 0xc0;
             return t;
-        case IO_START_TIMER0:
+        case IO_START_TIMER0://0x05
             timer0run = true;
             return (int) tm0v;
-        case IO_STOP_TIMER0:
+        case IO_STOP_TIMER0://0x05
             timer0run = false;
             return (int) tm0v;
-        case IO_START_TIMER1:
+        case IO_START_TIMER1://0x07
             timer1run = true;
             return (int) tm1v;
-        case IO_STOP_TIMER1:
+        case IO_STOP_TIMER1://0x06
             timer1run = false;
             return (int) tm1v;
-        case IO_PORT3:
+        case IO_PORT3://0x0b
             return readPort3();
-        case IO_DSP_STAT:
+        case IO_DSP_STAT://0x20
             return dspStat();
-		case IO_DSP_RET_DATA:
+		case IO_DSP_RET_DATA://0x21
 			return dspRetData();
-		case IO_GENERAL_STATUS:
+		case IO_GENERAL_STATUS://0xc
 			return record();
         default:
             return ioReg[address];
@@ -160,34 +160,34 @@ void BusPC1000::out(int address, int value) {
         }
     }
     switch (address) {
-        case IO_INT_ENABLE:
+        case IO_INT_ENABLE://0x01
             ioReg[O_INT_ENABLE] = value;
             break;
-        case IO_BANK_SWITCH:
+        case IO_BANK_SWITCH://0x00
             ioReg[IO_BANK_SWITCH] = value;
             super_switch();
             /////////////bankSwitch();
             break;
-        case IO_BIOS_BSW:
+        case IO_BIOS_BSW://0x0a
             ioReg[IO_BIOS_BSW] = value;
             super_switch();
             /////////////biosBankSwitch();
             /////////////bankSwitch();
             break;
-        case IO_ZP_BSW:
+        case IO_ZP_BSW://0x0f
             ioReg[IO_ZP_BSW] = value;
             super_switch();
             /////////zpBankSwitch();
             break;
-        case IO_PORT0:
+        case IO_PORT0://0x08
             ioReg[IO_PORT0] = value;
             ioReg[O_PORT0] = value;
             break;
-		case IO_PORT1:
+		case IO_PORT1://0x09
 			ioReg[IO_PORT1] = value;
 			read_key();
 			break;
-        case IO_PORT4:
+        case IO_PORT4://0x18
             ioReg[IO_PORT4] = value;
             if (isPlayMusic) {
                 musicSample = (value & 0x80) == 0 ? -1 : 1;
@@ -200,12 +200,12 @@ void BusPC1000::out(int address, int value) {
             }
 
             break;
-        case IO_PORT_CONFIG:
-        case IO_CTV_SELECT:
+        case IO_PORT_CONFIG://0x07
+        case IO_CTV_SELECT://0x19
             ioReg[address] = value;
             checkPlay();
             break;
-        case IO_TIMER0_VAL:
+        case IO_TIMER0_VAL://0x02
             ioReg[IO_TIMER0_VAL] = value;
             tm0v = value + tm0r;
 			if (tm0v > 255) {
@@ -213,29 +213,29 @@ void BusPC1000::out(int address, int value) {
 			}
             tm0r = 0;
             break;
-        case IO_TIMER1_VAL:
+        case IO_TIMER1_VAL://0x03
             ioReg[IO_TIMER1_VAL] = value;
             tm1v = value;
             break;
-        case IO_TIMERA_VAL_L:
+        case IO_TIMERA_VAL_L://0x10
             tmaReload = (tmaReload & 0xff00) | value;
             break;
-        case IO_TIMERA_VAL_H:
+        case IO_TIMERA_VAL_H://0x11
             tmaReload = (tmaReload & 0xff) | (value << 8);
             tmaValue = tmaReload;
             break;
-        case IO_DSP_STAT:
+        case IO_DSP_STAT://0x20
             if (value == DSP_RESET_FLAG || value == DSP_WAKEUP_FLAG) {
                 dspSleep = false;
 				dsp->reset();
             }
             break;
-        case IO_DSP_DATA_HI:
+        case IO_DSP_DATA_HI://0x23
             ioReg[IO_DSP_DATA_HI] = value;
             dspCmd(ioReg[IO_DSP_DATA_HI] * 256 + ioReg[IO_DSP_DATA_LOW]);
 			dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
             break;
-		case IO_DAC_DATA:
+		case IO_DAC_DATA://0x0e
 			ioReg[IO_DAC_DATA] = value;
 			{
 				__int64 t=cpu->getTotalCycles();
