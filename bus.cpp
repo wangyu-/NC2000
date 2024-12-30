@@ -75,6 +75,9 @@ int BusPC1000::in(int address) {
         }else if(address==0x3f){
             return Read3F(address);
         }
+        if(address==0x20||address==0x21||address==0x0c){
+            return ioReg[address];
+        }
     }
     if(nc3000mode){
         if(address==0x39) {
@@ -158,7 +161,17 @@ void BusPC1000::out(int address, int value) {
         if(address==0x3f){
             return Write3F(address,value);
         }
+        if(address==0x0d){
+            ioReg[0x0d] = value;
+            super_switch();
+            return;
+        }
+        if(address==0x20||address==0x23||address==0x0e){
+            ioReg[address]=value;
+            return;
+        }
     }
+
     switch (address) {
         case IO_INT_ENABLE://0x01
             ioReg[O_INT_ENABLE] = value;

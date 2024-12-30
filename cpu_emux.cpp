@@ -99,7 +99,8 @@ void cpu_run_emux(){
 	}
 
 	if(trigger_every_x_ms(4)){
-		if(nc1020mode){
+		if(nc1020mode||nc2000mode||nc3000mode){
+			//this makes lava games work
 			nc1020_states.clock_buff[4] ++;
 		}
 		if (bus->timeBaseEnable()) {
@@ -109,8 +110,16 @@ void cpu_run_emux(){
         }
 	}
 
+	if(trigger_x_times_per_s(1)){
+		//experiment
+		if(nc2000mode||nc3000mode){
+			////void AdjustTime();
+			////AdjustTime();
+		}
+	}
 	if(trigger_x_times_per_s(2)){
 		if(nc1020mode){
+			//nc2000 crash if enabled
 			void AdjustTime();
 			bool IsCountDown(void);
 			static bool& timer0_toggle = nc1020_states.timer0_toggle;
@@ -124,14 +133,15 @@ void cpu_run_emux(){
 				ram_io[0x3D] = 0x20;
 				nc1020_states.clock_flags &= 0xFD;
 			}
-			//g_irq = true;
 		}
 		if(nc2000mode||nc3000mode){
 			Store(1025, 0); //set idle time to zero, prevent sleep
 		}
 		if(pc1000mode){
-			//NMI每半秒发生一次
+			//set system time & prevent sleep, not important
 			setTime();
+		}
+		if(pc1000mode||nc2000mode){
 			if (bus->nmiEnable()){
 				cpu->NMI();
 				//printf("nmi!\n");
