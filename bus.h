@@ -60,14 +60,7 @@ class BusPC1000 : public IBus6502 {
 public:
 	C6502* cpu;
 	////////Dsp* dsp;
-    boolean flashModify;
     int ioReg[0x80];
-    byte* ram;
-    byte* xrom;
-    byte* flash;
-    byte* bank[8];
-    byte* bbsTab[16];
-    int zpBase;
     int tmaValue;
     int tmaReload;
     int* screen;
@@ -83,10 +76,6 @@ public:
     ////////////////SoundStream* sound;
     int musicSample;
     boolean musicEnable;// = true;
-
-	int sstId;
-    int sstWrite;
-    int sstErase;
 
 public:
 	BusPC1000();
@@ -126,3 +115,5 @@ private:
 	int read_key();
 	int record();
 };
+
+#undef final

@@ -14,7 +14,6 @@ static int keyMap[] = {
         0x501, 0x502, 0x504, 0x508, 0x510, 0x520, 0x540, 0x580, 0x108, 0x180
 };
 
-#define BANK_SIZE 0x2000
 
 __int64 recTick=0,lastDac=0,recTotal=0;
 
@@ -23,13 +22,9 @@ BusPC1000::BusPC1000() {
 	musicEnable = true;
 	//////////dsp=new Dsp();
 	//////////dsp->reset();
-    ram = new byte[8*0x2000];
-    xrom = new byte[0x800*0x2000]; //外部rom，16MB
-    flash = new byte[64*0x2000]; //flash，512KB
 	reset();
 	for (int i=0;i<8;i++)
 		key_posi[i]=0;
-    flashModify = false;
 }
 
 void BusPC1000::reset() {
@@ -38,61 +33,14 @@ void BusPC1000::reset() {
 	tmaValue=tmaReload=0;
 	dspSleep=isPlayMusic=false;
 	dspData=0;
-	sstId=sstWrite=sstErase=0;
 	musicSample = 0;
-	for (int i=0;i<0x80;i++)
-		ioReg[i]=0;
-	memset(ram,0,8*0x2000);
-	bank[0] = ram;
-    bank[1] = ram+BANK_SIZE;
-    ioReg[IO_BANK_SWITCH] = 0;
-    bankSwitch();
-    zpBase = 0;
-    bank[6] = xrom+BANK_SIZE*2;
-    bank[7] = xrom+BANK_SIZE*3;
-    bbsTab[0] = xrom+BANK_SIZE*2;
-    bbsTab[1] = ram+BANK_SIZE*3;
-    bbsTab[2] = xrom;
-    bbsTab[3] = xrom+BANK_SIZE*1;
-    bbsTab[4] = xrom+BANK_SIZE*6;
-    bbsTab[5] = xrom+BANK_SIZE*7;
-    bbsTab[6] = xrom+BANK_SIZE*4;
-    bbsTab[7] = xrom+BANK_SIZE*5;
-    bbsTab[8] = xrom+BANK_SIZE*10;
-    bbsTab[9] = xrom+BANK_SIZE*11;
-    bbsTab[10] = xrom+BANK_SIZE*8;
-    bbsTab[11] = xrom+BANK_SIZE*9;
-    bbsTab[12] = xrom+BANK_SIZE*14;
-    bbsTab[13] = xrom+BANK_SIZE*15;
-    bbsTab[14] = xrom+BANK_SIZE*12;
-    bbsTab[15] = xrom+BANK_SIZE*13;
+
 	recTick=lastDac=recTotal=0;
 }
 
 void BusPC1000::warmReset() {
 	recTick=lastDac=recTotal=0;
     ioReg[IO_TIMER0_VAL] = 1;
-    ram[0xcb] = -1;
-    ram[0xcc] = -1;
-}
-
-void BusPC1000::loadRom(byte* b, int length, int offset) {
-	for (int i = 0; i < length; i++) {
-        xrom[offset] = b[i];
-        offset++;
-    }
-}
-
-byte* BusPC1000::loadFlash(byte* b, int length, int offset) {
-	for (int i = 0; i < length; i++) {
-        flash[offset] = b[i];
-        offset++;
-    }
-	return flash;
-}
-
-byte* BusPC1000::getScreen() {
-	return ram+0x9c0;
 }
 
 void BusPC1000::getInfo(char info[]) {
@@ -100,82 +48,12 @@ void BusPC1000::getInfo(char info[]) {
 }
 
 int BusPC1000::read(int address) {
-	if (address < 0x40)
-        return in(address);
-    else if (address < 0x80)
-        return ram[address + zpBase];
-    else
-        return bank[(address & 0xe000) >> 13][address & 0x1fff];
-}
-
-int BusPC1000::readIo(int address) {
-	if (address < 0x40) {
-		if (address == IO_INT_ENABLE)
-			return ioReg[O_INT_ENABLE];
-		if (address == IO_PORT0)
-			return ioReg[O_PORT0];
-        return ioReg[address];
-	} else if (address < 0x80)
-        return ram[address + zpBase];
-    else
-        return bank[(address & 0xe000) >> 13][address & 0x1fff];
+    ////////////////todo
+    return -111;
 }
 
 void BusPC1000::write(int address, int value) {
-	if (address < 0x40) {
-        out(address, value);
-    } else if (address < 0x80) {
-        ram[address + zpBase] = (byte) value;
-    } else if (address < 0x4000) {
-        bank[address >> 13][address & 0x1fff] = (byte) value;
-    } else if ((ioReg[IO_BIOS_BSW] & 0x80) != 0 && ioReg[IO_BANK_SWITCH] < 16 && address < 0xc000) {
-        //写flash
-        writeFlash(address, value);
-    } else if (ioReg[IO_BANK_SWITCH] == 0 && address < 0x8000) {
-        bank[address >> 13][address & 0x1fff] = (byte) value;
-    } else if ((ioReg[IO_BIOS_BSW] & 0xf) != 1 && address >= 0xc000 && address < 0xe000) {
-        //bbs1
-        bank[address >> 13][address & 0x1fff] = (byte) value;
-    } else {
-        //Global.log("write " + Integer.toHexString(address) + " " + Integer.toHexString(value) + " " +
-        //        Integer.toHexString(cpu.PC) + " " + ioReg[IO_BANK_SWITCH]);
-    }
-}
-
-void BusPC1000::writeFlash(int address, int value) {
-    if ((sstId == 0) && (sstWrite == 0) && (sstErase == 0) && (address == 0x5555) && (value == 0xaa)) {
-        sstId++;
-        sstWrite++;
-        sstErase++;
-    } else if ((sstId == 1) && (sstWrite == 1) && (sstErase == 1) && (address == 0xaaaa) && (value == 0x55)) {
-        sstId++;
-        sstErase++;
-        sstWrite++;
-    } else if ((sstWrite == 2) && (address == 0x5555) && (value == 0xa0)) {
-        sstWrite++;
-        sstId = 0;
-        sstErase = 0;
-    } else if (sstWrite == 3) {
-        bank[address >> 13][address & 0x1fff] &= (byte) value;
-        sstWrite = 0;
-        flashModify = true;
-	} else if ((sstErase == 2) && (address == 0x5555) && (value == 0x80)) {
-		sstErase++;
-		sstWrite=0;
-		sstId=0;
-	} else if ((sstErase == 3) && (address == 0x5555) && (value == 0xaa)) {
-		sstErase++;
-	} else if ((sstErase == 4) && (address == 0xaaaa) && (value == 0x55)) {
-		sstErase++;
-	} else if ((sstErase == 5) && (value == 0x30)) {
-		memset(bank[address >> 13] + (address & 0x1000), 0xff, 0x1000);
-		sstErase = 0;
-        flashModify = true;
-    } else {
-        //Global.log("write " + Integer.toHexString(address) + " " + Integer.toHexString(value) + " " +
-        //        Integer.toHexString(cpu.PC) + " " + ioReg[IO_BANK_SWITCH]);
-		printf("write %x %x %x %x\n",address,value,/*cpu->pc*/0,ioReg[IO_BANK_SWITCH]);
-    }
+    //////////////todo
 }
 
 int BusPC1000::in(int address) {
@@ -217,16 +95,16 @@ void BusPC1000::out(int address, int value) {
             break;
         case IO_BANK_SWITCH:
             ioReg[IO_BANK_SWITCH] = value;
-            bankSwitch();
+            /////////////bankSwitch();
             break;
         case IO_BIOS_BSW:
             ioReg[IO_BIOS_BSW] = value;
-            biosBankSwitch();
-            bankSwitch();
+            /////////////biosBankSwitch();
+            /////////////bankSwitch();
             break;
         case IO_ZP_BSW:
             ioReg[IO_ZP_BSW] = value;
-            zpBankSwitch();
+            /////////zpBankSwitch();
             break;
         case IO_PORT0:
             ioReg[IO_PORT0] = value;
@@ -354,54 +232,6 @@ boolean BusPC1000::setTimer1() {
         }
     }
     return false;
-}
-
-void BusPC1000::bankSwitch() {
-    int bid = ioReg[IO_BANK_SWITCH];
-    if ((ioReg[IO_BIOS_BSW] & 0x80) == 0) {
-        //b7 :  ROA   : 4000-BFFF ROM RAM select ( 0 for ROM; 1 for RAM )
-        int base = (bid + ((ioReg[IO_LCD_SEGMENT] & 1) << 8)) << 2;
-        if (bid != 0) {
-            bank[2] = xrom+BANK_SIZE*(base + 2);
-            bank[3] = xrom+BANK_SIZE*(base + 3);
-        } else {
-            bank[2] = ram+BANK_SIZE*2;
-            bank[3] = ram+BANK_SIZE*3;
-        }
-        bank[4] = xrom+BANK_SIZE*base;
-        bank[5] = xrom+BANK_SIZE*(base + 1);
-    } else {
-        int base = (bid & 0xf) << 2;
-        /*if (bid < 2 && (ioReg[IO_LCD_SEGMENT] & 3) == 0) {
-            bank[2] = ram[base + 2];
-            bank[3] = ram[base + 3];
-            bank[4] = ram[base];
-            bank[5] = ram[base + 1];
-        } else*/
-        {
-            bank[2] = flash+BANK_SIZE*(base + 2);
-            bank[3] = flash+BANK_SIZE*(base + 3);
-            bank[4] = flash+BANK_SIZE*base;
-            bank[5] = flash+BANK_SIZE*(base + 1);
-        }
-    }
-}
-
-void BusPC1000::biosBankSwitch() {
-    int value = ioReg[IO_BIOS_BSW];
-    bank[6] = bbsTab[value & 0xf];
-}
-
-void BusPC1000::zpBankSwitch() {
-    int value = ioReg[IO_ZP_BSW] & 7;
-    int base = 0;
-    if (value == 0)
-        base = 0x40;
-    else if (value < 4)
-        base = 0;
-    else
-        base = 0x200 + (value - 4) * 0x40;
-    zpBase = base - 0x40;
 }
 
 void BusPC1000::setIrqTimeBase() {
