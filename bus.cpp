@@ -300,6 +300,21 @@ boolean BusPC1000::keyDown(int x, int y) {
     return true;
 }
 
+boolean BusPC1000::keyDown2(int y,int x) {
+    assert(y>=0 &&y<8);
+    assert(x>=0 &&x<8);
+    int v = (7-y)*256;
+    v+=1<<x;
+    //printf("keycode= %04x\n",v);
+    if (v != 0) {
+        key_posi[v >> 8] = v & 0xff;
+        if ((((v >> 8) == 6 && (v & 0x7f) != 0) || v == 0x701) && ioReg[IO_CLOCK_CTRL] == 0xf0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void BusPC1000::keyUp() {
     for (int i = 0; i < 8; i++) {
         key_posi[i] = 0;

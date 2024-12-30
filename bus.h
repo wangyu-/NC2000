@@ -95,6 +95,7 @@ public:
 	void setIrqTimer0();
 	void setIrqTimer1();
 	boolean keyDown(int x, int y);
+    boolean keyDown2(int x, int y);
 	void keyUp();
 	boolean nmiEnable();
 	boolean timeBaseEnable();

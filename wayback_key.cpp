@@ -1,7 +1,9 @@
 #include <SDL2/SDL.h>
 #include "comm.h"
 #include <map>
+#include "bus.h"
 using namespace std;
+extern BusPC1000 *bus;
 
 struct TKeyItem {
     //TKeyItem(int ID, const char* graphic, const char* subscript);
@@ -274,6 +276,11 @@ void handle_key_wayback(signed int sym, bool key_down){
         auto value=map_key_wayback(sym);
         if(value.first!=-1 && value.second!=-1){
            SetKeyWayback(value.first,value.second, key_down);
+           if(key_down){
+            bus->keyDown2(value.first, value.second);
+           }else{
+            bus->keyUp();
+           }
         }
         switch ( sym) {
           case SDLK_BACKQUOTE:
