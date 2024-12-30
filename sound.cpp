@@ -214,7 +214,10 @@ void init_audio(){
 bool sound_busy(){
 	//try to mimic emux's behavior
 	//at the moment only for experiment
-	if(SDL_GetQueuedAudioSize( dsp_deviceId )>8000/2) {
+
+	//the default value 8000/2 (equivalently 44100/2) is too small
+	//have to use large value here
+	if(SDL_GetQueuedAudioSize( dsp_deviceId )>20000) {
 		//printf("busy!!!\n");
 		return true;
 	}
