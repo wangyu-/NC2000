@@ -44,8 +44,8 @@ global switch
 */
 
 const bool nc1020mode = false;
-const bool nc2000mode = true;
-const bool nc3000mode = false;
+const bool nc2000mode = false;
+const bool nc3000mode = true;
 const bool pc1000mode = false;
 
 const bool use_emux_cpu =true;

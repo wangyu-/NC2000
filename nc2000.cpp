@@ -159,7 +159,15 @@ void SetKey(uint8_t key_id, bool down_or_up){
 	}
 }
 bool is_grey_mode(){
-	return nc1020_states.grey_mode;
+    extern unsigned short lcdbuffaddr;
+    extern unsigned short lcdbuffaddrmask;
+	unsigned short lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
+	//printf("%x  ",lcd_addr);
+	if(nc2000mode)
+		return lcd_addr==0x1380;
+	if(nc3000mode)
+		return lcd_addr==0x380;
+	return false;
 }
 bool CopyLcdBuffer(uint8_t* buffer){
     extern unsigned short lcdbuffaddr;
