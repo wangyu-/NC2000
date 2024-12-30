@@ -10,8 +10,7 @@
 extern unsigned short gThreadFlags;
 extern nc1020_states_t nc1020_states;
 static uint64_t& cycles = nc1020_states.cycles;
-static uint64_t& nmi_cycles = nc1020_states.nmi_cycles;
-static uint64_t& timebase_cycles = nc1020_states.timebase_cycles;
+static uint64_t& last_cycles = nc1020_states.last_cycles;
 
 struct Bus:IBus6502{
 	Bus(){
@@ -41,11 +40,8 @@ void cpu_run_emux(){
 
 	if(pc1000mode){
 		const uint32_t spdc1016freq=3686400;
-		if(nmi_cycles ==0 ){
-			nmi_cycles +=spdc1016freq/2;
-		}
-		if (cycles >= nmi_cycles) {
-			nmi_cycles += spdc1016freq/2;
+		const uint32_t cycles_nmi=spdc1016freq/2;
+		if (cycles/cycles_nmi > last_cycles/cycles_nmi) {
 			gThreadFlags |= 0x08; // Add NMIFlag
 		}
 	}
@@ -79,6 +75,7 @@ void cpu_run_emux(){
 
 	
 	uint32_t CpuTicks=cpu->exec_one()/12;
+	last_cycles=cycles;
 	cycles+=CpuTicks;
 
     void CheckTimebaseAndSetIRQTBI();
@@ -86,8 +83,7 @@ void cpu_run_emux(){
     void CheckTimebaseSetTimer0IntStatusAddIRQFlag();
 
 	bool needirq = false;
-	if ((nc2000mode||nc3000mode||pc1000mode) && cycles >= timebase_cycles) {
-		timebase_cycles += CYCLES_TIMEBASE;
+	if ((nc2000mode||nc3000mode||pc1000mode) && cycles/CYCLES_TIMEBASE >last_cycles/CYCLES_TIMEBASE) {
 		if ((gThreadFlags & 0x80u) == 0) {
 			// CheckTimerbaseAndEnableIRQnEXIE1
 
