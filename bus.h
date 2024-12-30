@@ -60,7 +60,8 @@ class BusPC1000 : public IBus6502 {
 public:
 	C6502* cpu;
 	////////Dsp* dsp;
-    int ioReg[0x80];
+    ////////int ioReg[0x80];
+    unsigned char* ioReg;
     int tmaValue;
     int tmaReload;
     int* screen;
@@ -100,10 +101,11 @@ public:
 	void playSample();
 	void getInfo(char info[]);
 
+    int in(int address);
+	void out(int address, int value);
+
 private:
 	void writeFlash(int address, int value);
-	int in(int address);
-	void out(int address, int value);
 	void checkPlay();
 	void bankSwitch();
 	void biosBankSwitch();

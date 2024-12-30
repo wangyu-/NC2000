@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include "ansi/c6502.h"
 #include "comm.h"
+#include "mem.h"
+#include "state.h"
+extern nc1020_states_t nc1020_states;
 
 typedef long long __int64;
 
@@ -20,6 +23,7 @@ __int64 recTick=0,lastDac=0,recTotal=0;
 
 BusPC1000::BusPC1000() {
 	///////////sound = 0;
+    ioReg=nc1020_states.ram_io;
 	musicEnable = true;
 	//////////dsp=new Dsp();
 	//////////dsp->reset();
@@ -97,15 +101,18 @@ void BusPC1000::out(int address, int value) {
             break;
         case IO_BANK_SWITCH:
             ioReg[IO_BANK_SWITCH] = value;
+            super_switch();
             /////////////bankSwitch();
             break;
         case IO_BIOS_BSW:
             ioReg[IO_BIOS_BSW] = value;
+            super_switch();
             /////////////biosBankSwitch();
             /////////////bankSwitch();
             break;
         case IO_ZP_BSW:
             ioReg[IO_ZP_BSW] = value;
+            super_switch();
             /////////zpBankSwitch();
             break;
         case IO_PORT0:

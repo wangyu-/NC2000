@@ -7,6 +7,9 @@
 #include "io.h"
 #include <cassert>
 
+#include "bus.h"
+
+extern BusPC1000 *bus;
 uint8_t* memmap[8];
 
 
@@ -53,7 +56,11 @@ uint8_t Load(uint16_t addr) {
 	}
 
 	if (addr < IO_LIMIT) {
-		return io_read[addr](addr);
+		if(use_emux_io){
+			return bus->in(addr);
+		}else {
+			return io_read[addr](addr);
+		}
 	}
 
 	if (addr <0x80) {
@@ -87,7 +94,12 @@ void Store(uint16_t addr, uint8_t value) {
 	}
 
 	if (addr < IO_LIMIT) {
-		io_write[addr](addr, value);
+		if(use_emux_io){
+			return bus->out(addr, value);
+		}else {
+			io_write[addr](addr, value);
+		}
+
 		return;
 	}
 
