@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "state.h"
 #include "nand.h"
+#include "NekoDriverIO.h"
 extern nc1020_states_t nc1020_states;
 extern Dsp dsp;
 
@@ -72,21 +73,40 @@ int BusPC1000::in(int address) {
     if(nc1020mode||nc2000mode||nc3000mode){
         if(address==0x3b){
             return Read3B(address);
-        }else if(address==0x3f){
+        }
+        if(address==0x3f){
             return Read3F(address);
         }
-        if(address==0x20||address==0x21||address==0x0c){
-            return ioReg[address];
+        if(address==0x08){
+            return ReadPort0(address);
+        }
+        if(address==0x09){
+            return ReadPort1(address);
         }
     }
     if(nc3000mode){
         if(address==0x39) {
             return read_nand();
         }
+        if(address==0x1e){
+            return ReadPort6EXP(address);
+        }
     } 
     if(nc2000mode){
         if(address==0x29) {
             return read_nand();
+        }
+    }
+    if(pc1000mode){
+        switch(address){
+            case IO_DSP_STAT://0x20
+                return dspStat();
+            case IO_DSP_RET_DATA://0x21
+                return dspRetData();
+            case IO_GENERAL_STATUS://0xc
+                return record();
+            case IO_PORT3://0x0b   //keyboard handling inside
+                return readPort3();
         }
     }
     int t;
@@ -107,14 +127,6 @@ int BusPC1000::in(int address) {
         case IO_STOP_TIMER1://0x06
             timer1run = false;
             return (int) tm1v;
-        case IO_PORT3://0x0b
-            return readPort3();
-        case IO_DSP_STAT://0x20
-            return dspStat();
-		case IO_DSP_RET_DATA://0x21
-			return dspRetData();
-		case IO_GENERAL_STATUS://0xc
-			return record();
         default:
             return ioReg[address];
     }
@@ -166,9 +178,50 @@ void BusPC1000::out(int address, int value) {
             super_switch();
             return;
         }
-        if(address==0x20||address==0x23||address==0x0e){
-            ioReg[address]=value;
-            return;
+        if(address==0x08){
+            return Write08Port0(address, value);
+        }
+        if(address==0x09){
+            return Write09Port1(address,value);
+        }
+        if(address==0x15){
+            return Write15Dir1(address, value);
+        }
+    }
+
+    if(pc1000mode){
+        switch(address){
+            case IO_DSP_STAT://0x20
+                if (value == DSP_RESET_FLAG || value == DSP_WAKEUP_FLAG) {
+                    dspSleep = false;
+                    dsp->reset();
+                }
+                return;
+            case IO_DSP_DATA_HI://0x23
+                ioReg[IO_DSP_DATA_HI] = value;
+                dspCmd(ioReg[IO_DSP_DATA_HI] * 256 + ioReg[IO_DSP_DATA_LOW]);
+                dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
+                return;
+            case IO_DAC_DATA://0x0e
+                ioReg[IO_DAC_DATA] = value;
+                {
+                    __int64 t=cpu->getTotalCycles();
+                    if (t-lastDac>3686400) {
+                        if (lastDac)
+                            recTotal+=lastDac-recTick;
+                        recTick=t;
+                    }
+                    lastDac=t;
+                }
+                return;
+            case IO_PORT0://0x08
+                ioReg[IO_PORT0] = value;
+                ioReg[O_PORT0] = value;
+                return;
+            case IO_PORT1://0x09
+                ioReg[IO_PORT1] = value;
+                read_key();
+                return;
         }
     }
 
@@ -192,14 +245,6 @@ void BusPC1000::out(int address, int value) {
             super_switch();
             /////////zpBankSwitch();
             break;
-        case IO_PORT0://0x08
-            ioReg[IO_PORT0] = value;
-            ioReg[O_PORT0] = value;
-            break;
-		case IO_PORT1://0x09
-			ioReg[IO_PORT1] = value;
-			read_key();
-			break;
         case IO_PORT4://0x18
             ioReg[IO_PORT4] = value;
             if (isPlayMusic) {
@@ -211,7 +256,6 @@ void BusPC1000::out(int address, int value) {
                 void beeper_on_io_write(int);
                 beeper_on_io_write(a);
             }
-
             break;
         case IO_PORT_CONFIG://0x07
         case IO_CTV_SELECT://0x19
@@ -237,29 +281,7 @@ void BusPC1000::out(int address, int value) {
             tmaReload = (tmaReload & 0xff) | (value << 8);
             tmaValue = tmaReload;
             break;
-        case IO_DSP_STAT://0x20
-            if (value == DSP_RESET_FLAG || value == DSP_WAKEUP_FLAG) {
-                dspSleep = false;
-				dsp->reset();
-            }
-            break;
-        case IO_DSP_DATA_HI://0x23
-            ioReg[IO_DSP_DATA_HI] = value;
-            dspCmd(ioReg[IO_DSP_DATA_HI] * 256 + ioReg[IO_DSP_DATA_LOW]);
-			dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
-            break;
-		case IO_DAC_DATA://0x0e
-			ioReg[IO_DAC_DATA] = value;
-			{
-				__int64 t=cpu->getTotalCycles();
-				if (t-lastDac>3686400) {
-					if (lastDac)
-						recTotal+=lastDac-recTick;
-					recTick=t;
-				}
-				lastDac=t;
-			}
-			break;
+
         default:
             ioReg[address] = value;
     }
