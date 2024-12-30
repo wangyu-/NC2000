@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include "comm.h"
+#include <SDL_keycode.h>
 #include <map>
 #include "bus.h"
 using namespace std;
@@ -209,6 +210,10 @@ vector<TKeyItem*> items1000 = {
     new TKeyItem(15, 0, 7,5, "F4", NULL, "修改",{SDLK_F4}),       // P05, P17
     NULL,       // P06, P17
     NULL,       // P07, P17
+
+    //newly add
+    new TKeyItem(0, 0, 7,0,"xx", NULL, "xx",{SDLK_SEMICOLON}),
+    new TKeyItem(0, 0, 7,1,"xx", NULL, "xx",{SDLK_QUOTE}),
 };
 
 

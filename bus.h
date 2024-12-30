@@ -2,6 +2,7 @@
 
 #include "ansi/ibus6502.h"
 #include "ansi/c6502.h"
+#include "dsp/dsp.h"
 
 #define final const
 class BusPC1000 : public IBus6502 {
@@ -59,7 +60,7 @@ class BusPC1000 : public IBus6502 {
 
 public:
 	C6502* cpu;
-	////////Dsp* dsp;
+	Dsp* dsp;
     ////////int ioReg[0x80];
     unsigned char* ioReg;
     int tmaValue;

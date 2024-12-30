@@ -210,3 +210,13 @@ void init_audio(){
 		//dsp_test3();
 	}
 }
+
+bool sound_busy(){
+	//try to mimic emux's behavior
+	//at the moment only for experiment
+	if(SDL_GetQueuedAudioSize( dsp_deviceId )>8000/2) {
+		//printf("busy!!!\n");
+		return true;
+	}
+	return false;
+}

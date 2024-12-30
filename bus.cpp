@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "state.h"
 extern nc1020_states_t nc1020_states;
+extern Dsp dsp;
 
 typedef long long __int64;
 
@@ -25,8 +26,9 @@ BusPC1000::BusPC1000() {
 	///////////sound = 0;
     ioReg=nc1020_states.ram_io;
 	musicEnable = true;
-	//////////dsp=new Dsp();
-	//////////dsp->reset();
+
+	dsp= &::dsp;
+	dsp->reset();
 	reset();
 	for (int i=0;i<8;i++)
 		key_posi[i]=0;
@@ -163,13 +165,13 @@ void BusPC1000::out(int address, int value) {
         case IO_DSP_STAT:
             if (value == DSP_RESET_FLAG || value == DSP_WAKEUP_FLAG) {
                 dspSleep = false;
-				//////////////dsp->reset();
+				dsp->reset();
             }
             break;
         case IO_DSP_DATA_HI:
             ioReg[IO_DSP_DATA_HI] = value;
             dspCmd(ioReg[IO_DSP_DATA_HI] * 256 + ioReg[IO_DSP_DATA_LOW]);
-			/////////////////dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
+			dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
             break;
 		case IO_DAC_DATA:
 			ioReg[IO_DAC_DATA] = value;
@@ -269,6 +271,10 @@ int BusPC1000::dspStat() {
     /*********** 
 	if (!dspSleep && sound->busy())
 		value |= 0x30;*/
+    bool sound_busy(void);
+    if(!dspSleep && sound_busy()){
+        value |= 0x30;
+    }
 	value |= 0x40;
     return value;
 }
