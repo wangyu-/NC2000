@@ -189,8 +189,8 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	//auto old=sound_stream.size();
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (nc1020_states.cycles < target_cycles) {
-		if(use_pc1000emux_cpu){
-			cpu_run2();
+		if(use_emux_cpu){
+			cpu_run_emux();
 		}else{
 			cpu_run();
 		}

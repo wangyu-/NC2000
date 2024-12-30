@@ -48,7 +48,7 @@ const bool nc2000mode = false;
 const bool nc3000mode = false;
 const bool pc1000mode = true;
 
-const bool use_pc1000emux_cpu =true;
+const bool use_emux_cpu =true;
 
 const bool nc2000_use_2600_rom = true;
 
