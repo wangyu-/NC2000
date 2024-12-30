@@ -1,3 +1,5 @@
+#pragma once
+
 class IBus6502 {
 public:
 	virtual int read(int address)=0;
