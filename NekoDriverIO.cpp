@@ -1,4 +1,5 @@
 //#include "NekoDriver.h"
+#include "comm.h"
 extern "C" {
 #ifdef HANDYPSP
 //#include "ANSI/w65c02.h"
@@ -51,7 +52,6 @@ BYTE w15_port1_DIR107 = 0;// DIR10~DIR17
 // 实际流程既是: 先复制输出状态引脚, 再处理导电橡胶传导.
 BYTE w08_port0_OL = 0;  // output latch
 BYTE r08_port0_ID = 0;  // input data
-BYTE r1e_port0_ID_EXP = 0;  // newly added for 3000
 
 BYTE w09_port1_OL = 0;
 BYTE r09_port1_ID = 0;
@@ -424,13 +424,13 @@ void UpdateKeypadRegisters()
         qDebug("new [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, port1data, port0data);
     }
     r09_port1_ID = port1data;
-    if(!nc3000mode){
+    if(pc1000mode||nc1020mode||nc2000mode||nc3000mode){
         r08_port0_ID = port0data;
-    }else{
+    }/*******else{
         r08_port0_ID = (port0data &0x0c) | (port0data&0xf3);
         r1e_port0_ID_EXP = (port0data &0xfc) | ((port0data&0x0c)>>2);
         //zpioregs[0x1e] = (port0data &0xfc) | ((port0data&0x0c)>>2);
-    }
+    }*/
 
     //printf("<port0=%d port1=%d tmpp30tv=%d>\n",port0data,port1data, tmpp30tv);
     if (tmpp30tv) {
@@ -456,7 +456,9 @@ BYTE __iocallconv ReadPort6EXP( BYTE read )
 {
     UpdateKeypadRegisters();
     //qDebug("ggv wanna read keypad port6, [%04x] -> %02x", read, mem[read]);
-    return r1e_port0_ID_EXP;
+    ///////////////////return r1e_port0_ID_EXP;
+    return ((r08_port0_ID&0x0c)>>2);
+
     (void)read;
 }
 
