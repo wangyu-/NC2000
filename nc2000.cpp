@@ -199,7 +199,7 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (nc1020_states.cycles < target_cycles) {
 		if(use_emux_cpu){
-			if(use_emux_io){
+			if(use_emux_bus){
 				cpu_run_emux();
 			}else{
 				cpu_run2();

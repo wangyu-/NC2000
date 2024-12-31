@@ -56,7 +56,7 @@ uint8_t Load(uint16_t addr) {
 	}
 
 	if (addr < IO_LIMIT) {
-		if(use_emux_io){
+		if(use_emux_bus){
 			return bus->in(addr);
 		}else {
 			return io_read[addr](addr);
@@ -94,7 +94,7 @@ void Store(uint16_t addr, uint8_t value) {
 	}
 
 	if (addr < IO_LIMIT) {
-		if(use_emux_io){
+		if(use_emux_bus){
 			return bus->out(addr, value);
 		}else {
 			io_write[addr](addr, value);
