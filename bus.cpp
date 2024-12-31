@@ -72,9 +72,6 @@ uint8_t IO_API Read3F(uint8_t addr);
 
 int BusPC1000::in(int address) {
     if(nc1020mode||nc2000mode||nc3000mode){
-        if(address==0x01){
-            return Read01IntStatus(address);
-        }
         if(address==0x08){
             return ReadPort0(address);
         }
@@ -107,13 +104,6 @@ int BusPC1000::in(int address) {
     }
     if(pc1000mode){
         switch(address){
-            case IO_INT_STATUS://0x01
-            {
-                int t;
-                t = ioReg[IO_INT_STATUS];
-                ioReg[IO_INT_STATUS] &= 0xc0;
-                return t;
-            }
             case IO_PORT3://0x0b   //keyboard handling inside
                 return readPort3();
             case IO_GENERAL_STATUS://0xc
@@ -125,6 +115,13 @@ int BusPC1000::in(int address) {
         }
     }
     switch (address) {
+        case IO_INT_STATUS://0x01
+        {
+            int t;
+            t = ioReg[IO_INT_STATUS];
+            ioReg[IO_INT_STATUS] &= 0xc0;
+            return t;
+        }
         case IO_START_TIMER0://0x05
             timer0run = true;
             return (int) tm0v;
@@ -158,9 +155,6 @@ void BusPC1000::out(int address, int value) {
         }
     }
     if(nc1020mode||nc2000mode||nc3000mode){
-        if(address==0x01){
-            return Write01IntEnable(address,value);
-        }
         if(address==0x04){
             return Write04GeneralCtrl(address,value);
         }
@@ -215,9 +209,6 @@ void BusPC1000::out(int address, int value) {
 
     if(pc1000mode){
         switch(address){
-            case IO_INT_ENABLE://0x01
-                ioReg[O_INT_ENABLE] = value;
-                return;
             case IO_PORT_CONFIG://0x07
             case IO_CTV_SELECT://0x19
                 ioReg[address] = value;
@@ -280,6 +271,9 @@ void BusPC1000::out(int address, int value) {
             ioReg[IO_BANK_SWITCH] = value;
             super_switch();
             /////////////bankSwitch();
+            return;
+        case IO_INT_ENABLE://0x01
+            ioReg[O_INT_ENABLE] = value;
             return;
         case IO_BIOS_BSW://0x0a
             ioReg[IO_BIOS_BSW] = value;

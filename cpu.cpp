@@ -268,6 +268,8 @@ void cpu_run(){
 		//printf("%d\n",cycles);
 
 		if(pc1000mode){
+			//using spdc1016freq is a hack for diff with wayback
+			//otherwise should use CYCLES_SECOND
 			const uint32_t spdc1016freq=3686400;
 			if(nmi_cycles ==0 ){
 				nmi_cycles +=spdc1016freq/2;
