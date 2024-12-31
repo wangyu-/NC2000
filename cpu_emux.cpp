@@ -99,15 +99,15 @@ void cpu_run_emux(){
 	}
 
 	if(trigger_every_x_ms(4)){
-		if(nc1020mode||nc2000mode||nc3000mode){
-			//this makes lava games work
-			nc1020_states.clock_buff[4] ++;
-		}
 		if (bus->timeBaseEnable()) {
             //timebase中断为4ms一次，主要用于键盘扫描
             bus->setIrqTimeBase();
             cpu->IRQ();
         }
+		if(nc1020mode||nc2000mode||nc3000mode){
+			//this makes lava games work
+			nc1020_states.clock_buff[4] ++;
+		}
 	}
 
 	if(trigger_x_times_per_s(1)){
@@ -118,8 +118,7 @@ void cpu_run_emux(){
 		}
 	}
 	if(trigger_x_times_per_s(2)){
-		if(nc1020mode){
-			//nc2000 crash if enabled
+		if(nc1020mode||nc2000mode||nc3000mode){
 			void AdjustTime();
 			bool IsCountDown(void);
 			static bool& timer0_toggle = nc1020_states.timer0_toggle;
@@ -127,11 +126,14 @@ void cpu_run_emux(){
 			if (!timer0_toggle) {
 				AdjustTime();
 			}
-			if (!IsCountDown() || timer0_toggle) {
-				ram_io[0x3D] = 0;
-			} else {
-				ram_io[0x3D] = 0x20;
-				nc1020_states.clock_flags &= 0xFD;
+			if(nc1020mode||nc3000mode){
+				//nc2000 crash if enabled
+				if (!IsCountDown() || timer0_toggle) {
+					ram_io[0x3D] = 0;
+				} else {
+					ram_io[0x3D] = 0x20;
+					nc1020_states.clock_flags &= 0xFD;
+				}
 			}
 		}
 		if(nc2000mode||nc3000mode){
@@ -141,10 +143,12 @@ void cpu_run_emux(){
 			//set system time & prevent sleep, not important
 			setTime();
 		}
-		if(pc1000mode||nc2000mode){
+		if(pc1000mode||nc2000mode||nc3000mode){
 			if (bus->nmiEnable()){
+				if(nc2000mode||nc3000mode){
+					printf("nmi!\n");
+				}
 				cpu->NMI();
-				//printf("nmi!\n");
 			}
 		}
 	}
