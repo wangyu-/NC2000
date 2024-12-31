@@ -613,7 +613,7 @@ BYTE __iocallconv Read18Port4( BYTE )
     }
     if(nc2000mode||nc3000mode){
         //nc3000c-lee has it but seems like no need?
-        //return zpioregs[io18_port4_data]|0x20;
+        return zpioregs[io18_port4_data]|0x20;
     }
     return zpioregs[io18_port4_data];
 }

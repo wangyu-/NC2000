@@ -22,6 +22,9 @@ struct nc1020_states_t{
 	uint8_t clock_buff[80];
 	uint8_t clock_flags;
 
+	uint8_t rtc_reg[256];
+	uint8_t interr_flag;
+
 	uint8_t jg_wav_data[0x20];
 	uint8_t jg_wav_flags;
 	uint8_t jg_wav_idx;

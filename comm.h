@@ -51,7 +51,7 @@ const bool pc1000mode = false;
 const bool use_emux_cpu =true;
 const bool use_emux_bus = true;
 
-const bool nc2000_use_2600_rom = true;
+const bool nc2000_use_2600_rom = false;
 
 const bool use_legacy_key_io = false;
 
@@ -111,7 +111,7 @@ const uint32_t LCD_REFRESH_INTERVAL=50; //refresh every 50 ms
 cycles related
 ===================
 */
-const uint32_t static_multipler=5; //tmp fix for speed and crash
+const uint32_t static_multipler=1; //tmp fix for speed and crash
 
 // cpu cycles per second (cpu freq).
 const uint32_t CYCLES_SECOND = 5120000*( (nc2000mode||nc3000mode)?static_multipler:1);

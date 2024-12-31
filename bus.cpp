@@ -11,6 +11,9 @@
 extern nc1020_states_t nc1020_states;
 extern Dsp dsp;
 
+static uint8_t * rtc_reg=nc1020_states.rtc_reg;
+static uint8_t& interr_flag = nc1020_states.interr_flag;
+
 long long recTick=0,lastDac=0,recTotal=0;
 
 BusPC1000::BusPC1000() {
@@ -66,10 +69,16 @@ int BusPC1000::in(int address) {
             return Read18Port4(address);//not important? seems like hotlink only
         }
         if(address==0x3b){
-            return Read3B(address);
+            if((ioReg[0x3d]&3)==0){
+                return rtc_reg[0x3b]&0xfe;
+            }else{
+                return ioReg[0x3b];
+            }
+           //return Read3B(address);
         }
         if(address==0x3f){
-            return Read3F(address);
+            return rtc_reg[ioReg[0x3e]];
+            //return Read3F(address);
         }
 
     }
@@ -84,6 +93,12 @@ int BusPC1000::in(int address) {
     if(nc2000mode){
         if(address==0x29) {
             return read_nand();
+        }
+        switch(address){
+            /*case 0x30:
+                return dspStat();*/
+            case 0x31:
+                return dspRetData();
         }
     }
     if(pc1000mode){
@@ -137,12 +152,38 @@ void BusPC1000::out(int address, int value) {
         if(address==0x29) {
             return nand_write(value);
         }
+        if(address==0x32) {
+        //fprintf(stderr,"0x%02x,",value);
+        printf("<w %02x>",value);
+        //return;
+        }
+        if(address==0x33){
+        //fprintf(stderr,"0x%02x,\n",value);
+        printf("[w %02x]\n",value);
+        }
+
+        switch(address){
+            case 0x30:
+                printf("reset\n");
+                if (value == DSP_RESET_FLAG || value == DSP_WAKEUP_FLAG) {
+                    dspSleep = false;
+                    dsp->reset();
+                }
+                return;
+            case 0x33:
+                //printf("write to 0x33 %d\n",value);
+                ioReg[IO_DSP_DATA_HI] = value;
+                dspCmd(ioReg[IO_DSP_DATA_HI] * 256 + ioReg[IO_DSP_DATA_LOW]);
+                dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
+                return;
+        }
     }
     if(nc1020mode||nc2000mode||nc3000mode){
         if(address==0x04){
             return Write04GeneralCtrl(address,value);
         }
         if(address==0x05){
+            //todo similuate speed as 3000emux
             return Write05ClockCtrl(address, value);
         }
         if(address==0x06){
@@ -186,8 +227,32 @@ void BusPC1000::out(int address, int value) {
         if(address==0x23){
             return Write23(address,value);
         }
+        if(address==0x3d){
+            ioReg[0x3d]= ioReg[0x3d] &0xf8 |value &7;
+            return;
+        }
         if(address==0x3f){
-            return Write3F(address,value);
+            int index=ioReg[0x3e];
+            ioReg[0x3f]=value;
+            if(index<7){
+                if((char)rtc_reg[0x0b]<0) return;
+            }else{
+                if(index==10){
+                    rtc_reg[10]=value;
+                    interr_flag= interr_flag|value&7;
+                    return;
+                }
+                if(index==0x0b){
+                    if((value&1)==0){
+                        return ;
+                    }
+                    ioReg[0x3d]=0xf8;
+                    return;
+                }
+            }
+            rtc_reg[index]=value;
+            return;
+            //return Write3F(address,value);
         }
     }
 
@@ -541,5 +606,13 @@ boolean BusPC1000::nmiEnable() {
 }
 
 boolean BusPC1000::timeBaseEnable() {
+    if(nc2000mode||nc3000mode){
+        if((ioReg[O_INT_ENABLE] & 8)) return false;
+        /*
+        if (this->field_0x96d4ac != '\0') {
+            return true;
+        }*/
+        return (ioReg[IO_GENERAL_CTRL] & 0xf)!=0;
+    }
     return (ioReg[O_INT_ENABLE] & 8) == 0 && (ioReg[IO_GENERAL_CTRL] & 0xf) > 0;
 }
