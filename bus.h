@@ -55,9 +55,6 @@ class BusPC1000 : public IBus6502 {
     static final int O_INT_ENABLE = 0x40;
     static final int O_PORT0 = 0x41;
 
-	static final int BLACK = 0xff000000;
-    static final int WHITE = 0xff90b057;
-
 public:
 	C6502* cpu;
 	Dsp* dsp;
@@ -65,7 +62,6 @@ public:
     unsigned char* ioReg;
     int tmaValue;
     int tmaReload;
-    int* screen;
     int key_posi[8];
     boolean timer0run;
     boolean timer1run;
@@ -81,13 +77,9 @@ public:
 
 public:
 	BusPC1000();
-	void loadRom(byte* b, int length, int offset);
-	byte* loadFlash(byte* b, int length, int offset);
 	void reset();
 	void warmReset();
-	byte* getScreen();
 	int read(int address);
-	int readIo(int address);
 	void write(int address, int value);
 	void setTimer();
 	boolean setTimer0();
@@ -95,23 +87,17 @@ public:
 	void setIrqTimeBase();
 	void setIrqTimer0();
 	void setIrqTimer1();
-	boolean keyDown(int x, int y);
     boolean keyDown2(int x, int y);
 	void keyUp();
 	boolean nmiEnable();
 	boolean timeBaseEnable();
 	void playSample();
-	void getInfo(char info[]);
 
     int in(int address);
 	void out(int address, int value);
 
 private:
-	void writeFlash(int address, int value);
 	void checkPlay();
-	void bankSwitch();
-	void biosBankSwitch();
-	void zpBankSwitch();
 	int dspStat();
 	int dspRetData();
 	void dspCmd(int cmd);

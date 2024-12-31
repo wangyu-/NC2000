@@ -11,19 +11,7 @@
 extern nc1020_states_t nc1020_states;
 extern Dsp dsp;
 
-typedef long long __int64;
-
-static int keyMap[] = {
-        0x701, 0x601, 0x602, 0x604, 0x608, 0x610, 0x620, 0x680, 0x702, 0x704,
-        0x000, 0x000, 0x000, 0x001, 0x002, 0x640, 0x004, 0x008, 0x010, 0x020,
-        0x201, 0x202, 0x204, 0x208, 0x210, 0x220, 0x240, 0x280, 0x101, 0x110,
-        0x301, 0x302, 0x304, 0x308, 0x310, 0x320, 0x340, 0x380, 0x102, 0x120,
-        0x401, 0x402, 0x404, 0x408, 0x410, 0x420, 0x440, 0x480, 0x104, 0x140,
-        0x501, 0x502, 0x504, 0x508, 0x510, 0x520, 0x540, 0x580, 0x108, 0x180
-};
-
-
-__int64 recTick=0,lastDac=0,recTotal=0;
+long long recTick=0,lastDac=0,recTotal=0;
 
 BusPC1000::BusPC1000() {
 	///////////sound = 0;
@@ -51,10 +39,6 @@ void BusPC1000::reset() {
 void BusPC1000::warmReset() {
 	recTick=lastDac=recTotal=0;
     ioReg[IO_TIMER0_VAL] = 1;
-}
-
-void BusPC1000::getInfo(char info[]) {
-	sprintf(info,"BANK:%02X BSW:%01X INT:%02X",ioReg[IO_BANK_SWITCH],ioReg[IO_BIOS_BSW]&0xf,ioReg[IO_INT_STATUS]);
 }
 
 int BusPC1000::read(int address) {
@@ -414,19 +398,6 @@ void BusPC1000::dspCmd(int cmd) {
 			dspData = 0x5a;
 			break;
     }
-}
-
-boolean BusPC1000::keyDown(int x, int y) {
-    if (x < 10 && y < 6) {
-        int v = keyMap[y * 10 + x];
-        if (v != 0) {
-            key_posi[v >> 8] = v & 0xff;
-            if ((((v >> 8) == 6 && (v & 0x7f) != 0) || v == 0x701) && ioReg[IO_CLOCK_CTRL] == 0xf0) {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 boolean BusPC1000::keyDown2(int y,int x) {
