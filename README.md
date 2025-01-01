@@ -55,14 +55,14 @@ The rest of Readme is going to be in Chinese， I will put english materials in 
 文曲星nc2000/nc2600模拟器。跨平台，可以运行在windows/linux/mac。
 
 支持以下feature：
-* 下载
+* 下载, 上传文件
 * 保存状态
 * 发音/beeper
 * 4灰度
-* 液晶格栅效果
+* 液晶格栅效果, 液晶残影
 
 # nand 和 nor
-因为可能有版权问题，暂时没放到repo里。 可以从官方nc2000或nc2600模拟器里自取rom。
+因为可能有版权问题，暂时没放到repo里。 需要使用从真机dump的rom。
 
 nand命名为：`nand.bin`
 
@@ -108,12 +108,14 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 `put 1.txt` 把本地的1.txt上传到文曲星的当前目录，命名为1.txt (也就是上一个命令省略了一个参数的形式)
 
+`get aaa.bin bbb.bin` ：把文曲星的当前目录的aaa.bin下载到电脑，命名为bbb.bin
+
+
 #### Note
 
 1. 如何切换当前目录呢？ 你在文曲星上打开资源管理器，进入哪个目录，哪个目录就是你的当前目录。 也就是说你文件上传到哪里，取决于模拟器内文曲星当前所在的文件夹。
 2. 以上命令需要文曲星在进入系统以后才可以运行
 3. 模拟器暂时不支持bin解密。上传bin文件需要在电脑上提前把bin文件解密好。
-4. 下载功能只做了nc2600。nc2000目前未做，强行使用可能会死机。
 
 ### flash保存
 
@@ -139,13 +141,12 @@ create_dir XXXX <回车>    //在模拟器创建一个名为XXXX的目录
 
 ### 已知问题
 
-1. 某些游戏速度不正常。可以暂时用speed命令调整速度，让游戏正常。
-2. 秒表读数跳动。
+1. 超级玛丽、淘金者等游戏按键不能用
+2. nc2000报时报不出来
 
 ### TODO
 
 1. 模拟更多的I/O。
-2. 部分代码非常tricky（尤其nand），主要是为了先跑通证明可行性，后面会重写。
 
 ### Note on compile
 
@@ -159,21 +160,22 @@ make
 
 # 代码基于以下项目
 
-模拟器主体：
+**这个项目本质上是sim800和wayback的fork：**
 
 https://github.com/banxian/Sim800 sim800: cc800模拟器。 作者：曾半仙
 
-https://github.com/banxian/Wayback800iOS waybay800: cc800/pc1000模拟器。（sim800作者的新版）
+https://github.com/banxian/Wayback800iOS wayback800: cc800/pc1000模拟器。（sim800作者的新版）
 
-DSP功能：
+**CPU[1]、DSP功能、部分IO，复用或者参考了：**
 
-Pc1000emux。作者: Lee。
+Pc1000emux，nc3000emux旧版。 作者：Lee。
 
-部分IO参考了：
+nc3000emux新版(没有源码)
+
+**早期代码复用或参考了：**
 
 https://github.com/hackwaly/NC1020 nc1020模拟器，应该是基于sim800开发。 (不确定URL是否是原作者）
 
-SDL支持参考了：
+https://github.com/Wang-Yue/NC1020 nc1020模拟器SDL版。应该是上一个项目的fork。
 
-https://github.com/Wang-Yue/NC1020 nc1020模拟器SDL版。
-
+[1] 支持两个cpu实现，其中一个是wayback中的handypsp实现，另一个是pc1000mux的c6502.cpp实现。 可以在编译时切换。
