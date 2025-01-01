@@ -237,7 +237,7 @@ void BusPC1000::out(int address, int value) {
             int index=ioReg[0x3e];
             ioReg[0x3f]=value;
             if(index<7){
-                if((char)rtc_reg[0x0b]<0) return;
+                if((signed char)rtc_reg[0x0b]<0) return;
             }else{
                 if(index==10){
                     rtc_reg[10]=value;

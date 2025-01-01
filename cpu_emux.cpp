@@ -108,7 +108,7 @@ bool chk_ar(){
   if (((byte)interr_flag >> 1 & 1) == 0) {
     return 0;
   }
-  if ((char)rtc_reg[7] < '\0') {
+  if ((signed char)rtc_reg[7] < (signed char)'\0') {
     if (((rtc_reg[2] ^ rtc_reg[7]) & 0x1f) != 0) {
       return 0;
     }
@@ -119,7 +119,7 @@ bool chk_ar(){
     uVar2 = 0;
     bVar1 = rtc_reg[6];
   }
-  if ((char)bVar1 < '\0') {
+  if ((signed char)bVar1 < (signed char)'\0') {
     if (((rtc_reg[1] ^ bVar1) & 0x3f) != 0) {
       return 0;
     }
@@ -129,7 +129,7 @@ bool chk_ar(){
   else {
     bVar1 = rtc_reg[5];
   }
-  if (-1 < (char)bVar1) {
+  if (-1 < (signed char)bVar1) {
     return uVar2;
   }
   if (((rtc_reg[0] ^ bVar1) & 0x3f) == 0) {
