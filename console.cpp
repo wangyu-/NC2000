@@ -12,7 +12,9 @@
 extern "C" {
 #include "ansi/w65c02.h"
 }
+#include "bus.h"
 extern nc1020_states_t nc1020_states;
+extern BusPC1000 *bus;
 
 deque<string> udp_msgs;
 std::mutex g_mutex;
@@ -111,8 +113,8 @@ std::string HexToBytes(const std::string& hex) {
 
   for (unsigned int i = 0; i < hex.length(); i += 2) {
     std::string byteString = hex.substr(i, 2);
-    char byte = (char) strtol(byteString.c_str(), NULL, 16);
-    bytes.push_back(byte);
+    char b = (char) strtol(byteString.c_str(), NULL, 16);
+    bytes.push_back(b);
   }
 
   return bytes;
@@ -157,6 +159,8 @@ void handle_cmd(string & str){
 
 	if(cmds[0]=="file_manager"){
 		mPC = 0x3000;
+		bus->cpu->PC=0x3000;
+		
 		if(nc2000mode){
 			if(nc2000_use_2600_rom){
 				uint8_t buf[]={0x00,0x27,0x05,0x18,0x90,0xfa};
@@ -176,6 +180,7 @@ void handle_cmd(string & str){
 	if(cmds[0]=="create_dir" || cmds[0]=="create_dir_hex"){
 			printf("<pc=%x>\n",mPC);
 			mPC = 0x3000;
+			bus->cpu->PC=0x3000;
 			string dir_name=cmds[1];
 			if(cmds[0]=="create_dir_hex"){
 				dir_name=HexToBytes(dir_name);
@@ -210,6 +215,7 @@ void handle_cmd(string & str){
 			ram_io[0x0a]|=0x80;
 			super_switch();
 			mPC=0x4018;
+			bus->cpu->PC=0x4018;
 			return;
 	}
 	if(cmds[0]=="speed"){
@@ -244,6 +250,7 @@ void handle_cmd(string & str){
 				}
 			}
 			mPC=0x3000;
+			bus->cpu->PC=0x3000;
 			//enable_dyn_debug=true;
 			return;
 	}
@@ -301,6 +308,7 @@ void handle_cmd(string & str){
 			}
 
 			mPC=0x3000;
+			bus->cpu->PC=0x3000;
 
 			
 			return;

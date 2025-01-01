@@ -17,9 +17,11 @@ static uint64_t& last_cycles = nc1020_states.last_cycles;
 static uint8_t * rtc_reg=nc1020_states.rtc_reg;
 static uint8_t& interr_flag = nc1020_states.interr_flag;
 struct BusPC1000 *bus;
-C6502 *cpu;
+extern C6502* cpu;
 
 void cpu_init_emux(){
+	assert(use_emux_cpu);
+	assert(use_emux_bus);
 	bus=new BusPC1000();
 	cpu=new C6502(bus);
 	bus->cpu=cpu;

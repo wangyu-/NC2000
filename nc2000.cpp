@@ -14,9 +14,11 @@
 #include <cstdio>
 #include <deque>
 #include "sound.h"
+#include "ansi/c6502.h"
 extern WqxRom nc1020_rom;
 
 nc1020_states_t nc1020_states;
+C6502 *cpu;
 
 //static uint32_t& version = nc1020_states.version;
 
@@ -62,7 +64,7 @@ void ResetStates(){
 	memset(&nc1020_states,0,sizeof(nc1020_states_t));
 	init_mem();
 	reset_cpu_states();
-	cpu_init_emux();
+	if(use_emux_cpu&& use_emux_bus) cpu_init_emux();
 }
 
 /*

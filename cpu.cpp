@@ -395,9 +395,11 @@ static struct Bus:IBus6502{
 		Store(address,value);
 	}
 }bus;
-static C6502 *cpu;
+extern C6502 *cpu;
 static bool cpu2_initalized;
 void cpu_run2(){
+	assert(use_emux_cpu);
+	assert(!use_emux_bus);
 	if(!cpu2_initalized){
 		cpu2_initalized=true;
 		cpu=new C6502(&bus);
