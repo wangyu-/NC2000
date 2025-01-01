@@ -1,7 +1,9 @@
 #include <SDL2/SDL.h>
 #include "comm.h"
+#include "dsp/dsp.h"
 #include "nc2000.h"
 #include <SDL_keycode.h>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include "sound.h"
@@ -14,6 +16,8 @@ static bool fast_forward=false;
 
 static SDL_Renderer* renderer;
 static uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
+
+const bool simulate_lcd_delay=true;
 
 
 bool InitEverything() {
@@ -42,6 +46,34 @@ bool InitEverything() {
   return true;
 }
 
+unsigned char p[80*total_size][160*total_size][4] ;
+inline void handle_pixel(int u,int v,const unsigned char * color_arr[], int idx){
+    if(!simulate_lcd_delay){
+        memcpy(p[u][v], color_arr[idx], 4);
+    }else{
+      for(int i=1;i<4;i++){
+        if(color_arr[idx][i]>p[u][v][i]){
+          unsigned char delta=color_arr[idx][i]-p[u][v][i];
+          //delta=delta*1/8;
+          delta>>=3;
+          p[u][v][i]+=delta;
+            /*int tmp=p[u][v][i]+30;
+            if(tmp >color_arr[idx][i]) tmp=color_arr[idx][i];
+            p[u][v][i]=tmp;*/
+        }
+        else if( color_arr[idx][i]<p[u][v][i] ){
+          unsigned char delta=p[u][v][i]- color_arr[idx][i];
+          //delta=delta*1/4;
+          delta>>=2;
+          p[u][v][i]-=delta;
+            /*int tmp=p[u][v][i]-100;
+            if(tmp <color_arr[idx][i]) tmp=color_arr[idx][i];
+            p[u][v][i]=tmp;*/
+        }else{
+        }
+      }
+    }
+}
 void Render() {
   SDL_RenderClear(renderer);
   SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
@@ -74,8 +106,8 @@ void Render() {
   static const size_t color_size = sizeof(black_color);
   //unsigned char lcd[80*(pixel_size+gap_zize)][160*(pixel_size+gap_zize)][color_size] ;
   //unsigned char lcd[80*(pixel_size+gap_zize)][160*(pixel_size+gap_zize)][color_size] ;
-  unsigned char (*p)[160*total_size][color_size] ;
-  p=(unsigned char (*)[160*total_size][color_size] ) bytes;
+
+  //p=(unsigned char (*)[160*total_size][color_size] ) bytes;
   if(!is_grey_mode()){
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8; ++i) {
       for (int j = 0; j < 8; ++j) {
@@ -84,16 +116,15 @@ void Render() {
         int value= pixel? 3:0;
         int r=pos/160;
         int c=pos%160;
-        //memcpy(p[r][c],index[value],color_size);
         for(int u=r*total_size;u<r*total_size+total_size;u++){
           for(int v=c*total_size;v<c*total_size+total_size;v++){
               if(u-r*total_size<pixel_size && v-c*total_size<pixel_size){
-                memcpy(p[u][v],index[value],color_size);     
+                handle_pixel(u,v,index,value);
               }/*else if (u==r*total_size &&  v-c*total_size>=pixel_size || v==c*total_size && u-r*total_size>=pixel_size){
                 memcpy(p[u][v],index[0],color_size);  
               }*/
               else{
-                memcpy(p[u][v],index_shadow[value],color_size);
+                handle_pixel(u,v,index_shadow,value);
                 /*unsigned char tmp[4];
                 memcpy(tmp,index[value],color_size);
                 tmp[1]+=(255-tmp[1])/2;tmp[2]+=(255-tmp[2])/2;tmp[3]+=(255-tmp[3])/2;
@@ -116,12 +147,12 @@ void Render() {
         for(int u=r*total_size;u<r*total_size+total_size;u++){
           for(int v=c*total_size;v<c*total_size+total_size;v++){
               if(u-r*total_size<pixel_size && v-c*total_size<pixel_size){
-                memcpy(p[u][v],index[value],color_size);     
+                handle_pixel(u,v,index,value);    
               }/*else if (u==r*total_size &&  v-c*total_size>=pixel_size || v==c*total_size && u-r*total_size>=pixel_size){
                 memcpy(p[u][v],index[0],color_size);  
               }*/
               else{
-                memcpy(p[u][v],index_shadow[value],color_size);
+                handle_pixel(u,v,index_shadow,value);
                 /*unsigned char tmp[4];
                 memcpy(tmp,index[value],color_size);
                 tmp[1]+=(255-tmp[1])/2;tmp[2]+=(255-tmp[2])/2;tmp[3]+=(255-tmp[3])/2;
@@ -132,6 +163,7 @@ void Render() {
       }
     }
   }
+  memcpy(bytes,p,sizeof(p));
   /*
   for(int i=0;i<80;i++){
     for(int j=0;j<160;j++){
