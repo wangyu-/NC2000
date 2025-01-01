@@ -11,6 +11,7 @@
 #include <SDL2/SDL.h>
 #include <SDL_timer.h>
 #include <cassert>
+#include <cstdio>
 #include <deque>
 #include "sound.h"
 extern WqxRom nc1020_rom;
@@ -163,10 +164,9 @@ bool is_grey_mode(){
     extern unsigned short lcdbuffaddrmask;
 	unsigned short lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
 	//printf("%x  ",lcd_addr);
-	if(nc2000mode)
+	//fflush(stdout);
+	if(nc2000mode||nc3000mode)
 		return lcd_addr==0x1380;
-	if(nc3000mode)
-		return lcd_addr==0x380;
 	return false;
 }
 bool CopyLcdBuffer(uint8_t* buffer){
