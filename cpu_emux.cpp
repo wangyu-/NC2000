@@ -206,20 +206,42 @@ void cpu_run_emux(){
 	if(trigger_x_times_per_s(576*50)){
 		//printf("trigger1!\n");
 		bus->setTimer();
-		if (bus->setTimer0()) {
-            //timer0用于录放音，蜂鸣器音乐
-            bus->setIrqTimer0();
-			//printf("irq1!\n");
-            cpu->IRQ();
-        }
-		if (bus->setTimer1()) {
-            //timer1用于秒表的百分之一秒，每秒200次
-            bus->setIrqTimer1();
-            cpu->IRQ();
-			//printf("irq2!\n");
-        }
+		if(pc1000mode){
+			if (bus->setTimer0()) {
+				//timer0用于录放音，蜂鸣器音乐
+				bus->setIrqTimer0();
+				//printf("irq1!\n");
+				cpu->IRQ();
+			}
+			if (bus->setTimer1()) {
+				//timer1用于秒表的百分之一秒，每秒200次
+				bus->setIrqTimer1();
+				cpu->IRQ();
+				//printf("irq2!\n");
+			}
+		}
+		
 	}
 
+	if(nc1020mode||nc2000mode||nc3000mode){
+		bool KeepTimer01( unsigned int cpuTick);
+		if(KeepTimer01(CpuTicks)){
+			//adapted from wayback
+			if ( ram_io[0x04] & 0x0F ) {
+				//why only set flag for timer0? why not set 0x20
+				extern bool hack_need_irq_by_timer0;
+				extern bool hack_need_irq_by_timer1;
+				if(hack_need_irq_by_timer0){
+					ram_io[0x01] |= 0x10u; 
+					cpu->IRQ();
+				}
+				if(hack_need_irq_by_timer1){
+					ram_io[0x01] |= 0x20u; 
+					cpu->IRQ();
+				}
+			}
+		}
+	}
 	if(trigger256){
 		if (bus->timeBaseEnable()) {
             //timebase中断为4ms一次，主要用于键盘扫描

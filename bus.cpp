@@ -61,6 +61,11 @@ uint8_t IO_API Read3F(uint8_t addr);
 
 int BusPC1000::in(int address) {
     if(nc1020mode||nc2000mode||nc3000mode){
+        if(address==0x04) return Read04StopTimer0(address);
+        if(address==0x05) return Read05StartTimer0(address);
+        if(address==0x06) return Read06StopTimer1(address);
+        if(address==0x07) return Read07StartTimer1(address);
+
         if(address==0x08){
             return ReadPort0(address);
         }
@@ -105,6 +110,18 @@ int BusPC1000::in(int address) {
     }
     if(pc1000mode){
         switch(address){
+            case IO_STOP_TIMER0://0x04
+                timer0run = false;
+                return (int) tm0v;
+            case IO_START_TIMER0://0x05
+                timer0run = true;
+                return (int) tm0v;
+            case IO_STOP_TIMER1://0x06
+                timer1run = false;
+                return (int) tm1v;
+            case IO_START_TIMER1://0x07
+                timer1run = true;
+                return (int) tm1v;
             case IO_PORT3://0x0b   //keyboard handling inside
                 return readPort3();
             case IO_GENERAL_STATUS://0xc
@@ -123,18 +140,6 @@ int BusPC1000::in(int address) {
             ioReg[IO_INT_STATUS] &= 0xc0;
             return t;
         }
-        case IO_START_TIMER0://0x05
-            timer0run = true;
-            return (int) tm0v;
-        case IO_STOP_TIMER0://0x04
-            timer0run = false;
-            return (int) tm0v;
-        case IO_START_TIMER1://0x07
-            timer1run = true;
-            return (int) tm1v;
-        case IO_STOP_TIMER1://0x06
-            timer1run = false;
-            return (int) tm1v;
         default:
             return ioReg[address];
     }
@@ -297,6 +302,18 @@ void BusPC1000::out(int address, int value) {
 
     if(pc1000mode){
         switch(address){
+            case IO_TIMER0_VAL://0x02
+                ioReg[IO_TIMER0_VAL] = value;
+                tm0v = value + tm0r;
+                if (tm0v > 255) {
+                    tm0v = 255;
+                }
+                tm0r = 0;
+                return;
+            case IO_TIMER1_VAL://0x03
+                ioReg[IO_TIMER1_VAL] = value;
+                tm1v = value;
+                return;
             case IO_PORT_CONFIG://0x07
             case IO_CTV_SELECT://0x19
                 ioReg[address] = value;
@@ -369,18 +386,6 @@ void BusPC1000::out(int address, int value) {
             /////////////biosBankSwitch();
             /////////////bankSwitch();
             return;
-        case IO_TIMER0_VAL://0x02
-            ioReg[IO_TIMER0_VAL] = value;
-            tm0v = value + tm0r;
-			if (tm0v > 255) {
-                tm0v = 255;
-			}
-            tm0r = 0;
-            return;
-        case IO_TIMER1_VAL://0x03
-            ioReg[IO_TIMER1_VAL] = value;
-            tm1v = value;
-            return;
         case IO_TIMERA_VAL_L://0x10
             tmaReload = (tmaReload & 0xff00) | value;
             return;
@@ -388,7 +393,6 @@ void BusPC1000::out(int address, int value) {
             tmaReload = (tmaReload & 0xff) | (value << 8);
             tmaValue = tmaReload;
             return;
-
         default:
             ioReg[address] = value;
     }
