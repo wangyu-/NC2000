@@ -56,6 +56,7 @@ inline void handle_pixel(int u,int v,const unsigned char * color_arr[], int idx)
           unsigned char delta=color_arr[idx][i]-p[u][v][i];
           //delta=delta*1/8;
           delta>>=3;
+          if(delta==0) delta++;
           p[u][v][i]+=delta;
             /*int tmp=p[u][v][i]+30;
             if(tmp >color_arr[idx][i]) tmp=color_arr[idx][i];
@@ -65,6 +66,7 @@ inline void handle_pixel(int u,int v,const unsigned char * color_arr[], int idx)
           unsigned char delta=p[u][v][i]- color_arr[idx][i];
           //delta=delta*1/4;
           delta>>=2;
+          if(delta==0) delta++;
           p[u][v][i]-=delta;
             /*int tmp=p[u][v][i]-100;
             if(tmp <color_arr[idx][i]) tmp=color_arr[idx][i];
