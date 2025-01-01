@@ -51,7 +51,7 @@ void C6502::reset() {
     total_cycles = 0;
 }
 
-__int64 C6502::getTotalCycles() {
+long long C6502::getTotalCycles() {
 	return total_cycles + clk;
 }
 

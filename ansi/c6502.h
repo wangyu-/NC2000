@@ -3,7 +3,6 @@
 #include "ibus6502.h"
 
 typedef bool boolean;
-typedef long long __int64;
 typedef unsigned char byte;
 
 class C6502 {
@@ -22,7 +21,7 @@ public:
     boolean nmiRequest;
     int clk;
     unsigned int lineclk;
-    __int64 total_cycles;
+    long long total_cycles;
 
 public:
 	C6502(IBus6502* bus);
@@ -31,7 +30,7 @@ public:
 	int exec2(int max_cycles);
 	void NMI();
 	void IRQ();
-	__int64 getTotalCycles();
+	long long getTotalCycles();
 	void getInfo(char info[]);
 	int dasm(int address,char *s);
 

@@ -332,7 +332,7 @@ void BusPC1000::out(int address, int value) {
             case IO_DAC_DATA://0x0e
                 ioReg[IO_DAC_DATA] = value;
                 {
-                    __int64 t=cpu->getTotalCycles();
+                    long long t=cpu->getTotalCycles();
                     if (t-lastDac>3686400) {
                         if (lastDac)
                             recTotal+=lastDac-recTick;
