@@ -157,9 +157,13 @@ uint8_t trigger256_cnt=0;
 void cpu_run_emux(){
 	//assert(cycles==cpu->getTotalCycles()/12);
 
-	string msg=get_message();
-	if(!msg.empty()){
-		handle_cmd(msg);
+	if((cpu->P&4)==0)
+	{
+		bus->speed_slowdown=1;
+		string msg=get_message();
+		if(!msg.empty()){
+			handle_cmd(msg);
+		}
 	}
 	tick++;
 
