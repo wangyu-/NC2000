@@ -190,7 +190,11 @@ void cpu_run_emux(){
 			rtc_reg[4]=trigger256_cnt;
 		}
 	}
-	uint32_t CpuTicks=cpu->exec2(9999,128*12)/12;
+
+	//todo study datasheet of how speed affect timers
+	uint32_t target_cycles=128*12; target_cycles/=bus->speed_slowdown;
+	uint32_t CpuTicks=cpu->exec2(target_cycles)/12;
+	CpuTicks*=bus->speed_slowdown;
 	last_cycles=cycles;
 	cycles+=CpuTicks;
 

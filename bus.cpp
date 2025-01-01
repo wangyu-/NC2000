@@ -1,4 +1,5 @@
 #include "bus.h"
+#include <cassert>
 #include <memory.h>
 #include <stdio.h>
 #include "ansi/c6502.h"
@@ -145,11 +146,48 @@ void Write23(uint8_t addr, uint8_t value);
 void Write3F(uint8_t addr, uint8_t value);
 void BusPC1000::out(int address, int value) {
     if(nc3000mode){
+        if(address==0x05){
+            uint8_t cks=value>>5;
+            if (cks!=ram_io[0x05]>>5){
+                //the defintion is not same as spdc1024
+                switch(cks){
+                    case 0: speed_slowdown=32;break;
+                    case 1: speed_slowdown=4;break;
+                    case 2: speed_slowdown=2;break;
+                    case 3: speed_slowdown=1;break;
+                    case 4: speed_slowdown=512;break;
+                    case 5: speed_slowdown=256;break;
+                    case 6: speed_slowdown=64;break;
+                    case 7: printf("oops clk off\n");speed_slowdown=999999;break;
+                    default:assert(false);
+                }
+                //printf("<cks=%d slowdown=%d>\n",cks,speed_slowdown);
+            }
+             //purposely not return
+        }
         if(address==0x39) {
             return nand_write(value);
         } 
     }
     if(nc2000mode) {
+        if(address==0x05){
+            uint8_t cks=value>>5;
+            if (cks!=ram_io[0x05]>>5){
+                switch(cks){
+                    case 0: speed_slowdown=8;break;
+                    case 1: speed_slowdown=4;break;
+                    case 2: speed_slowdown=2;break;
+                    case 3: speed_slowdown=1;break;
+                    case 4: speed_slowdown=64;break;
+                    case 5: speed_slowdown=32;break;
+                    case 6: speed_slowdown=16;break;
+                    case 7: printf("oops clk off\n");speed_slowdown=999999;break;
+                    default:assert(false);
+                }
+                //printf("<cks=%d slowdown=%d>\n",cks,speed_slowdown);
+            }
+            //purposely not return
+        }
         if(address==0x29) {
             return nand_write(value);
         }
@@ -185,7 +223,6 @@ void BusPC1000::out(int address, int value) {
             return Write04GeneralCtrl(address,value);
         }
         if(address==0x05){
-            //todo similuate speed as 3000emux
             return Write05ClockCtrl(address, value);
         }
         if(address==0x06){

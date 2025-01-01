@@ -75,6 +75,8 @@ public:
     int musicSample;
     boolean musicEnable;// = true;
 
+    unsigned int speed_slowdown=1;
+
 public:
 	BusPC1000();
 	void reset();
