@@ -76,14 +76,17 @@ uint8_t read_nand(){
         CLE = ram_io[0x18]&0x20;
         ALE = ram_io[0x18]&0x10;
         CE = ram_io[0x18]&0x04;
-        if(!CE) {
-            //printf("read while CE is false\n");
+        if(CE) {
+            printf("read while no CE\n");
         }
     }
     if(nc2000mode){
         CLE = ram_io[0x18]&0x01;
         ALE = ram_io[0x18]&0x02;
-        CE = ram_io[0x18]&0x02;
+        CE = ram_io[0x18]&0x40;
+        if(CE) {
+            printf("read while no CE\n");
+        }
     }
     assert(!CLE || ! ALE);
 
@@ -262,14 +265,11 @@ void nand_write(uint8_t value){
         CLE = ram_io[0x18]&0x20;
         ALE = ram_io[0x18]&0x10;
         CE = ram_io[0x18]&0x04;
-        if(!CE) {
-            //printf("write while CE is false\n");
-        }
     }
     if(nc2000mode){
         CLE = ram_io[0x18]&0x01;
         ALE = ram_io[0x18]&0x02;
-        CE = ram_io[0x18]&0x02;
+        CE = ram_io[0x18]&0x40;
     }
     assert(!CLE || ! ALE);
 
