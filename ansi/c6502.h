@@ -21,7 +21,7 @@ public:
     boolean nmiPending;
     boolean nmiRequest;
     int clk;
-    int lineclk;
+    unsigned int lineclk;
     __int64 total_cycles;
 
 public:

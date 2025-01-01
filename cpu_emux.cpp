@@ -67,7 +67,7 @@ void setTime1000() {
 #define	AR_h		0x07
 #define	RTC_CTRL	0x0a
 #define	INT_CLEAR	0x0b
-
+// nc3000lee1.1 version, only for compare
 unsigned char chk_ar0()
 {
 	unsigned char alm=0;
@@ -177,18 +177,21 @@ void cpu_run_emux(){
 	bool trigger256=trigger_x_times_per_s(256);
 
 	if(trigger256){
-		if(trigger256_cnt==0){
-			//at the begin of every second
-			setTime3000();
+		if(nc1020mode||nc2000mode||nc3000mode){
+			if(trigger256_cnt==0){
+				//at the begin of every second
+				setTime3000();
+			}
+			//bump the 1/256 second
+			rtc_reg[4]=trigger256_cnt;
 		}
-		//bump the 1/256 second
-		rtc_reg[4]=trigger256_cnt;
 	}
 	uint32_t CpuTicks=cpu->exec_one()/12;
 	last_cycles=cycles;
 	cycles+=CpuTicks;
 
-	if(trigger_x_times_per_s(CYCLES_SECOND/128)){
+	//magic number to fit timer0 and timer1's code
+	if(trigger_x_times_per_s(576*50)){
 		//printf("trigger1!\n");
 		bus->setTimer();
 		if (bus->setTimer0()) {
@@ -214,14 +217,12 @@ void cpu_run_emux(){
 
 		if(nc1020mode||nc2000mode||nc3000mode){
 			if(trigger256_cnt%128==0){
-				printf("!!!!!\n");
 				if(trigger256_cnt==0&& chk_ar()){
-					printf("222222\n");
+					printf("chk_ar() return true!\n");
 					ram_io[0x3d] = 0x20;
 					interr_flag&=0xfd;	
 				}else{
 					if(rtc_reg[10]&1 &&interr_flag&1){
-						printf("333333\n");
 						ram_io[0x3d] =0;
 						cpu->IRQ();
 					}
@@ -233,46 +234,12 @@ void cpu_run_emux(){
 			}
 		}
 
-
 	}
 
-	if(trigger_x_times_per_s(1)){
-		//experiment
-		if(nc2000mode||nc3000mode){
-			////void AdjustTime();
-			////AdjustTime();
-		}
-	}
-	if(trigger_x_times_per_s(2)&&false){
-		if(nc1020mode||nc2000mode||nc3000mode){
-			void AdjustTime();
-			bool IsCountDown(void);
-			static bool& timer0_toggle = nc1020_states.timer0_toggle;
-			timer0_toggle = !timer0_toggle;
-			if (!timer0_toggle) {
-				AdjustTime();
-			}
-			if(nc1020mode||nc3000mode){
-				//nc2000 crash if enabled
-				if (!IsCountDown() || timer0_toggle) {
-					ram_io[0x3D] = 0;
-				} else {
-					ram_io[0x3D] = 0x20;
-					nc1020_states.clock_flags &= 0xFD;
-				}
-			}
-		}
-		if(nc2000mode||nc3000mode){
-			Store(1025, 0); //set idle time to zero, prevent sleep
-		}
-		if(pc1000mode){
-			//set system time & prevent sleep, not important
-			setTime1000();
-		}
-		if(pc1000mode){
-			if (bus->nmiEnable()){
-				cpu->NMI();
-			}
+	if(pc1000mode&&trigger_x_times_per_s(2)){
+		setTime1000();
+		if (bus->nmiEnable()){
+			cpu->NMI();
 		}
 	}
 

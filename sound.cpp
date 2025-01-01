@@ -84,6 +84,8 @@ void post_cpu_run_sound_handling(){
 		//pop_cnt=0;
 		min_audio_queue_size_observed=DSP_AUDIO_HZ*999;
 		last_audio_queue_check_time=current_time;
+
+		//printf("dsp_audio_queue=%d\n",SDL_GetQueuedAudioSize(dsp_deviceId));
 	}
 
 	int queue_size=SDL_GetQueuedAudioSize(beeper_deviceId);

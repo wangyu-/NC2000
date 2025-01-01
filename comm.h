@@ -51,7 +51,7 @@ const bool pc1000mode = false;
 const bool use_emux_cpu =true;
 const bool use_emux_bus = true;
 
-const bool nc2000_use_2600_rom = false;
+const bool nc2000_use_2600_rom = true;
 
 const bool use_legacy_key_io = false;
 

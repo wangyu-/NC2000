@@ -174,12 +174,12 @@ void IO_API WriteXX(uint8_t addr, uint8_t value){
     if(nc2000mode||nc3000mode){
         if(addr==0x32) {
         //fprintf(stderr,"0x%02x,",value);
-        printf("<w %02x>",value);
+        //printf("<w %02x>",value);
         //return;
         }
         if(addr==0x33){
         //fprintf(stderr,"0x%02x,\n",value);
-        printf("[w %02x]\n",value);
+        //printf("[w %02x]\n",value);
         extern string udp_msg;
         write_data_to_dsp(value, ram_io[0x32]);
         if(value==0x14) {

@@ -4,6 +4,7 @@
 #include "ansi/c6502.h"
 #include "comm.h"
 #include "mem.h"
+#include "ram.h"
 #include "state.h"
 #include "nand.h"
 #include "NekoDriverIO.h"
@@ -95,8 +96,8 @@ int BusPC1000::in(int address) {
             return read_nand();
         }
         switch(address){
-            /*case 0x30:
-                return dspStat();*/
+            case 0x30:
+                return dspStat();
             case 0x31:
                 return dspRetData();
         }
@@ -152,29 +153,30 @@ void BusPC1000::out(int address, int value) {
         if(address==0x29) {
             return nand_write(value);
         }
-        if(address==0x32) {
-        //fprintf(stderr,"0x%02x,",value);
-        printf("<w %02x>",value);
-        //return;
-        }
-        if(address==0x33){
-        //fprintf(stderr,"0x%02x,\n",value);
-        printf("[w %02x]\n",value);
-        }
 
+    }
+
+    if(nc2000mode||nc3000mode){
+        if(false){
+            if(address==0x32) {
+                printf("<w %02x>",value);
+            }
+            if(address==0x33){
+                printf("[w %02x]\n",value);
+            }
+        }
         switch(address){
             case 0x30:
-                printf("reset\n");
+                //printf("dsp reset\n");
                 if (value == DSP_RESET_FLAG || value == DSP_WAKEUP_FLAG) {
                     dspSleep = false;
                     dsp->reset();
                 }
                 return;
             case 0x33:
-                //printf("write to 0x33 %d\n",value);
-                ioReg[IO_DSP_DATA_HI] = value;
-                dspCmd(ioReg[IO_DSP_DATA_HI] * 256 + ioReg[IO_DSP_DATA_LOW]);
-                dsp->write(value,ioReg[IO_DSP_DATA_LOW]);
+                ioReg[0x33] = value;
+                dspCmd(ioReg[0x33] * 256 + ioReg[0x32]);
+                dsp->write(value,ioReg[0x32]);
                 return;
         }
     }
@@ -431,6 +433,11 @@ void BusPC1000::setIrqTimer1() {
 
 int BusPC1000::dspStat() {
     int value = 0;
+    if(nc2000mode||nc3000mode){
+        value=ram_io[0x30];
+        value &=~DSP_SLEEP_FLAG;
+        value &=~0x30;
+    }
     if (dspSleep)
         value |= DSP_SLEEP_FLAG;
     /*********** 
@@ -440,7 +447,9 @@ int BusPC1000::dspStat() {
     if(!dspSleep && sound_busy()){
         value |= 0x30;
     }
-	value |= 0x40;
+    if(pc1000mode){
+	    value |= 0x40;
+    }
     return value;
 }
 
@@ -609,6 +618,7 @@ boolean BusPC1000::timeBaseEnable() {
     if(nc2000mode||nc3000mode){
         if((ioReg[O_INT_ENABLE] & 8)) return false;
         /*
+        // todo fix this
         if (this->field_0x96d4ac != '\0') {
             return true;
         }*/
