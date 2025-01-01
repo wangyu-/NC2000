@@ -186,7 +186,7 @@ void cpu_run_emux(){
 			rtc_reg[4]=trigger256_cnt;
 		}
 	}
-	uint32_t CpuTicks=cpu->exec_one()/12;
+	uint32_t CpuTicks=cpu->exec2(9999,128*12)/12;
 	last_cycles=cycles;
 	cycles+=CpuTicks;
 

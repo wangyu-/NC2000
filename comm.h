@@ -114,7 +114,7 @@ cycles related
 const uint32_t static_multipler=1; //tmp fix for speed and crash
 
 // cpu cycles per second (cpu freq).
-const uint32_t CYCLES_SECOND = 5120000*( (nc2000mode||nc3000mode)?static_multipler:1);
+const uint32_t CYCLES_SECOND = 3686400*(pc1000mode) + 5120000*(nc1020mode||nc2000mode)+10240000*nc3000mode;
 const uint32_t UNKNOWN_TIMER0_FREQ = 2;
 const uint32_t TIMER0_FREQ = 2; //not used now
 const uint32_t TIMER1_FREQ = 200;//not used now
