@@ -225,7 +225,9 @@ void BusPC1000::out(int address, int value) {
     }
     if(nc1020mode||nc2000mode||nc3000mode){
         if(address==0x04){
-            return Write04GeneralCtrl(address,value);
+            Write04GeneralCtrl(address,value);
+            //Write09Port1(0x09, ram_io[0x09]);//reapply after PTYPE changed??
+            return;
         }
         if(address==0x05){
             return Write05ClockCtrl(address, value);

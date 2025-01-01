@@ -307,7 +307,7 @@ void UpdateKeypadRegisters()
         // y0,y1 = P30 (can only receive)
         // y2~7 = P12~P17
         bool ysend = ((port1control & port1controlbit) != 0);
-        if (y < 2) {
+        if (pc1000mode && y < 2) {
             //ysend = false;
             yreceive = (zpioregs[io07_port_config] & 0x04) == 0;
             ysend = !yreceive;
@@ -333,7 +333,7 @@ void UpdateKeypadRegisters()
 
             ////////////TODO FIX HERE!!!!!!!!!!!!!!!!!!
             //have to change here otherwise time key doesn't work
-            if (y == 0 && false) {
+            if (pc1000mode && y == 0) {
                 // Special P30 "row"
                 if (x == 0) {
                     // P10
@@ -358,7 +358,7 @@ void UpdateKeypadRegisters()
                 } else {
                     // port0x -> port1y, and y is receive
                     // port0,port1 -> p30
-                    if (y >= 2) {
+                    if (y >= 2 ||nc2000mode||nc3000mode) {
                         if (keypadmatrix[y][x]==1 && ((port0data & xbit) != 0)) {
                         tmpdest1 |= xbit;
                     }
@@ -378,8 +378,8 @@ void UpdateKeypadRegisters()
                             // on/off key
                             if (keypadmatrix[y][x]==1) {
                                 tmpp30tv |= 1 << (x + 8);
-                }
-                    }
+                             }
+                        }
                     }
                 }
             }
@@ -424,9 +424,8 @@ void UpdateKeypadRegisters()
         qDebug("new [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, port1data, port0data);
     }
     r09_port1_ID = port1data;
-    if(pc1000mode||nc1020mode||nc2000mode||nc3000mode){
-        r08_port0_ID = port0data;
-    }/*******else{
+    r08_port0_ID = port0data;
+    /*******else{
         r08_port0_ID = (port0data &0x0c) | (port0data&0xf3);
         r1e_port0_ID_EXP = (port0data &0xfc) | ((port0data&0x0c)>>2);
         //zpioregs[0x1e] = (port0data &0xfc) | ((port0data&0x0c)>>2);
