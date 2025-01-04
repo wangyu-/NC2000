@@ -84,7 +84,7 @@ bool read_nor(uint16_t addr, uint8_t &value){
     if (!in_nor_range(addr)) return false;
 
     if(fp_type==NOR_CMD::INFO_READ && fp_step ==3){
-        printf("read fp_type=%d fp_step=%d addr=%04x\n",fp_type,fp_step,addr);
+        //printf("read fp_type=%d fp_step=%d addr=%04x\n",fp_type,fp_step,addr);
         value=nor_info_block[addr%0x100];
         return true;
     }
