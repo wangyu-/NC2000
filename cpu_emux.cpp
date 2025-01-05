@@ -23,11 +23,10 @@ void cpu_init_emux(){
 	//assert(use_emux_cpu);
 	// assert(use_emux_bus);
 	bus=new BusPC1000();
-	if(use_emux_cpu){
-		cpu=new C6502(bus);
-		bus->cpu=cpu;
-		cpu->reset();
-	}
+	cpu=new C6502(bus);
+	bus->cpu=cpu;
+	// now in resetStates()
+	//cpu->reset();
 }
 
 bool trigger_every_x_ms(int x){

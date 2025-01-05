@@ -31,40 +31,12 @@ static uint8_t* keypad_matrix = nc1020_states.keypad_matrix;
 static bool& wake_up_pending = nc1020_states.pending_wake_up;
 static uint8_t& wake_up_key = nc1020_states.wake_up_flags;
 
-void Initialize() {
-	if(enable_inject){
-		std::ifstream inject_bin("inject.bin");
-		std::stringstream buffer;
-		buffer << inject_bin.rdbuf();
-		printf("<inject_size=%lu>\n",buffer.str().size());
-		inject_code=buffer.str();
-	}
-
-	init_io();
-
-//#ifdef DEBUG
-//	FILE* file = fopen((nc1020_dir + "/wqxsimlogs.bin").c_str(), "rb");
-//	fseek(file, 0L, SEEK_END);
-//	uint32_t file_size = ftell(file);
-//	uint32_t insts_count = (file_size - 8) / 8;
-//	debug_logs.insts_count = insts_count;
-//	debug_logs.logs = (log_rec_t*)malloc(insts_count * 8);
-//	fseek(file, 0L, SEEK_SET);
-//	fread(&debug_logs.insts_start, 4, 1, file);
-//	fseek(file, 4L, SEEK_SET);
-//	fread(&debug_logs.peek_addr, 4, 1, file);
-//	fseek(file, 8L, SEEK_SET);
-//	fread(debug_logs.logs, 8, insts_count, file);
-//	fclose(file);
-//#endif
-}
-
 void ResetStates(){
 	//version = VERSION;
 	memset(&nc1020_states,0,sizeof(nc1020_states_t));
 	init_mem();
 	reset_cpu_states();
-	cpu_init_emux();
+	cpu->reset();
 }
 
 /*
@@ -95,24 +67,34 @@ void SaveStates(){
 }
 
 void LoadNC1020(){
+	init_io();
+	cpu_init_emux();
+	if(use_emux_cpu&&!use_emux_bus){
+		void init_cpu2();
+		init_cpu2();
+	}
+
 	rom_switcher();
 	init_nor();
-	init_rom();
+	if(pc1000mode||nc1020mode) {
+		init_rom();
+	}
 	if(nc2000mode||nc3000mode) {
 		read_nand_file();
 	}
 	ResetStates();
+
 	if(nc2000mode||nc3000mode){
 		//nc3000c-lee has it but seems like no need?
 		//ram_io[0x18]=0x20;
 	}
 	//LoadStates();
 }
-
+/*
 void SaveNC1020(){
 	SaveNor();
 	//SaveStates();
-}
+}*/
 
 void SetKey(uint8_t key_id, bool down_or_up){
 	uint8_t row = key_id % 8;

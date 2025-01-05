@@ -40,7 +40,6 @@ bool InitEverything() {
   }
   SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH * LINE_SIZE *total_size, SCREEN_HEIGHT * LINE_SIZE *total_size);
 
-  Initialize();
   LoadNC1020();
   
   return true;
@@ -399,7 +398,7 @@ int main(int argc, char* args[]) {
   //SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
   RunGame();
   if(false){
-    SaveNC1020();
+    //SaveNC1020();
   }
 
   return 0;

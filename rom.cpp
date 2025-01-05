@@ -32,9 +32,7 @@ void LoadRom(const string romPath){
 
 void init_rom(){
     memset(&rom_buff,0,sizeof(rom_buff));
-	if(nc1020mode||pc1000mode){
-		LoadRom(nc1020_rom.romPath);
-	}
+	LoadRom(nc1020_rom.romPath);
 	if(nc1020mode){
 		for (uint32_t i=0; i<num_rom_pages/3; i++) {
 			rom_volume0[i] = rom_buff + (0x8000 * i);

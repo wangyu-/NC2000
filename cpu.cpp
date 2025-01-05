@@ -402,15 +402,15 @@ static struct Bus:IBus6502{
 	}
 }bus;
 extern C6502 *cpu;
-static bool cpu2_initalized;
+void init_cpu2(){
+	cpu=new C6502(&bus);
+	// now in resetStates()
+	//cpu->reset();
+}
 void cpu_run2(){
 	assert(use_emux_cpu);
 	assert(!use_emux_bus);
-	if(!cpu2_initalized){
-		cpu2_initalized=true;
-		cpu=new C6502(&bus);
-		cpu->reset();
-	}
+
 	assert(cycles==cpu->getTotalCycles()/12);
 
 	string msg=get_message();
