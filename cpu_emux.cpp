@@ -153,16 +153,34 @@ void setTime3000(){
     }
 }
 uint8_t trigger256_cnt=0;
+int cpu_emux_target_cycles0=128*12;
+int cpu_emux_target_cycles=cpu_emux_target_cycles0;
+
 bool time_adjusted;
 void cpu_run_emux(){
 	//assert(cycles==cpu->getTotalCycles()/12);
-
-	if((cpu->P&4)==0)
-	{
-		bus->speed_slowdown=1;
-		string msg=get_message();
-		if(!msg.empty()){
-			handle_cmd(msg);
+	char *peeked_msg=peek_message();
+	if(peeked_msg){
+		bool need_wait=false;
+		string cmd=split_s(string(peeked_msg)," ")[0];
+		if(cmd=="file_manager"||cmd=="put"||cmd=="get"||cmd=="create_dir"||cmd=="create_dir_hex"){
+			need_wait=true;
+		}
+		else if(cmd=="log"){
+			cpu_emux_target_cycles=0;
+		}
+		else if(cmd=="nolog"){
+			cpu_emux_target_cycles=cpu_emux_target_cycles0;
+		}
+		if(!need_wait||(cpu->P&4)==0)
+		{
+			if(cmd=="file_manager"||cmd=="put"||cmd=="get"){
+				bus->speed_slowdown=1;
+			}
+			string msg=get_message();
+			if(!msg.empty()){
+				handle_cmd(msg);
+			}
 		}
 	}
 	if(nc2000mode){
@@ -210,7 +228,7 @@ void cpu_run_emux(){
 	}
 
 	//todo study datasheet of how speed affect timers
-	uint32_t target_cycles=128*12; target_cycles/=bus->speed_slowdown;
+	uint32_t target_cycles=cpu_emux_target_cycles; target_cycles/=bus->speed_slowdown;
 	uint32_t CpuTicks=cpu->exec2(target_cycles)/12;
 	CpuTicks*=bus->speed_slowdown;
 	last_cycles=cycles;

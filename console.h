@@ -9,6 +9,8 @@ void handle_cmd(string & str);
 void push_message(char* msg);
 
 string get_message();
+char* peek_message();
+
 
 
 // compile below with 6502 macroassembler and simulator,

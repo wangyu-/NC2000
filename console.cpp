@@ -37,6 +37,16 @@ string get_message(){
     return res;
 }
 
+char *peek_message(){
+	char *p=NULL;
+	g_mutex.lock();
+    if(!udp_msgs.empty()){
+        p= (char *)udp_msgs.front().c_str();
+    }
+	g_mutex.unlock();
+    return p;
+}
+
 
 deque<char> queue;
 int32_t dummy_io_cnt=-1;
@@ -227,7 +237,11 @@ void handle_cmd(string & str){
 			return;
 	}
 	if(cmds[0]=="log"){
-			enable_dyn_debug^=0x1;
+			enable_dyn_debug=true;
+			return;
+	}
+	if(cmds[0]=="nolog"){
+			enable_dyn_debug=false;
 			return;
 	}
 	if(cmds[0]=="get"){

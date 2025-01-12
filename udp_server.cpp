@@ -40,11 +40,12 @@ static struct sockaddr_in remaddr;
 
 void read_loop(std::string msg)
 {
-	char buf[1000];
+	char buf[10000];
 	socklen_t addrlen = sizeof(remaddr);  
 	while(1){
 		ssize_t recvlen = recvfrom(udp_fd, buf, sizeof(buf)-1, 0, (struct sockaddr *)&remaddr, &addrlen);
 		if(recvlen>0) {
+			assert(recvlen<sizeof(buf));
 			buf[recvlen]=0;
 		} 
         push_message(buf);
