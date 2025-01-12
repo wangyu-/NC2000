@@ -48,7 +48,11 @@ void read_loop(std::string msg)
 			assert(recvlen<sizeof(buf));
 			buf[recvlen]=0;
 		} 
-        push_message(buf);
+		string str=buf;
+		while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
+			str.pop_back();
+		}
+        push_message(str);
 
 	}
     //std::cout << "task1 says: " << msg;

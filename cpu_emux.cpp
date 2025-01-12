@@ -162,9 +162,11 @@ void cpu_run_emux(){
 	char *peeked_msg=peek_message();
 	if(peeked_msg){
 		bool need_wait=false;
-		string cmd=split_s(string(peeked_msg)," ")[0];
+		string cmd=split_s(string(peeked_msg), " ")[0];
+		//printf("cmd is %s\n",cmd.c_str());
 		if(cmd=="file_manager"||cmd=="put"||cmd=="get"||cmd=="create_dir"||cmd=="create_dir_hex"){
 			need_wait=true;
+			//printf("need wait!!\n");
 		}
 		else if(cmd=="log"){
 			cpu_emux_target_cycles=0;
@@ -176,6 +178,7 @@ void cpu_run_emux(){
 		{
 			if(cmd=="file_manager"||cmd=="put"||cmd=="get"){
 				bus->speed_slowdown=1;
+				printf("set cks to highest\n");
 			}
 			string msg=get_message();
 			if(!msg.empty()){

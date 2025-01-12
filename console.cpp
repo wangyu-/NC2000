@@ -19,10 +19,10 @@ extern BusPC1000 *bus;
 deque<string> udp_msgs;
 std::mutex g_mutex;
 
-void push_message(char* msg){
-		g_mutex.lock();
-		udp_msgs.push_back(msg);
-		g_mutex.unlock();
+void push_message(string msg){
+	g_mutex.lock();
+	udp_msgs.push_back(msg);
+	g_mutex.unlock();
 }
 
 string get_message(){
@@ -130,11 +130,8 @@ std::string HexToBytes(const std::string& hex) {
   return bytes;
 }
 
-void handle_cmd(string & str){
-	while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
-		str.pop_back();
-	} 
-	printf("received %s from udp\n",str.c_str());
+void handle_cmd(string str){
+	printf("handling cmd %s\n",str.c_str());
 	auto cmds=split_s(str," ");
 	for(int i=0;i<cmds.size();i++){
 		printf("<%s>",cmds[i].c_str());
