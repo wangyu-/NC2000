@@ -328,14 +328,10 @@ void handle_cmd(string str){
 	}
 
 	if(cmds[0]=="sync_time") {
-		time_t t = time(NULL);
-  		struct tm tm = *localtime(&t);
-		Peek16(1018)=tm.tm_year+1900-1881;
-		Peek16(1019)=tm.tm_mon;
-	    Peek16(1020)=tm.tm_mday-1;
-		Peek16(1015)=tm.tm_hour;
-		Peek16(1016)=tm.tm_min;
-		Peek16(1017)=tm.tm_sec*2;
+		if(nc2000mode){
+			extern void sync_time_2000();
+			sync_time_2000();
+		}
 		return ;
 	}
 	printf("unknow command <%s>\n",cmds[0].c_str());

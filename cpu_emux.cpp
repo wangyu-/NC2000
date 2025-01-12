@@ -157,6 +157,17 @@ int cpu_emux_target_cycles0=128*12;
 int cpu_emux_target_cycles=cpu_emux_target_cycles0;
 
 bool time_adjusted;
+void sync_time_2000(){
+		time_t current_time = time(NULL);
+		struct tm *local_time = localtime(&current_time);
+		Store(0x3fa, local_time->tm_year - 103 +0x7a);
+		Store(0x3fb, local_time->tm_mon);
+		Store(0x3fc, local_time->tm_mday-1);
+		//Store(0x3fd, local_time->tm_wday);
+		rtc_reg[2]=local_time->tm_hour;
+		rtc_reg[1]=local_time->tm_min;
+		rtc_reg[0]=local_time->tm_sec;
+}
 void cpu_run_emux(){
 	//assert(cycles==cpu->getTotalCycles()/12);
 	char *peeked_msg=peek_message();
@@ -189,15 +200,7 @@ void cpu_run_emux(){
 	if(nc2000mode){
 		if(!time_adjusted && Peek16(0x3fa)==0x7a&&rtc_reg[0]==1){
 			time_adjusted=1;
-			time_t current_time = time(NULL);
-			struct tm *local_time = localtime(&current_time);
-			Store(0x3fa, local_time->tm_year - 103 +0x7a);
-			Store(0x3fb, local_time->tm_mon);
-			Store(0x3fc, local_time->tm_mday-1);
-			//Store(0x3fd, local_time->tm_wday);
-			rtc_reg[2]=local_time->tm_hour;
-			rtc_reg[1]=local_time->tm_min;
-			rtc_reg[0]=local_time->tm_sec;
+			sync_time_2000();
 		}
 	}
 	tick++;
