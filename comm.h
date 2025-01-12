@@ -169,6 +169,7 @@ void ProcessBinaryLinear(uint8_t* dest, uint8_t* src, uint32_t size);
 
 //use vector char since string cannot store \0 well on mingw
 void read_file(string name,vector<char> &v);
+int read_file_noexit(string name,vector<char> &v);
 /*
 ===================
 common types

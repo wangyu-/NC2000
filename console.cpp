@@ -256,7 +256,9 @@ void handle_cmd(string & str){
 	}
 	if(cmds[0]=="put"){
 			vector<char> file;
-			read_file(cmds[1], file);
+			if(read_file_noexit(cmds[1], file)!=0){
+				return ;
+			}
 			string target=cmds[1];
 			if(cmds.size()>2) target=cmds[2];
 			queue.clear();

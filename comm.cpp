@@ -85,3 +85,18 @@ void read_file(string name,vector<char> &v){
     fclose(f);
 }
 
+int read_file_noexit(string name,vector<char> &v){
+    FILE *f = fopen(name.c_str(), "rb");
+    if(f==0) {
+        printf("open file %s fail!\n",name.c_str());
+        return -1;
+    }
+    fseek(f, 0, SEEK_END);
+    int fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+    v.resize(fsize);
+    fread(&v[0], fsize, 1, f);
+    fclose(f);
+    return 0;
+}
+
