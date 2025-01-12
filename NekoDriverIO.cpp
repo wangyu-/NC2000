@@ -360,7 +360,7 @@ void UpdateKeypadRegisters()
                     // port0,port1 -> p30
                     if (y >= 2 ||nc2000mode||nc3000mode) {
                         if (keypadmatrix[y][x]==1 && ((port0data & xbit) != 0)) {
-                        tmpdest1 |= xbit;
+                        tmpdest1 |= port1controlbit;
                     }
                     } else if (y == 1) {
                         // hotkey
