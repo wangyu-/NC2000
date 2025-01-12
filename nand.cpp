@@ -208,43 +208,6 @@ uint8_t read_nand(){
         return result;
     }
 
-    /*
-        erase
-    */
-    //printf("bs=%x roa_bbs=%x pc=%x  %x %x %x %x \n",ram_io[0x00], ram_io[0x0a], reg_pc,  Peek16(p), Peek16(p+1),Peek16(p+2),Peek16(p+3));
-    if(cmd==0x60){
-        assert(nand_cmd.size()==2 && nand_cmd[1]==0xd0  &&nand_data.size()==0 && nand_addr.size()==4);
-        unsigned char low=nand_addr[0];
-        unsigned char mid=nand_addr[1];
-        unsigned char high=nand_addr[2]&0x01;
-        //unsigned char a25=nand_addr[3];
-
-        //assert(false);
-        //return 0x40;
-        //if(xxx==1) return 0x40;
-        unsigned int final= (high*256u*256u + mid*256u+low)*528u;
-        /*
-        if(nand_read_cnt%100==0){
-            printf("<cmd60> %d\n",nand_read_cnt);
-            for(int i=0;i<nand_cmd.size();i++){
-                printf("<%x>",(unsigned char)nand_cmd[i]);
-            }
-        }*/
-
-        nand_read_cnt++;
-        char *p=&nand[0][0];
-        //printf("final=%x\n",final);
-        printf("nand erase!!! %x tick=%lld pc=%x %x\n",final,tick, mPC, ram_io[0x00]);
-        //assert(false);
-
-        //final-=32*1024;
-        assert(final%(32*528)==0);
-        assert(final +32*528 <= sizeof(nand));
-        memset(p+final,0xff,32*528);
-        clear_nand_status();
-        return 0x40;
-    }
-
     assert(false);
 }
 
@@ -316,7 +279,7 @@ void nand_write(uint8_t value){
                 for(int i=0;i<16;i++){
                     p[final+i]=nand_data[i];
                 }
-                printf("program spare!!!! final=%x\n",final);
+                printf("nand program spare, offset=%x\n",final);
                 clear_nand_status();
             }
             else if(nand_cmd[0]==0x0 && nand_cmd.size()==2 && nand_addr.size()==4 && nand_data.size()==528){
@@ -334,7 +297,7 @@ void nand_write(uint8_t value){
                 unsigned int final= pos*528u+ y;
                 assert(final%(528)==0);
                 char *p=&nand[0][0];
-                printf("program!!!! final=%x\n",final);
+                printf("nand program, offset=%x\n",final);
 
                 for(int i=0;i<528;i++){
                     p[final+i]=nand_data[i];
@@ -350,10 +313,24 @@ void nand_write(uint8_t value){
         }
         if(value==0xd0||value==0x80){
             if(value==0xd0){
-                assert(nand_cmd.size()>=1);
+                assert(nand_cmd.size()==1);
                 assert(nand_cmd[0]==0x60);
                 assert(nand_addr.size()==3);
                 assert(nand_data.size()==0);
+
+                unsigned char low=nand_addr[0];
+                unsigned char mid=nand_addr[1];
+                unsigned char high=nand_addr[2]&0x01;
+
+                unsigned int final= (high*256u*256u + mid*256u+low)*528u;
+
+                nand_read_cnt++;
+                char *p=&nand[0][0];
+                printf("nand erase!!! %x tick=%lld pc=%x %x\n",final,tick, mPC, ram_io[0x00]);
+
+                assert(final%(32*528)==0);
+                assert(final +32*528 <= sizeof(nand));
+                memset(p+final,0xff,32*528);
             }
             if(value==0x80){
                 assert(nand_cmd.size()>=1);
