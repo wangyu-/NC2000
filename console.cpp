@@ -20,6 +20,7 @@ deque<string> udp_msgs;
 std::mutex g_mutex;
 
 void push_message(string msg){
+	if(msg.empty()) return;
 	g_mutex.lock();
 	udp_msgs.push_back(msg);
 	g_mutex.unlock();
