@@ -275,9 +275,18 @@ void nand_write(uint8_t value){
 
                 assert((final-512)%(528)==0);
 
-                char *p=&nand[0][0];
+                unsigned char *p=(unsigned char*)&nand[0][0];
+                bool warn=false;
                 for(int i=0;i<16;i++){
-                    p[final+i]=nand_data[i];
+                    if(p[final+i]!=0xff){
+                        warn=true;
+                        //this is allowed, but wqx's software always erase before write
+                        p[final+i]=0xff;
+                    }
+                    p[final+i]&=nand_data[i];
+                }
+                if(warn){
+                    printf("oops writing to non-erased byte at %x!!!!!!!!!!\n",final);
                 }
                 printf("nand program spare, offset=%x\n",final);
                 clear_nand_status();
@@ -296,11 +305,20 @@ void nand_write(uint8_t value){
                 unsigned int y=low;
                 unsigned int final= pos*528u+ y;
                 assert(final%(528)==0);
-                char *p=&nand[0][0];
+                unsigned char *p=(unsigned char*)&nand[0][0];
                 printf("nand program, offset=%x\n",final);
 
+                bool warn=false;
                 for(int i=0;i<528;i++){
-                    p[final+i]=nand_data[i];
+                    if(p[final+i]!=0xff){
+                        warn=true;
+                        //this is allowed, but wqx's software always erase before write
+                        p[final+i]=0xff;
+                    }
+                    p[final+i]&=nand_data[i];
+                }
+                if(warn){
+                    printf("oops writing to non-erased byte at %x!!!!!!!!!!\n",final);
                 }
                 clear_nand_status();
             }
