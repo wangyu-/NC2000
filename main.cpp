@@ -25,7 +25,8 @@ bool InitAudioVideo() {
   lcd_effect_buffer = new unsigned char[SCREEN_HEIGHT*total_size* SCREEN_WIDTH*total_size * 4];
   memset(lcd_effect_buffer, 0, SCREEN_HEIGHT*total_size* SCREEN_WIDTH*total_size * 4);
 
-  if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+  // if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_EVENTS) == -1) {
     std::cout << " Failed to initialize SDL : " << SDL_GetError() << std::endl;
     return false;
   }
