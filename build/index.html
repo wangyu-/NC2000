@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Emscripten-Generated Code</title>
+    <title>NC2000</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,7 +19,19 @@
         .header {
             display: flex;
             flex-direction: row;
-            align-items: ju;
+            align-items: center;
+        }
+
+        @media screen and (max-width: 600px) {
+            .header {
+                flex-direction: column;
+            }
+        }
+
+        .header h1 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .emscripten_border {
@@ -34,7 +46,6 @@
             display: flex;
             justify-content: flex-start;
             gap: 70px;
-            margin-bottom: 10px;
         }
 
         .emscripten {
@@ -44,6 +55,8 @@
         canvas.emscripten {
             border: none;
             background-color: black;
+            width: 935px;
+            height: 400px;
         }
 
         #status {
@@ -93,6 +106,10 @@
             resize: none;
         }
 
+        #zoom-controls {
+            padding: 10px 0;
+        }
+
         /* Virtual keyboard styles */
         #virtual-keyboard {
             display: flex;
@@ -123,7 +140,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
+            font-size: 20px;
             cursor: pointer;
             user-select: none;
             position: relative;
@@ -172,6 +189,7 @@
 
 <body>
     <div class="header">
+        <h1>WQXSIM</h1>
         <div class="spinner" id='spinner'></div>
         <div class="emscripten" id="status">Downloading...</div>
         <!-- ROM Selection -->
@@ -189,10 +207,9 @@
     </div>
 
     <!-- 缩放控制 -->
-    <div id="zoom-controls"
-        style="margin: 10px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; max-width: 800px; width: 100%;">
+    <div id="zoom-controls">
         <label for="zoom-slider" style="font-weight: bold; margin-right: 10px;">缩放:</label>
-        <input type="range" id="zoom-slider" min="0.5" max="2" step="0.1" value="1" 
+        <input type="range" id="zoom-slider" min="0.5" max="2" step="0.1" value="1"
             style="width: 200px; vertical-align: middle;">
         <span id="zoom-value" style="margin-left: 10px; font-weight: bold;">100%</span>
         <button id="zoom-reset"
@@ -570,24 +587,24 @@
             // 获取视口高度和宽度
             const viewportHeight = window.innerHeight;
             const viewportWidth = window.innerWidth;
-            
+
             // 获取缩放容器的原始尺寸
             const containerRect = zoomContainer.getBoundingClientRect();
             const containerHeight = containerRect.height / currentZoom; // 当前缩放下的实际高度
             const containerWidth = containerRect.width / currentZoom; // 当前缩放下的实际宽度
-            
+
             // 计算可用空间（减去顶部控件的高度）
             const availableHeight = viewportHeight - 250; // 估算的顶部控件高度
             const availableWidth = viewportWidth - 40; // 留出一些边距
-            
+
             // 计算缩放比例
             const heightScale = availableHeight / containerHeight;
             const widthScale = availableWidth / containerWidth;
-            
+
             // 使用较小的缩放比例，确保内容完全可见
             const fitZoom = Math.min(heightScale, widthScale, 2.0); // 最大不超过2.0
             const minZoom = Math.max(fitZoom, 0.5); // 最小不小于0.5
-            
+
             applyZoom(minZoom);
         }
 
@@ -817,10 +834,10 @@
 
                 // 设置ROM选择器
                 setupRomSelector();
-                
+
                 // 设置缩放控制
                 setupZoomControls();
-                
+
                 // 延迟执行自动适应屏幕，确保所有元素都已渲染
                 setTimeout(() => {
                     fitToScreen();
