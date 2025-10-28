@@ -3,7 +3,7 @@ Run NC2000 in browser
 
 文曲星NC2000模拟器，原版 SDL2 在 [https://github.com/wangyu-/NC2000](https://github.com/wangyu-/NC2000), 本项目在其基础上，使用 Emscripten 编译为 WebAssembly，在浏览器中运行。
 
-可以在 [https://fwindpeak.github.io/NC2000-wasm/build/wqxsim.html](https://fwindpeak.github.io/NC2000-wasm/build/wqxsim.html) 在线运行。
+可以在 [https://fwindpeak.github.io/NC2000-wasm/build/index.html](https://fwindpeak.github.io/NC2000-wasm/build/index.html) 在线运行。
 目前只集成了 NC2000 3.5版的 ROM，后续会考虑集成其他版本的 ROM。
 
 
