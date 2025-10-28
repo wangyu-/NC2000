@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NC2000</title>
     <style>
         body {
@@ -18,20 +19,29 @@
 
         .header {
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             align-items: center;
-        }
-
-        @media screen and (max-width: 600px) {
-            .header {
-                flex-direction: column;
-            }
         }
 
         .header h1 {
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .header #rom-selection {
+            margin: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #rom-selection #rom-select {
+            padding: 5px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
         }
 
         .emscripten_border {
@@ -190,13 +200,15 @@
 <body>
     <div class="header">
         <h1>WQXSIM</h1>
-        <div class="spinner" id='spinner'></div>
-        <div class="emscripten" id="status">Downloading...</div>
+        <div class="status">
+            <div class="spinner" id='spinner'></div>
+            <div class="emscripten" id="status">Downloading...</div>
+        </div>
+
         <!-- ROM Selection -->
-        <div id="rom-selection"
-            style="margin: 10px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; max-width: 800px; width: 100%;">
+        <div id="rom-selection">
             <label for="rom-select" style="font-weight: bold; margin-right: 10px;">选择ROM:</label>
-            <select id="rom-select" style="padding: 5px; border-radius: 3px; border: 1px solid #ccc; min-width: 300px;">
+            <select id="rom-select">
                 <option value="nc2000">nc2000/2600 官方3.5</option>
                 <option value="nc2600c_fc42">nc2600c 非常4.2 by 41824984 - 24MB扩容</option>
             </select>
@@ -208,17 +220,14 @@
 
     <!-- 缩放控制 -->
     <div id="zoom-controls">
-        <label for="zoom-slider" style="font-weight: bold; margin-right: 10px;">缩放:</label>
-        <input type="range" id="zoom-slider" min="0.5" max="2" step="0.1" value="1"
-            style="width: 200px; vertical-align: middle;">
+        <label for="zoom-slider">缩放:</label>
+        <input type="range" id="zoom-slider" min="0.2" max="3" step="0.1" value="1">
         <span id="zoom-value" style="margin-left: 10px; font-weight: bold;">100%</span>
         <button id="zoom-reset"
             style="margin-left: 10px; padding: 5px 10px; background-color: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer;">重置</button>
-        <button id="zoom-fit"
-            style="margin-left: 5px; padding: 5px 10px; background-color: #2ecc71; color: white; border: none; border-radius: 3px; cursor: pointer;">适应屏幕</button>
         <label style="margin-left: 15px;">
             <input type="checkbox" id="auto-fit" style="vertical-align: middle;">
-            <span style="vertical-align: middle;">自动适应屏幕</span>
+            <span>自适应</span>
         </label>
     </div>
 
@@ -350,9 +359,10 @@
             { label: 'F3', subscript: '', superscript: '查找', sdlKeys: ['SDLK_F3'] },
             { label: 'F4', subscript: '', superscript: '修改', sdlKeys: ['SDLK_F4'] }],
             // Row 3
-            [{ label: '发音', subscript: '', superscript: '', sdlKeys: ['SDLK_F5'] },
-            { label: '报时', subscript: '', superscript: '', sdlKeys: ['SDLK_F6'] },
-            { label: 'reset', subscript: '', superscript: '', sdlKeys: ['SDLK_F6'] },
+            [{ label: '发音', subscript: '', superscript: '', sdlKeys: ['SDLK_SEMICOLON'] },
+            { label: '报时', subscript: '', superscript: '', sdlKeys: ['SDLK_QUOTE'] },
+                null,
+            // { label: 'reset', subscript: '', superscript: '', sdlKeys: ['SDLK_F6'] },
             { label: '英汉', subscript: '', superscript: '汉英', sdlKeys: ['SDLK_F5'] },
             { label: '名片', subscript: '', superscript: '通讯', sdlKeys: ['SDLK_F6'] },
             { label: '计算', subscript: '', superscript: '换算', sdlKeys: ['SDLK_F7'] },
@@ -564,7 +574,6 @@
         const zoomSlider = document.getElementById('zoom-slider');
         const zoomValue = document.getElementById('zoom-value');
         const zoomReset = document.getElementById('zoom-reset');
-        const zoomFit = document.getElementById('zoom-fit');
         const autoFitCheckbox = document.getElementById('auto-fit');
         let isFitMode = false;
         let autoFitEnabled = false;
@@ -595,15 +604,15 @@
 
             // 计算可用空间（减去顶部控件的高度）
             const availableHeight = viewportHeight - 250; // 估算的顶部控件高度
-            const availableWidth = viewportWidth - 40; // 留出一些边距
+            const availableWidth = viewportWidth - 20; // 留出一些边距
 
             // 计算缩放比例
             const heightScale = availableHeight / containerHeight;
             const widthScale = availableWidth / containerWidth;
 
             // 使用较小的缩放比例，确保内容完全可见
-            const fitZoom = Math.min(heightScale, widthScale, 2.0); // 最大不超过2.0
-            const minZoom = Math.max(fitZoom, 0.5); // 最小不小于0.5
+            const fitZoom = Math.min(heightScale, widthScale, 3.0); // 最大不超过2.0
+            const minZoom = Math.max(fitZoom, 0.2); // 最小不小于0.5
 
             applyZoom(minZoom);
         }
@@ -622,14 +631,6 @@
             zoomReset.addEventListener('click', () => {
                 resetZoom();
                 isFitMode = false;
-                autoFitCheckbox.checked = false;
-                autoFitEnabled = false;
-            });
-
-            // 适应屏幕按钮点击事件
-            zoomFit.addEventListener('click', () => {
-                fitToScreen();
-                isFitMode = true;
                 autoFitCheckbox.checked = false;
                 autoFitEnabled = false;
             });
@@ -825,7 +826,7 @@
 
                 // 6e. [完成] 手动调用 main() (使用当前ROM配置)
                 console.log("文件系统已准备就绪。即将启动 main()...");
-                Module.setStatus('All assets loaded. Starting Wasm...');
+                Module.setStatus(' ');
 
                 // 使用当前选择的ROM配置
                 const romConfig = romConfigs[currentRom];
