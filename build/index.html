@@ -16,6 +16,12 @@
             background-color: #f0f0f0;
         }
 
+        .header {
+            display: flex;
+            flex-direction: row;
+            align-items: ju;
+        }
+
         .emscripten_border {
             border: 1px solid #ccc;
             margin: 10px 0;
@@ -165,41 +171,66 @@
 </head>
 
 <body>
-    <div class="spinner" id='spinner'></div>
-    <div class="emscripten" id="status">Downloading...</div>
+    <div class="header">
+        <div class="spinner" id='spinner'></div>
+        <div class="emscripten" id="status">Downloading...</div>
+        <!-- ROM Selection -->
+        <div id="rom-selection"
+            style="margin: 10px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; max-width: 800px; width: 100%;">
+            <label for="rom-select" style="font-weight: bold; margin-right: 10px;">选择ROM:</label>
+            <select id="rom-select" style="padding: 5px; border-radius: 3px; border: 1px solid #ccc; min-width: 300px;">
+                <option value="nc2000">nc2000/2600 官方3.5</option>
+                <option value="nc2600c_fc42">nc2600c 非常4.2 by 41824984 - 24MB扩容</option>
+            </select>
+            <button id="apply-rom"
+                style="margin-left: 10px; padding: 5px 10px; background-color: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer;">应用</button>
+            <div id="rom-status" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+        </div>
+    </div>
 
-    <!-- <span id='controls'>
-        <span><input type="checkbox" id="resize">Resize canvas</span>
-        <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
-        <span><input type="button" value="Fullscreen"
-                onclick="Module.requestFullscreen(document.getElementById('pointerLock').checked, 
-                                                                                document.getElementById('resize').checked)">
-        </span>
-    </span> -->
+    <!-- 缩放控制 -->
+    <div id="zoom-controls"
+        style="margin: 10px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; max-width: 800px; width: 100%;">
+        <label for="zoom-slider" style="font-weight: bold; margin-right: 10px;">缩放:</label>
+        <input type="range" id="zoom-slider" min="0.5" max="2" step="0.1" value="1" 
+            style="width: 200px; vertical-align: middle;">
+        <span id="zoom-value" style="margin-left: 10px; font-weight: bold;">100%</span>
+        <button id="zoom-reset"
+            style="margin-left: 10px; padding: 5px 10px; background-color: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer;">重置</button>
+        <button id="zoom-fit"
+            style="margin-left: 5px; padding: 5px 10px; background-color: #2ecc71; color: white; border: none; border-radius: 3px; cursor: pointer;">适应屏幕</button>
+        <label style="margin-left: 15px;">
+            <input type="checkbox" id="auto-fit" style="vertical-align: middle;">
+            <span style="vertical-align: middle;">自动适应屏幕</span>
+        </label>
+    </div>
 
     <div class="emscripten">
         <progress value="0" max="100" id="progress" hidden=1></progress>
     </div>
 
-    <div class="emscripten_border">
-        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
-        <div class="screen_num">
-            <span>1</span>
-            <span>2</span>
-            <span>3</span>
-            <span>4</span>
-            <span>5</span>
-            <span>6</span>
-            <span>7</span>
-            <span>8</span>
-            <span>9</span>
+    <!-- 缩放容器，包含屏幕和虚拟键盘 -->
+    <div id="zoom-container" style="transform-origin: top center; transition: transform 0.3s ease;">
+        <div class="emscripten_border">
+            <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+            <div class="screen_num">
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
+                <span>5</span>
+                <span>6</span>
+                <span>7</span>
+                <span>8</span>
+                <span>9</span>
+            </div>
         </div>
-    </div>
-    <textarea style="display: none;" id="output" rows="8"></textarea>
+        <textarea style="display: none;" id="output" rows="8"></textarea>
 
-    <!-- Virtual Keyboard Container -->
-    <div id="virtual-keyboard">
-        <!-- Virtual keyboard will be generated here by JavaScript -->
+        <!-- Virtual Keyboard Container -->
+        <div id="virtual-keyboard">
+            <!-- Virtual keyboard will be generated here by JavaScript -->
+        </div>
     </div>
 
     <script type="module">
@@ -482,6 +513,129 @@
             });
         }
 
+        // ROM configurations
+        const romConfigs = {
+            'nc2000': {
+                name: 'nc2000/2600 官方3.5',
+                args: ['--nc2000', '--rom', 'roms/nc2000'],
+                files: [
+                    { url: 'roms/nc2000.nand', vfsPath: '/roms/nc2000.nand' },
+                    { url: 'roms/nc2000.nand0', vfsPath: '/roms/nc2000.nand0' },
+                    { url: 'roms/nc2000.nor', vfsPath: '/roms/nc2000.nor' }
+                ]
+            },
+            'nc2600c_fc42': {
+                name: 'nc2600c 非常4.2 by 41824984 - 24MB扩容',
+                args: ['--nc2000', '--rom', 'roms/fc42'],
+                files: [
+                    { url: 'roms/fc42.nand', vfsPath: '/roms/fc42.nand' },
+                    { url: 'roms/fc42.nand0', vfsPath: '/roms/fc42.nand0' },
+                    { url: 'roms/fc42.nor', vfsPath: '/roms/fc42.nor' }
+                ]
+            }
+            // 注意：其他ROM版本暂时不可用，因为缺少对应的ROM文件
+            // 如果需要添加更多ROM版本，请先将对应的ROM文件添加到build/roms目录
+        };
+
+        // Current selected ROM
+        let currentRom = 'nc2000';
+        let wasmInstance = null;
+
+        // 缩放功能
+        let currentZoom = 1.0;
+        const zoomContainer = document.getElementById('zoom-container');
+        const zoomSlider = document.getElementById('zoom-slider');
+        const zoomValue = document.getElementById('zoom-value');
+        const zoomReset = document.getElementById('zoom-reset');
+        const zoomFit = document.getElementById('zoom-fit');
+        const autoFitCheckbox = document.getElementById('auto-fit');
+        let isFitMode = false;
+        let autoFitEnabled = false;
+
+        // 应用缩放
+        function applyZoom(zoomLevel) {
+            currentZoom = parseFloat(zoomLevel);
+            zoomContainer.style.transform = `scale(${currentZoom})`;
+            zoomValue.textContent = `${Math.round(currentZoom * 100)}%`;
+            zoomSlider.value = currentZoom;
+        }
+
+        // 重置缩放
+        function resetZoom() {
+            applyZoom(1.0);
+        }
+
+        // 适应屏幕缩放
+        function fitToScreen() {
+            // 获取视口高度和宽度
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            // 获取缩放容器的原始尺寸
+            const containerRect = zoomContainer.getBoundingClientRect();
+            const containerHeight = containerRect.height / currentZoom; // 当前缩放下的实际高度
+            const containerWidth = containerRect.width / currentZoom; // 当前缩放下的实际宽度
+            
+            // 计算可用空间（减去顶部控件的高度）
+            const availableHeight = viewportHeight - 250; // 估算的顶部控件高度
+            const availableWidth = viewportWidth - 40; // 留出一些边距
+            
+            // 计算缩放比例
+            const heightScale = availableHeight / containerHeight;
+            const widthScale = availableWidth / containerWidth;
+            
+            // 使用较小的缩放比例，确保内容完全可见
+            const fitZoom = Math.min(heightScale, widthScale, 2.0); // 最大不超过2.0
+            const minZoom = Math.max(fitZoom, 0.5); // 最小不小于0.5
+            
+            applyZoom(minZoom);
+        }
+
+        // 设置缩放事件监听器
+        function setupZoomControls() {
+            // 滑块变化事件
+            zoomSlider.addEventListener('input', (e) => {
+                applyZoom(e.target.value);
+                isFitMode = false;
+                autoFitCheckbox.checked = false;
+                autoFitEnabled = false;
+            });
+
+            // 重置按钮点击事件
+            zoomReset.addEventListener('click', () => {
+                resetZoom();
+                isFitMode = false;
+                autoFitCheckbox.checked = false;
+                autoFitEnabled = false;
+            });
+
+            // 适应屏幕按钮点击事件
+            zoomFit.addEventListener('click', () => {
+                fitToScreen();
+                isFitMode = true;
+                autoFitCheckbox.checked = false;
+                autoFitEnabled = false;
+            });
+
+            // 自动适应屏幕复选框事件
+            autoFitCheckbox.addEventListener('change', (e) => {
+                autoFitEnabled = e.target.checked;
+                if (autoFitEnabled) {
+                    fitToScreen();
+                    isFitMode = true;
+                } else {
+                    isFitMode = false;
+                }
+            });
+
+            // 窗口大小变化时，如果是适应屏幕模式或自动适应模式，则重新计算
+            window.addEventListener('resize', () => {
+                if (isFitMode || autoFitEnabled) {
+                    fitToScreen();
+                }
+            });
+        }
+
         const filesToLoad = [
             // Resource files
             { url: 'resource/lcdstripe_slice_w938.json', vfsPath: '/resource/lcdstripe_slice_w938.json' },
@@ -495,6 +649,7 @@
             { url: 'roms/fc42.nand0', vfsPath: '/roms/fc42.nand0' },
             { url: 'roms/fc42.nor', vfsPath: '/roms/fc42.nor' },
             { url: 'roms/fc42.nand', vfsPath: '/roms/fc42.nand' },
+
         ];
 
         var Module = {
@@ -542,11 +697,87 @@
 
         import WqxsimModule from './wqxsim.js';
 
+        // ROM选择事件处理函数
+        function setupRomSelector() {
+            const romSelect = document.getElementById('rom-select');
+            const applyButton = document.getElementById('apply-rom');
+            const romStatus = document.getElementById('rom-status');
+
+            // 设置默认值为当前ROM
+            romSelect.value = currentRom;
+
+            // 应用按钮点击事件
+            applyButton.addEventListener('click', async () => {
+                const selectedRom = romSelect.value;
+
+                if (selectedRom === currentRom) {
+                    romStatus.textContent = '已经是当前ROM，无需更改';
+                    return;
+                }
+
+                if (!wasmInstance) {
+                    romStatus.textContent = 'WASM模块尚未加载完成，请稍后再试';
+                    return;
+                }
+
+                try {
+                    romStatus.textContent = '正在切换ROM...';
+                    currentRom = selectedRom;
+
+                    // 重新加载WASM
+                    await restartWithNewRom();
+
+                    romStatus.textContent = `已切换到: ${romConfigs[selectedRom].name}`;
+                } catch (error) {
+                    console.error('切换ROM时出错:', error);
+                    romStatus.textContent = `切换ROM失败: ${error.message}`;
+                }
+            });
+        }
+
+        // 使用新ROM重新启动
+        async function restartWithNewRom() {
+            if (!wasmInstance) {
+                throw new Error('WASM实例未初始化');
+            }
+
+            const FS = wasmInstance.FS;
+            const romConfig = romConfigs[currentRom];
+
+            // 下载ROM文件
+            const romFiles = romConfig.files;
+            const fetchPromises = romFiles.map(async (file) => {
+                const response = await fetch(file.url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${file.url}: ${response.statusText}`);
+                }
+                const data = await response.arrayBuffer();
+                return { data: new Uint8Array(data), path: file.vfsPath };
+            });
+
+            const loadedFiles = await Promise.all(fetchPromises);
+
+            // 将ROM文件写入VFS
+            for (const file of loadedFiles) {
+                const lastSlashIndex = file.path.lastIndexOf('/');
+                const dirPath = lastSlashIndex > 0 ? file.path.substring(0, lastSlashIndex) : '.';
+                FS.mkdirTree(dirPath);
+                FS.writeFile(file.path, file.data);
+                console.log(`VFS: Wrote ${file.path}`);
+            }
+
+            // 重新调用main函数
+            console.log("使用新ROM重新启动...");
+            wasmInstance.callMain(romConfig.args);
+            console.log("wqxsim 已使用新ROM启动。");
+        }
+
         // 6. [核心] 异步函数，用于加载和运行
         async function loadAndRun() {
             try {
                 // 6a. 加载 Wasm 模块
                 const instance = await WqxsimModule(Module);
+                wasmInstance = instance; // 保存WASM实例
 
                 console.log("Wasm 模块已加载，准备文件系统...", instance);
 
@@ -575,14 +806,28 @@
                     console.log(`VFS: Wrote ${file.path}`);
                 }
 
-                // 6e. [完成] 手动调用 main() (保持不变)
+                // 6e. [完成] 手动调用 main() (使用当前ROM配置)
                 console.log("文件系统已准备就绪。即将启动 main()...");
                 Module.setStatus('All assets loaded. Starting Wasm...');
 
-                // const args = ['--nc2000', '--rom', 'roms/fc42']; // 第一个参数是程序名
-                const args = ['--nc2000', '--rom', 'roms/nc2000']; // 第一个参数是程序名
-                instance.callMain(args);
+                // 使用当前选择的ROM配置
+                const romConfig = romConfigs[currentRom];
+                instance.callMain(romConfig.args);
                 console.log("wqxsim 已启动。");
+
+                // 设置ROM选择器
+                setupRomSelector();
+                
+                // 设置缩放控制
+                setupZoomControls();
+                
+                // 延迟执行自动适应屏幕，确保所有元素都已渲染
+                setTimeout(() => {
+                    fitToScreen();
+                    isFitMode = true;
+                    autoFitCheckbox.checked = true;
+                    autoFitEnabled = true;
+                }, 1000);
 
             } catch (err) {
                 Module.setStatus('Error during startup. See console.');
