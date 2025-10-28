@@ -5,6 +5,7 @@
 #include <map>
 #include "compare/pc1000bus.h"
 #include "console.h"
+#include <emscripten.h>
 using namespace std;
 extern BusPC1000 *bus_pc1000;
 
@@ -365,6 +366,7 @@ void SetKeyWayback(int code_y,int code_x, bool down_or_up){
     }
 
 }
+
 void handle_key_wayback(signed int sym, bool key_down){
         /*if(enable_debug_key_shoot){
           printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
@@ -424,4 +426,38 @@ void handle_key_wayback(signed int sym, bool key_down){
           default :  // unsupported
             break;
         }
+}
+
+extern "C" {
+  // 全局 SDL 事件队列（SDL 内部维护，无需手动定义）
+
+// 从 JavaScript 接收虚拟按键事件（键码 + 按下/抬起状态）
+// keyCode: 对应 SDL 的键码（如 SDLK_a、SDLK_RETURN 等）
+// isDown: true=按下，false=抬起
+EMSCRIPTEN_KEEPALIVE
+void injectVirtualKeyEvent(int keyCode, bool isDown) {
+    // 创建 SDL 键盘事件
+    SDL_Event event;
+    SDL_zero(event); // 初始化事件结构
+
+    // 设置事件类型（按下/抬起）
+    event.type = isDown ? SDL_KEYDOWN : SDL_KEYUP;
+
+    // 填充键码信息（模拟物理键盘的键码）
+    event.key.keysym.sym = (SDL_Keycode)keyCode; // 关键：使用 SDL 标准键码
+    event.key.repeat = 0; // 非重复事件（虚拟键盘点击一次算一次）
+
+    // 将事件推入 SDL 事件队列，供 SDL_PollEvent 读取
+    SDL_PushEvent(&event);
+}
+
+// 可选：处理虚拟文本输入（如中文、特殊字符，对应 SDL_TEXTINPUT）
+EMSCRIPTEN_KEEPALIVE
+void injectVirtualTextInput(const char* text) {
+    SDL_Event event;
+    SDL_zero(event);
+    event.type = SDL_TEXTINPUT;
+    strncpy(event.text.text, text, SDL_TEXTINPUTEVENT_TEXT_SIZE - 1); // 复制文本
+    SDL_PushEvent(&event);
+}
 }

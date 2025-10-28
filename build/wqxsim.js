@@ -9167,6 +9167,8 @@ var ASM_CONSTS = {
 var _main,
   _malloc,
   _free,
+  _injectVirtualKeyEvent,
+  _injectVirtualTextInput,
   ___getTypeName,
   __emscripten_stack_restore,
   __emscripten_stack_alloc,
@@ -9224,6 +9226,8 @@ function assignWasmExports(wasmExports) {
   _main = Module['_main'] = wasmExports['__main_argc_argv'];
   _malloc = wasmExports['malloc'];
   _free = wasmExports['free'];
+  _injectVirtualKeyEvent = Module['_injectVirtualKeyEvent'] = wasmExports['injectVirtualKeyEvent'];
+  _injectVirtualTextInput = Module['_injectVirtualTextInput'] = wasmExports['injectVirtualTextInput'];
   ___getTypeName = wasmExports['__getTypeName'];
   __emscripten_stack_restore = wasmExports['_emscripten_stack_restore'];
   __emscripten_stack_alloc = wasmExports['_emscripten_stack_alloc'];
