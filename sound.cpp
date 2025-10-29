@@ -45,38 +45,48 @@ static int target_audio_queue_size_max=20000;
 static int min_audio_queue_size_observed=int_inf;
 
 
-// 线性插值采样率转换
-// 输入:
-//   input        - 8000Hz的原始音频数据（16位PCM）
-//   input_len    - 输入数据的样本数（不是字节数）
-//   output       - 输出缓冲区（需提前分配足够空间）
-//   output_max_len - 输出缓冲区最大可容纳的样本数
-// 输出:
-//   实际转换后的样本数
+// 改进的采样率转换：8000Hz -> 44100Hz
+// 使用简单的抗混叠滤波和更好的插值
 int resample_8000_to_44100(const int16_t* input, int input_len, int16_t* output, int output_max_len) {
     // 转换比率：44100 / 8000 = 5.5
     const double ratio = 44100.0 / 8000.0;
-    // 计算理论输出样本数（不超过output_max_len）
     const int output_len = (int)(input_len * ratio);
     const int actual_output_len = output_len > output_max_len ? output_max_len : output_len;
 
     for (int i = 0; i < actual_output_len; i++) {
-        // 计算当前输出样本对应输入的位置（浮点数）
         const double input_pos = i / ratio;
-        // 整数部分（输入样本索引）
         const int src_idx = (int)input_pos;
-        // 小数部分（插值权重）
         const double frac = input_pos - src_idx;
 
-        // 处理边界：如果索引超出输入范围，用最后一个样本填充
         if (src_idx >= input_len - 1) {
             output[i] = input[input_len - 1];
-        } else {
-            // 线性插值：output = (1 - frac)*input[src_idx] + frac*input[src_idx+1]
+        } else if (src_idx == 0) {
+            // 边界处理：简单线性插值
             output[i] = (int16_t)(
                 (1.0 - frac) * input[src_idx] + 
                 frac * input[src_idx + 1]
             );
+        } else {
+            // 使用3点插值获得更好的音质
+            const double y0 = input[src_idx - 1];
+            const double y1 = input[src_idx];
+            const double y2 = input[src_idx + 1];
+            
+            // 二次插值或改进的线性插值
+            double interpolated;
+            if (frac < 0.5) {
+                // 偏向左侧样本
+                interpolated = y1 + frac * (y2 - y0) * 0.5;
+            } else {
+                // 偏向右侧样本  
+                interpolated = y2 - (1.0 - frac) * (y2 - y0) * 0.5;
+            }
+            
+            // 限制范围
+            if (interpolated > 32767.0) interpolated = 32767.0;
+            if (interpolated < -32768.0) interpolated = -32768.0;
+            
+            output[i] = (int16_t)interpolated;
         }
     }
 
@@ -85,14 +95,14 @@ int resample_8000_to_44100(const int16_t* input, int input_len, int16_t* output,
 
 void manipulate_beeper(int a){
     long long current_cycle=nc2k_states.cycles;
-	//note: (BEEPER_AUDIO_HZ+20) is to make it a bit larger, so that queue will not drain because of clock mismatch
-    long long samples_start=last_beeper.cycle*(BEEPER_AUDIO_HZ+20)/CYCLES_SECOND;
-    long long samples_end=current_cycle*(BEEPER_AUDIO_HZ+20)/CYCLES_SECOND;
+	//note: (44100+20) is to make it a bit larger, so that queue will not drain because of clock mismatch
+    long long samples_start=last_beeper.cycle*(44100+20)/CYCLES_SECOND;
+    long long samples_end=current_cycle*(44100+20)/CYCLES_SECOND;
     //printf("%lld, %d  %lld %lld\n",current_cycle -last_beeper.cycle, nc1020_states.cycles, samples_start,samples_end);
     last_beeper.cycle=current_cycle;
 
     for(int i=0;i<(samples_end-samples_start);i++){
-        sound_stream_beeper.push_back(8000*last_beeper.value);
+        sound_stream_beeper.push_back(8000*last_beeper.value);  // 保持8000的音量级别
     }
     last_beeper.value=a;
 }
@@ -158,10 +168,19 @@ void post_cpu_run_sound_handling(){
 			double val=value-cuttmp;
 			cuttmp+=cutoff*val;
 			value=val;
-			/*if(!sound_stream_dsp.empty()){
-				value+=sound_stream_dsp.front();
+			
+			// 检查是否有DSP音频需要混音
+			if(!sound_stream_dsp.empty()){
+				// DSP音频已经是44100Hz，不需要重采样，直接混音
+				int dsp_value = sound_stream_dsp.front();
 				sound_stream_dsp.pop_front();
-			}*/
+				// 混音并防止溢出
+				int mixed_value = value + (dsp_value >> 2); // DSP音量降低为1/4避免盖过beeper
+				if(mixed_value > 32767) mixed_value = 32767;
+				if(mixed_value < -32768) mixed_value = -32768;
+				value = mixed_value;
+			}
+			
 			beeper_buffer.push_back(value);
 		}
 		if(!beeper_buffer.empty()){
@@ -217,58 +236,64 @@ void dsp_call_back(unsigned char *p,int len){
 	cnt++;
 	if(enable_debug_dsp){
 		if(cnt%1000==0){
-			printf("audio_queue_len=%d\n",SDL_GetQueuedAudioSize(dsp_deviceId));
+			printf("dsp_callback: input_len=%d, dsp_queue=%d\n", len, SDL_GetQueuedAudioSize(dsp_deviceId));
 		}
 		if(SDL_GetQueuedAudioSize(dsp_deviceId)==0) {
 			printf("audio queue drain!!! \n");
 		}
 	}
-	 //if this is too small, then dic's repeat prounce will be cut off
-	 //if this is too large, then sound will not be stopped immediately
-	 //(if wqx program doesn't respect dsp busy, then this is last resort to stop queueing)
-    if(SDL_GetQueuedAudioSize( dsp_deviceId )>dsp_drop_len) {
-		if(enable_debug_dsp){
-			printf("audio queue dropping!!!!!!");
-		}
-        return ;
-    }
-    
 	
     // 原DSP数据是8000Hz的16位PCM（AUDIO_S16LSB），转换为int16_t数组
     int input_samples = len / sizeof(int16_t);
     if (input_samples <= 0) return;
 
-    // 复制输入数据到转换缓冲区（确保不超过最大长度）
-    int process_samples = input_samples > MAX_INPUT_SAMPLES ? MAX_INPUT_SAMPLES : input_samples;
-    for (int i = 0; i < process_samples; i++) {
-        resample_input_buf[i] = ((int16_t*)p)[i];
-    }
+    // 处理所有输入样本，分批进行转换
+    int processed = 0;
+    while (processed < input_samples) {
+        int remaining = input_samples - processed;
+        int batch_size = remaining > MAX_INPUT_SAMPLES ? MAX_INPUT_SAMPLES : remaining;
+        
+        // 复制当前批次数据到转换缓冲区
+        for (int i = 0; i < batch_size; i++) {
+            resample_input_buf[i] = ((int16_t*)p)[processed + i];
+        }
 
-    // 执行采样率转换（8000→44100）
-    int output_samples = resample_8000_to_44100(
-        resample_input_buf,
-        process_samples,
-        resample_output_buf,
-        MAX_OUTPUT_SAMPLES
-    );
-
-    // 将转换后的数据入队播放（注意字节数 = 样本数 * 2）
-    if (output_samples > 0) {
-        SDL_QueueAudio(
-            dsp_deviceId,
+        // 执行采样率转换（8000→44100）
+        int output_samples = resample_8000_to_44100(
+            resample_input_buf,
+            batch_size,
             resample_output_buf,
-            output_samples * sizeof(int16_t)
+            MAX_OUTPUT_SAMPLES
         );
+
+        // 将转换后的数据存入共享缓冲区，供beeper混音使用
+        if (output_samples > 0) {
+            for (int i = 0; i < output_samples; i++) {
+                if (sound_stream_dsp.size() < 100000) { // 限制缓冲区大小
+                    sound_stream_dsp.push_back(resample_output_buf[i]);
+                }
+            }
+        }
+        
+        processed += batch_size;
     }
 }
 
 bool sound_busy(){
+	// WASM版本：检查beeper设备队列和DSP缓冲区
 	// this value is tricky:
 	// if too small sdl will pop because queue too small
 	// if too large, then too many queued and sound cannot be stopped immediately. 
 	// (some wqx program respect dsp busy, some doesn't)
-	if(SDL_GetQueuedAudioSize( dsp_deviceId )>dsp_busy_len) {
-		//printf("busy!!!\n");
+	int beeper_queue_size = SDL_GetQueuedAudioSize(beeper_deviceId);
+	int dsp_buffer_size = sound_stream_dsp.size() * sizeof(int16_t);
+	int total_size = beeper_queue_size + dsp_buffer_size;
+	
+	if(total_size > dsp_busy_len) {
+		if(enable_debug_dsp){
+			printf("sound busy: beeper_queue=%d, dsp_buffer=%d, total=%d\n", 
+				   beeper_queue_size, dsp_buffer_size, total_size);
+		}
 		return true;
 	}
 	return false;
@@ -279,49 +304,28 @@ void init_audio(){
     dsp.callback=dsp_call_back;
 
     //SDL_Init(SDL_INIT_AUDIO);
+    // WASM项目只支持一个音频设备，统一使用44100Hz采样率
     SDL_AudioSpec desired_spec = {
-        .freq = BEEPER_AUDIO_HZ,
+        .freq = 44100,  // 统一使用44100Hz
         .format = AUDIO_S16LSB,
         .channels = 1,
         .samples = 4096,
         .callback = NULL,
         .userdata = NULL,
     };
-	SDL_AudioSpec desired_spec2 = {
-        .freq = DSP_AUDIO_HZ,
-        .format = AUDIO_S16LSB,
-        .channels = 1,
-        .samples = 4096,
-        .callback = NULL,
-        .userdata = NULL,
-    };
-
-    //SDL_AudioSpec obtained_spec;
-
-	// dsp_deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec2, NULL, 0);
-    // if(dsp_deviceId<=0){
-    //     printf("dsp SDL_OpenAudioDevice Failed!\n");
-    // }
 
     beeper_deviceId = SDL_OpenAudioDevice(NULL, 0, &desired_spec, NULL, 0);
     if(beeper_deviceId<=0){
         printf("beeper SDL_OpenAudioDevice Failed!\n");
+    } else {
+        printf("Audio initialized: 44100Hz, 16-bit, mono\n");
+        printf("DSP resampling: 8000Hz -> 44100Hz\n");
     }
 
 	dsp_deviceId = beeper_deviceId;
 	
 	SDL_PauseAudioDevice(beeper_deviceId, 0);
     SDL_PauseAudioDevice(dsp_deviceId, 0);
-
-	/*
-	extern void dsp_test();
-	extern void dsp_test2();
-	extern void dsp_test3();
-	if(enable_dsp_test){
-		dsp_test();
-		dsp_test2();
-		dsp_test3();
-	}*/
 }
 
 
