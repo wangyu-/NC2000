@@ -1,0 +1,170 @@
+{
+    "lcd_alarm": {
+        "slice": { "x": 28, "y": 215 },
+        "frame": { "x": 331, "y": 407, "w": 28, "h": 22 }
+    },
+    "lcd_battery": {
+        "slice": { "x": 30, "y": 291 },
+        "frame": { "x": 945, "y": 402, "w": 21, "h": 24 }
+    },
+    "lcd_caps": {
+        "slice": { "x": 30, "y": 114 },
+        "frame": { "x": 85, "y": 407, "w": 46, "h": 20 }
+    },
+    "lcd_down": {
+        "slice": { "x": 3, "y": 348 },
+        "frame": { "x": 655, "y": 407, "w": 18, "h": 21 }
+    },
+    "lcd_eng": {
+        "slice": { "x": 30, "y": 90 },
+        "frame": { "x": 135, "y": 407, "w": 46, "h": 20 }
+    },
+    "lcd_flash": {
+        "slice": { "x": 60, "y": 161 },
+        "frame": { "x": 537, "y": 407, "w": 21, "h": 21 }
+    },
+    "lcd_hbar": {
+        "slice": { "x": 17, "y": 381 },
+        "frame": { "x": 780, "y": 407, "w": 15, "h": 14 }
+    },
+    "lcd_hframe": {
+        "slice": { "x": 0, "y": 376 },
+        "frame": { "x": 3, "y": 407, "w": 78, "h": 24 }
+    },
+    "lcd_keyclick": {
+        "slice": { "x": 65, "y": 185 },
+        "frame": { "x": 720, "y": 407, "w": 16, "h": 25 }
+    },
+    "lcd_left": {
+        "slice": { "x": 58, "y": 348 },
+        "frame": { "x": 610, "y": 407, "w": 19, "h": 16 }
+    },
+    "lcd_line": {
+        "slice": { "x": 922, "y": 14 },
+        "frame": { "x": 740, "y": 407, "w": 16, "h": 10 }
+    },
+    "lcd_line5": {
+        "slice": { "x": 922, "y": 54 },
+        "frame": { "x": 760, "y": 407, "w": 16, "h": 10 }
+    },
+    "lcd_microphone": {
+        "slice": { "x": 55, "y": 240 },
+        "frame": { "x": 945, "y": 371, "w": 24, "h": 27 }
+    },
+    "lcd_minus": {
+        "slice": { "x": 55, "y": 278 },
+        "frame": { "x": 285, "y": 407, "w": 42, "h": 12 }
+    },
+    "lcd_num": {
+        "slice": { "x": 30, "y": 66 },
+        "frame": { "x": 185, "y": 407, "w": 46, "h": 20 }
+    },
+    "lcd_pgdown": {
+        "slice": { "x": 31, "y": 348 },
+        "frame": { "x": 633, "y": 407, "w": 18, "h": 22 }
+    },
+    "lcd_pgleft": {
+        "slice": { "x": 28, "y": 321 },
+        "frame": { "x": 484, "y": 407, "w": 23, "h": 18 }
+    },
+    "lcd_pgright": {
+        "slice": { "x": 55, "y": 321 },
+        "frame": { "x": 511, "y": 407, "w": 22, "h": 18 }
+    },
+    "lcd_pgup": {
+        "slice": { "x": 30, "y": 45 },
+        "frame": { "x": 587, "y": 407, "w": 19, "h": 19 }
+    },
+    "lcd_point": {
+        "slice": { "x": 15, "y": 33 },
+        "frame": { "x": 960, "y": 357, "w": 5, "h": 5 }
+    },
+    "lcd_right": {
+        "slice": { "x": 921, "y": 348 },
+        "frame": { "x": 699, "y": 407, "w": 17, "h": 16 }
+    },
+    "lcd_secret": {
+        "slice": { "x": 55, "y": 296 },
+        "frame": { "x": 426, "y": 407, "w": 26, "h": 16 }
+    },
+    "lcd_semicolon": {
+        "slice": { "x": 36, "y": 8 },
+        "frame": { "x": 960, "y": 337, "w": 5, "h": 16 }
+    },
+    "lcd_seven_honz1": {
+        "slice": { "x": 0, "y": 0 },
+        "frame": { "x": 395, "y": 425, "w": 14, "h": 4 }
+    },
+    "lcd_seven_honz2": {
+        "slice": { "x": 0, "y": 13 },
+        "frame": { "x": 285, "y": 423, "w": 14, "h": 6 }
+    },
+    "lcd_seven_honz3": {
+        "slice": { "x": 0, "y": 26 },
+        "frame": { "x": 303, "y": 423, "w": 14, "h": 6 }
+    },
+    "lcd_seven_vert1": {
+        "slice": { "x": 10, "y": 0 },
+        "frame": { "x": 815, "y": 407, "w": 4, "h": 16 }
+    },
+    "lcd_seven_vert2": {
+        "slice": { "x": 10, "y": 16 },
+        "frame": { "x": 823, "y": 407, "w": 4, "h": 16 }
+    },
+    "lcd_seven_vert3": {
+        "slice": { "x": 0, "y": 0 },
+        "frame": { "x": 831, "y": 407, "w": 4, "h": 16 }
+    },
+    "lcd_seven_vert4": {
+        "slice": { "x": 0, "y": 16 },
+        "frame": { "x": 839, "y": 407, "w": 4, "h": 16 }
+    },
+    "lcd_sharpbell": {
+        "slice": { "x": 28, "y": 190 },
+        "frame": { "x": 363, "y": 407, "w": 28, "h": 20 }
+    },
+    "lcd_shift": {
+        "slice": { "x": 30, "y": 138 },
+        "frame": { "x": 235, "y": 407, "w": 46, "h": 20 }
+    },
+    "lcd_sound": {
+        "slice": { "x": 28, "y": 161 },
+        "frame": { "x": 456, "y": 407, "w": 24, "h": 23 }
+    },
+    "lcd_speaker": {
+        "slice": { "x": 58, "y": 215 },
+        "frame": { "x": 562, "y": 407, "w": 21, "h": 20 }
+    },
+    "lcd_star": {
+        "slice": { "x": 55, "y": 50 },
+        "frame": { "x": 799, "y": 407, "w": 12, "h": 12 }
+    },
+    "lcd_tape": {
+        "slice": { "x": 28, "y": 243 },
+        "frame": { "x": 395, "y": 407, "w": 27, "h": 14 }
+    },
+    "lcd_up": {
+        "slice": { "x": 3, "y": 45 },
+        "frame": { "x": 677, "y": 407, "w": 18, "h": 21 }
+    },
+    "lcd_vertbar": {
+        "slice": { "x": 6, "y": 74 },
+        "frame": { "x": 945, "y": 337, "w": 11, "h": 30 }
+    },
+    "lcd_vframe": {
+        "slice": { "x": 0, "y": 42 },
+        "frame": { "x": 945, "y": 3, "w": 24, "h": 330 }
+    },
+    "lcdoverlap": {
+        "slice": { "x": 0, "y": 0 },
+        "frame": { "x": 3, "y": 3, "w": 938, "h": 400 }
+    },
+    "lcdpixel": {
+        "slice": { "x": 107, "y": 0 },
+        "frame": { "x": 321, "y": 423, "w": 5, "h": 5 }
+    },
+    "misc": {
+        "gap": { "7seg": 21, "line": 79, "oddline": true },
+        "lcd": { "w": 938, "h": 400 }
+    }
+}
