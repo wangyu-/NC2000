@@ -195,11 +195,14 @@
             min-width: 200px;
         }
 
+        .file-manager-section {
+            display: flex;
+            flex-direction: rom;
+            margin-bottom: 10px;
+        }
+
         /* 文件下载样式 */
         .file-download-section {
-            margin-left: 20px;
-            border-left: 1px solid #ccc;
-            padding-left: 15px;
             display: inline-block;
             vertical-align: middle;
         }
@@ -286,6 +289,9 @@
             <input type="checkbox" id="auto-fit" style="vertical-align: middle;">
             <span>自适应</span>
         </label>
+    </div>
+
+    <div class="file-manager-section">
 
         <!-- 文件下载控制 -->
         <div class="file-download-section">
@@ -1003,14 +1009,14 @@
                             console.warn(`无法读取目录 ${path}:`, e);
                         }
                     }
-                    return items;
+                    return items
                 }
 
                 // 从根目录开始遍历，但跳过系统目录
                 const files = traverseDirectory('/roms');
 
-                // 按文件大小排序，较小的文件在前
-                files.sort((a, b) => a.size - b.size);
+                // 按文件名排序
+                files.sort((a, b) => a.name.localeCompare(b.name));
 
                 console.log(`总共找到 ${files.length} 个文件:`, files);
 
