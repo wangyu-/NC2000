@@ -296,6 +296,14 @@
             <button id="refresh-files"
                 style="margin-left: 10px; padding: 6px 12px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">刷新</button>
         </div>
+
+        <!-- 文件上传控制 -->
+        <div class="file-upload-section" style="margin-left: 15px;">
+            <input type="file" id="file-upload" style="display: none;" multiple accept="*/*">
+            <button id="upload-files"
+                style="padding: 6px 12px; background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">上传文件到ROMs</button>
+            <span id="upload-status" style="margin-left: 10px; font-size: 12px; color: #666;"></span>
+        </div>
     </div>
 
     <div class="emscripten">
@@ -795,10 +803,10 @@
             applyButton.addEventListener('click', async () => {
                 const selectedRom = romSelect.value;
 
-                if (selectedRom === currentRom) {
-                    romStatus.textContent = '已经是当前ROM，无需更改';
-                    return;
-                }
+                // if (selectedRom === currentRom) {
+                //     romStatus.textContent = '已经是当前ROM，无需更改';
+                //     return;
+                // }
 
                 if (!wasmInstance) {
                     romStatus.textContent = 'WASM模块尚未加载完成，请稍后再试';
@@ -806,13 +814,12 @@
                 }
 
                 try {
-                    romStatus.textContent = '正在切换ROM...';
+                    // romStatus.textContent = '正在切换ROM...';
                     currentRom = selectedRom;
 
                     // 重新加载WASM
                     await restartWithNewRom();
-
-                    romStatus.textContent = `已切换到: ${romConfigs[selectedRom].name}`;
+                    // romStatus.textContent = `已切换到: ${romConfigs[selectedRom].name}`;
                 } catch (error) {
                     console.error('切换ROM时出错:', error);
                     romStatus.textContent = `切换ROM失败: ${error.message}`;
@@ -829,32 +836,44 @@
             const FS = wasmInstance.FS;
             const romConfig = romConfigs[currentRom];
 
-            // 下载ROM文件
-            const romFiles = romConfig.files;
-            const fetchPromises = romFiles.map(async (file) => {
-                const response = await fetch(file.url);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch ${file.url}: ${response.statusText}`);
-                }
-                const data = await response.arrayBuffer();
-                return { data: new Uint8Array(data), path: file.vfsPath };
-            });
+            // // 下载ROM文件
+            // const romFiles = romConfig.files;
+            // const fetchPromises = romFiles.map(async (file) => {
+            //     const response = await fetch(file.url);
+            //     if (!response.ok) {
+            //         throw new Error(`Failed to fetch ${file.url}: ${response.statusText}`);
+            //     }
+            //     const data = await response.arrayBuffer();
+            //     return { data: new Uint8Array(data), path: file.vfsPath };
+            // });
 
-            const loadedFiles = await Promise.all(fetchPromises);
+            // const loadedFiles = await Promise.all(fetchPromises);
 
-            // 将ROM文件写入VFS
-            for (const file of loadedFiles) {
-                const lastSlashIndex = file.path.lastIndexOf('/');
-                const dirPath = lastSlashIndex > 0 ? file.path.substring(0, lastSlashIndex) : '.';
-                FS.mkdirTree(dirPath);
-                FS.writeFile(file.path, file.data);
-                console.log(`VFS: Wrote ${file.path}`);
-            }
+            // // 将ROM文件写入VFS
+            // for (const file of loadedFiles) {
+            //     const lastSlashIndex = file.path.lastIndexOf('/');
+            //     const dirPath = lastSlashIndex > 0 ? file.path.substring(0, lastSlashIndex) : '.';
+            //     FS.mkdirTree(dirPath);
+            //     FS.writeFile(file.path, file.data);
+            //     console.log(`VFS: Wrote ${file.path}`);
+            // }
 
             // 重新调用main函数
             console.log("使用新ROM重新启动...");
             wasmInstance.callMain(romConfig.args);
             console.log("wqxsim 已使用新ROM启动。");
+        }
+
+        function setUpScreenFit() {
+            // 设置缩放控制
+            setupZoomControls();
+            // 延迟执行自动适应屏幕，确保所有元素都已渲染
+            setTimeout(() => {
+                fitToScreen();
+                isFitMode = true;
+                autoFitCheckbox.checked = true;
+                autoFitEnabled = true;
+            }, 100);
         }
 
         // 6. [核心] 异步函数，用于加载和运行
@@ -903,19 +922,12 @@
                 // 设置ROM选择器
                 setupRomSelector();
 
-                // 设置缩放控制
-                setupZoomControls();
+
 
                 // 设置文件下载控制
                 setupFileDownloadControls();
 
-                // 延迟执行自动适应屏幕，确保所有元素都已渲染
-                setTimeout(() => {
-                    fitToScreen();
-                    isFitMode = true;
-                    autoFitCheckbox.checked = true;
-                    autoFitEnabled = true;
-                }, 1000);
+
 
             } catch (err) {
                 Module.setStatus('Error during startup. See console.');
@@ -1119,6 +1131,9 @@
             const downloadButton = document.getElementById('download-files');
             const fileSelect = document.getElementById('file-select');
             const refreshButton = document.getElementById('refresh-files');
+            const uploadButton = document.getElementById('upload-files');
+            const fileInput = document.getElementById('file-upload');
+            const uploadStatus = document.getElementById('upload-status');
 
             // 下载按钮点击事件
             downloadButton.addEventListener('click', downloadSelectedFile);
@@ -1131,6 +1146,22 @@
                     console.log('文件系统可用:', wasmInstance.FS ? '是' : '否');
                 }
                 populateFileList();
+            });
+
+            // 上传按钮点击事件 - 触发文件选择
+            uploadButton.addEventListener('click', function () {
+                fileInput.click();
+            });
+
+            // 文件选择事件
+            fileInput.addEventListener('change', async function (event) {
+                const files = event.target.files;
+                if (files.length === 0) return;
+
+                await uploadFilesToRoms(files, uploadStatus);
+
+                // 清空文件输入，允许重复选择相同文件
+                fileInput.value = '';
             });
 
             // 文件选择框获得焦点时更新文件列表（更友好的触发方式）
@@ -1155,8 +1186,78 @@
 
         }
 
+        // 上传文件到ROMs目录
+        async function uploadFilesToRoms(files, statusElement) {
+            if (!wasmInstance) {
+                statusElement.textContent = 'WASM实例未初始化，请稍后再试';
+                statusElement.style.color = '#e74c3c';
+                return;
+            }
+
+            const FS = wasmInstance.FS;
+            let uploadedCount = 0;
+            let failedCount = 0;
+
+            statusElement.textContent = '开始上传文件...';
+            statusElement.style.color = '#666';
+
+            for (const file of files) {
+                try {
+                    // 验证文件
+                    if (file.size === 0) {
+                        console.warn(`跳过空文件: ${file.name}`);
+                        failedCount++;
+                        continue;
+                    }
+
+                    // 读取文件内容
+                    const arrayBuffer = await file.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer);
+
+                    // 确保ROMs目录存在
+                    try {
+                        FS.mkdirTree('/roms');
+                    } catch (e) {
+                        // 目录可能已存在，忽略错误
+                    }
+
+                    // 构建目标路径
+                    const targetPath = `/roms/${file.name}`;
+
+                    // 写入文件到虚拟文件系统
+                    FS.writeFile(targetPath, uint8Array);
+                    console.log(`已上传文件: ${targetPath} (${formatFileSize(file.size)})`);
+
+                    uploadedCount++;
+                    statusElement.textContent = `上传进度: ${uploadedCount}/${files.length}`;
+
+                } catch (error) {
+                    console.error(`上传文件 ${file.name} 失败:`, error);
+                    failedCount++;
+                    statusElement.textContent = `上传失败: ${file.name}`;
+                    statusElement.style.color = '#e74c3c';
+                }
+            }
+
+            // 显示最终结果
+            if (failedCount === 0) {
+                statusElement.textContent = `成功上传 ${uploadedCount} 个文件`;
+                statusElement.style.color = '#27ae60';
+            } else {
+                statusElement.textContent = `上传完成: ${uploadedCount} 成功, ${failedCount} 失败`;
+                statusElement.style.color = failedCount === files.length ? '#e74c3c' : '#f39c12';
+            }
+
+            // 刷新文件列表
+            setTimeout(() => {
+                populateFileList();
+            }, 500);
+        }
+
         // 启动整个过程
         loadAndRun();
+
+        setUpScreenFit();
     </script>
 </body>
 
