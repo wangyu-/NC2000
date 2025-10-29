@@ -217,6 +217,14 @@ extern uint32_t CYCLES_MS;
 const uint32_t DSP_AUDIO_HZ = 8000;
 const uint32_t BEEPER_AUDIO_HZ = 44100;
 
+// 定义转换缓冲区（根据实际需求调整大小，这里设为每次处理4096个输入样本）
+#define MAX_INPUT_SAMPLES 4096
+// 输出缓冲区大小 = 输入样本数 * 转换比率（5.5），向上取整
+#define MAX_OUTPUT_SAMPLES (int)(MAX_INPUT_SAMPLES * 5.5 + 1)
+
+static int16_t resample_input_buf[MAX_INPUT_SAMPLES];
+static int16_t resample_output_buf[MAX_OUTPUT_SAMPLES];
+
 /*
 ===================
 rom related
