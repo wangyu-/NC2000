@@ -11,7 +11,8 @@
   "dependencies": {
     "less": "^4.4.2",
     "pinia": "^2.2.2",
-    "vue": "^3.5.22"
+    "vue": "^3.5.22",
+    "vuefinder": "^2.7.1"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",

@@ -218,6 +218,10 @@ function simulateSDLKeyEvent(sdlKeyNames: string[], keyDown: boolean) {
         }
     });
     const keyName = sdlKeyNames[0];
+    if (!keyName) {
+        console.warn(`Unknown SDL key: ${keyName}`);
+        return;
+    }
     const sdlKeyCode = SDLKeycodes[keyName];
     if (sdlKeyCode !== undefined) {
         injectKeyFunction(sdlKeyCode, keyDown ? 1 : 0);
