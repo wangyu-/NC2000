@@ -15,3 +15,6 @@ wqxsim
 .cache/
 
 # Project specific
+
+web/**/wqxsim.js
+web/**/wqxsim.wasm

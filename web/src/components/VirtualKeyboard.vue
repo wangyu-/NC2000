@@ -241,7 +241,7 @@ function simulateSDLKeyEvent(sdlKeyNames: string[], keyDown: boolean) {
     padding: 10px;
     background-color: #e0e0e0;
     border-radius: 8px;
-    max-width: 900px;
+    max-width: 960px;
     width: 100%;
 
     .keyboard-row {

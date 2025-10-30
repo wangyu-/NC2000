@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <emscripten.h>
 #include "comm.h"
 #include "dsp/dsp.h"
 #include "nc2000.h"
@@ -203,6 +204,11 @@ int main(int argc, char* args[]) {
 #if defined(__MINGW32__)
   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 #endif
+
+  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+  SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1"); // 启用垂直同步
+
+
   int res1=SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
   if(debug_level>=1) printf("SDL_SetThreadPriority returned %d\n", res1);
 
@@ -214,7 +220,8 @@ int main(int argc, char* args[]) {
 
   //SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
   //SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
-  main_loop();
+  // main_loop();
+  emscripten_set_main_loop(main_loop, 0, 1);
   if(save_flash_on_exit){
     save_flash("");
   }

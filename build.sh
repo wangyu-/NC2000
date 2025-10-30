@@ -38,16 +38,17 @@ em++ \
     console.cpp \
     -I. \
     -O3 \
-    -g3 \
     -DHANDYPSP \
     -Wno-deprecated-declarations \
-    -sUSE_SDL=2 \
+    -s USE_SDL=2 \
     -s MODULARIZE=1 \
     -s EXPORT_ES6=1 \
     -s EXPORT_NAME="WqxsimModule" \
     -s EXPORTED_RUNTIME_METHODS="['FS','cwrap','ccall','callMain']" \
     -s NO_EXIT_RUNTIME=1 \
     -s INVOKE_RUN=0 \
+    -s USE_WEBGL2=1 \
+    -s FULL_ES3=1 \
     -sINITIAL_MEMORY=128MB \
     -sALLOW_MEMORY_GROWTH=1 \
     -sASYNCIFY \
@@ -58,3 +59,8 @@ em++ \
     -o build/wqxsim.js
 
 echo "Build complete. ES6 module should be available at build/wqxsim.js"
+
+cp build/wqxsim.js web/public/wqxsim.js
+cp build/wqxsim.wasm web/public/wqxsim.wasm
+cp build/wqxsim.js web/src/assets/wqxsim.js
+cp build/wqxsim.wasm web/src/assets/wqxsim.wasm

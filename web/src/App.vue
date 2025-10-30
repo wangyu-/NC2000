@@ -51,8 +51,6 @@ const filesToLoad = [
   { url: 'roms/fc42.nand', vfsPath: '/roms/fc42.nand' },
 ];
 
-// 响应式状态
-const isMobileDevice = ref(false);
 const isDrawerOpen = ref(false);
 const currentRom = ref('nc2000');
 const currentZoom = ref(1.0);
@@ -75,25 +73,6 @@ const outputRef = ref<HTMLTextAreaElement | null>(null);
 // WASM 实例
 let wasmInstance: any = null;
 
-// 检测是否为移动设备
-function detectMobileDevice(): boolean {
-  // return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  return false
-}
-
-// 初始化移动设备UI
-function setupMobileUI(): boolean {
-  const isMobile = detectMobileDevice();
-  // isMobileDevice.value = isMobile;
-
-  // // 添加设备类型类到body
-  document.body.classList.add(isMobile ? 'mobile-device' : 'desktop-device');
-
-  // 默认关闭抽屉
-  isDrawerOpen.value = false;
-
-  return isMobile;
-}
 
 // 切换抽屉状态
 function toggleDrawer() {
@@ -125,13 +104,14 @@ function fitToScreen() {
   if (!zoomContainerRef.value) return;
 
   // 获取视口高度和宽度
-  const viewportHeight = window.innerHeight;
-  const viewportWidth = window.innerWidth;
+  const viewportHeight = document.body.clientHeight;
+  const viewportWidth = document.body.clientWidth;
+  console.log('viewportWidth', viewportWidth);
 
   // 获取缩放容器的原始尺寸
   const containerRect = zoomContainerRef.value.getBoundingClientRect();
-  const containerHeight = containerRect.height / currentZoom.value;
-  const containerWidth = containerRect.width / currentZoom.value;
+  const containerHeight = containerRect.height;
+  const containerWidth = containerRect.width;
 
   // 计算可用空间
   const availableHeight = viewportHeight - 250;
@@ -142,10 +122,12 @@ function fitToScreen() {
   const widthScale = availableWidth / containerWidth;
 
   // 使用较小的缩放比例
-  const fitZoom = Math.min(heightScale, widthScale, 3.0);
-  const minZoom = Math.max(fitZoom, 0.2);
+  const fitZoom = Math.min(heightScale, widthScale);
+  // const minZoom = Math.max(fitZoom, 0.2);
 
-  applyZoom(minZoom);
+  console.log('fitZoom', fitZoom, availableWidth, containerWidth);
+
+  applyZoom(fitZoom);
 }
 
 // 设置缩放控制
@@ -324,8 +306,6 @@ function handleZoomSliderChange(event: Event) {
 
 // 生命周期钩子
 onMounted(() => {
-  // 初始化移动设备UI
-  setupMobileUI();
 
   // 设置屏幕适应
   setUpScreenFit();
@@ -333,88 +313,96 @@ onMounted(() => {
   // 加载和运行WASM
   loadAndRun();
 
-  // 设置WebGL上下文丢失处理
-  if (canvasRef.value) {
-    canvasRef.value.addEventListener('webglcontextlost', (e) => {
-      alert('WebGL context lost. You will need to reload the page.');
-      e.preventDefault();
-    }, false);
-    // 确保canvas有正确的尺寸
-    canvasRef.value.width = 935;
-    canvasRef.value.height = 400;
-  }
+  // // 设置WebGL上下文丢失处理
+  // if (canvasRef.value) {
+  //   canvasRef.value.addEventListener('webglcontextlost', (e) => {
+  //     alert('WebGL context lost. You will need to reload the page.');
+  //     e.preventDefault();
+  //   }, false);
+  //   // 确保canvas有正确的尺寸
+  //   canvasRef.value.width = 935;
+  //   canvasRef.value.height = 400;
+  // }
 
 
 });
 </script>
 
 <template>
-  <!-- 抽屉式控件容器 -->
-  <div class="drawer" :class="{ open: isDrawerOpen }">
-    <h2>- </h2>
 
-    <!-- ROM Selection -->
-    <div class="control-section">
-      <h3>ROM选择</h3>
-      <select v-model="currentRom" class="full-width">
-        <option v-for="(config, key) in romConfigs" :key="key" :value="key">
-          {{ config.name }}
-        </option>
-      </select>
-      <button @click="applyRomChange" class="primary-button full-width">应用</button>
-      <div class="status-text">{{ romStatusText }}</div>
+  <div class="app">
+
+
+    <!-- 抽屉式控件容器 -->
+    <div class="drawer" :class="{ open: isDrawerOpen }">
+      <h2>- </h2>
+
+      <!-- ROM Selection -->
+      <div class="control-section">
+        <h3>ROM选择</h3>
+        <select v-model="currentRom" class="full-width">
+          <option v-for="(config, key) in romConfigs" :key="key" :value="key">
+            {{ config.name }}
+          </option>
+        </select>
+        <button @click="applyRomChange" class="primary-button full-width">应用</button>
+        <div class="status-text">{{ romStatusText }}</div>
+      </div>
+
+      <!-- 缩放控制 -->
+      <div class="control-section">
+        <h3>缩放控制</h3>
+        <div class="zoom-controls">
+          <label for="zoom-slider">缩放:</label>
+          <input type="range" id="zoom-slider" min="0.2" max="3" step="0.1" :value="currentZoom"
+            @input="handleZoomSliderChange" class="full-width">
+          <div class="zoom-display">
+            <span>{{ Math.round(currentZoom * 100) }}%</span>
+            <button @click="resetZoom" class="secondary-button">重置</button>
+          </div>
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="auto-fit" :checked="autoFitEnabled" @change="handleAutoFitChange">
+          <span>自适应屏幕</span>
+        </label>
+      </div>
+      <FileManager :wasmInstance="wasmInstance" />
+
     </div>
 
-    <!-- 缩放控制 -->
-    <div class="control-section">
-      <h3>缩放控制</h3>
-      <div class="zoom-controls">
-        <label for="zoom-slider">缩放:</label>
-        <input type="range" id="zoom-slider" min="0.2" max="3" step="0.1" :value="currentZoom"
-          @input="handleZoomSliderChange" class="full-width">
-        <div class="zoom-display">
-          <span>{{ Math.round(currentZoom * 100) }}%</span>
-          <button @click="resetZoom" class="secondary-button">重置</button>
+    <!-- 抽屉遮罩层 -->
+    <div class="drawer-overlay" :class="{ show: isDrawerOpen }" @click="closeDrawer"></div>
+
+    <!-- 抽屉开关按钮 -->
+    <button class="drawer-toggle" @click="toggleDrawer">☰</button>
+
+    <div class="header">
+      <h1>WQXSIM</h1>
+      <div class="status">
+        <div class="spinner" v-show="showSpinner"></div>
+        <div class="emscripten">{{ statusText }}</div>
+      </div>
+    </div>
+
+    <div class="emscripten">
+      <progress :value="progressValue" :max="progressMax" v-show="showProgress"></progress>
+    </div>
+
+    <!-- 缩放容器，包含屏幕和虚拟键盘 -->
+    <div ref="zoomContainerRef" class="zoom-container">
+      <div class="emscripten_border">
+        <canvas ref="canvasRef" class="emscripten" oncontextmenu="event.preventDefault()" tabindex="-1" width="972"
+          height="435"></canvas>
+        <div class="screen_num">
+          <span v-for="n in [1, 2, 3, 4, 5, 6, 7, 8, 9]">{{ n }}</span>
         </div>
       </div>
-      <label class="checkbox-label">
-        <input type="checkbox" id="auto-fit" :checked="autoFitEnabled" @change="handleAutoFitChange">
-        <span>自适应屏幕</span>
-      </label>
+      <textarea ref="outputRef" v-model="outputText" rows="8" style="display: none;"></textarea>
+      <VirtualKeyboard :wasmInstance="wasmInstance" />
     </div>
-    <FileManager :wasmInstance="wasmInstance" />
 
   </div>
 
-  <!-- 抽屉遮罩层 -->
-  <div class="drawer-overlay" :class="{ show: isDrawerOpen }" @click="closeDrawer"></div>
-
-  <!-- 抽屉开关按钮 -->
-  <button class="drawer-toggle" @click="toggleDrawer">☰</button>
-
-  <div class="header">
-    <h1>WQXSIM</h1>
-    <div class="status">
-      <div class="spinner" v-show="showSpinner"></div>
-      <div class="emscripten">{{ statusText }}</div>
-    </div>
-  </div>
-
-  <div class="emscripten">
-    <progress :value="progressValue" :max="progressMax" v-show="showProgress"></progress>
-  </div>
-
-  <!-- 缩放容器，包含屏幕和虚拟键盘 -->
-  <div ref="zoomContainerRef" class="zoom-container">
-    <div class="emscripten_border">
-      <canvas ref="canvasRef" class="emscripten" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
-      <div class="screen_num">
-        <span v-for="n in [1, 2, 3, 4, 5, 6, 7, 8, 9]">{{ n }}</span>
-      </div>
-    </div>
-    <textarea ref="outputRef" v-model="outputText" rows="8" style="display: none;"></textarea>
-    <VirtualKeyboard :wasmInstance="wasmInstance" />
-  </div>
 </template>
 
 <style lang="less">
@@ -423,11 +411,25 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  // background-color: #f0f0f0;
+  // overflow-x: hidden;
+
+  select {
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+}
+
+.app {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #f0f0f0;
-  overflow-x: hidden;
+  justify-content: center;
 }
 
 // 移动设备检测
@@ -586,57 +588,6 @@ body {
   }
 }
 
-// // 移动设备特定样式
-// @media (max-width: 768px) {
-//   body {
-//     padding: 0;
-//     overflow-x: hidden;
-//   }
-
-//   .drawer-toggle {
-//     width: 45px;
-//     height: 45px;
-//     font-size: 20px;
-//     top: 10px;
-//     left: 10px;
-//   }
-
-//   .header {
-//     padding: 5px;
-//     margin-bottom: 5px;
-//   }
-
-//   h1 {
-//     font-size: 1.5rem;
-//     margin: 5px 0;
-//   }
-
-//   .emscripten_border {
-//     margin: 60px 5px 5px;
-//     border: none;
-//     background-color: transparent;
-//   }
-
-//   canvas.emscripten {
-//     max-width: 100%;
-//     height: auto;
-//     width: 100% !important;
-//     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-//     touch-action: manipulation;
-//   }
-
-//   .screen_num {
-//     padding-left: 0;
-//     justify-content: center;
-//     gap: 20px;
-//     margin-top: 5px;
-
-//     span {
-//       font-size: 14px;
-//     }
-//   }
-// }
-
 .header {
   display: flex;
   flex-direction: column;
@@ -719,6 +670,6 @@ canvas.emscripten {
 
 .zoom-container {
   transform-origin: top center;
-  transition: transform 0.3s ease;
+  // transition: transform 0.3s ease;
 }
 </style>
