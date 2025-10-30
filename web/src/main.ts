@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import './assets/styles/global.scss'
+
 
 // 创建应用实例
 const app = createApp(App)

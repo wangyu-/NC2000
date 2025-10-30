@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "less": "^4.4.2",
     "pinia": "^2.2.2",
     "vue": "^3.5.22"
   },
@@ -24,6 +25,9 @@
   "pnpm": {
     "overrides": {
       "vite": "npm:rolldown-vite@7.1.14"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
