@@ -105,7 +105,7 @@ void open_serial_port(char *port_name){
     sp_open(uart_port, SP_MODE_READ_WRITE);
 
     int my_baudrate = 115200;
-    //my_baudrate=230400;
+    //my_baudrate=9600;
     printf("Setting port to %d 8N1, no flow control.\n", my_baudrate);
     check(sp_set_baudrate(uart_port, my_baudrate));
     check(sp_set_bits(uart_port, 8));
@@ -113,45 +113,30 @@ void open_serial_port(char *port_name){
     check(sp_set_stopbits(uart_port, 1));
     check(sp_set_flowcontrol(uart_port, SP_FLOWCONTROL_NONE));
 }
-int is_write_ready(/*struct sp_port *port*/) {
+bool is_write_ready() {
     int waiting = sp_output_waiting(uart_port);
     if (waiting < 0) {
         assert(false);
-        return waiting; // Return error code
     }
     return (waiting == 0); 
 }
 
-int is_read_ready(/*struct sp_port *port*/) {
+bool is_read_ready() {
     int bytes_waiting = sp_input_waiting(uart_port);
     if (bytes_waiting < 0) {
         assert(false);
-        return -1;
     }
     return bytes_waiting>0;
 }
-int write_one_byte(/*struct sp_port *port*/ uint8_t byte) {
-    // Timeout in milliseconds (e.g., 100ms)
-    unsigned int timeout_ms = 1;
-
-    printf("write one byte %02x\n",byte);
-
+void write_one_byte(uint8_t byte) {
     if(!is_write_ready()){
-        printf("uart  write but not ready\n");
-        return -100;
+        printf("uart write but not ready\n");
+        return ;
     }
-    
-    // Pass the address of 'byte' (&byte) and size 1
+    unsigned int timeout_ms = 1;
+    printf("write one byte %02x , write pedning=%d\n",byte, sp_output_waiting(uart_port));
     int result = sp_blocking_write(uart_port, &byte, 1, timeout_ms);
     assert(result==1);
-
-    if (result == 1) {
-        return 1; // Success
-    } else if (result == 0) {
-        return 0; // Timeout (port was busy/blocked)
-    } else {
-        return -1; // Error (e.g., disconnected)
-    }
 }
 
 uint8_t read_one_byte() {
@@ -160,25 +145,24 @@ uint8_t read_one_byte() {
         return 0xff;
     }
     unsigned int timeout_ms=1;
-    char buf[10];
-    // We pass the pointer 'byte_out' and ask for 1 byte.
+    unsigned char buf[2];
     int result = sp_blocking_read(uart_port, buf, 1, timeout_ms);
     assert(result==1);
-    printf("read one byte %02x\n",buf[0]);
+    printf("read one byte %02x, read pending=%d\n",buf[0], sp_input_waiting(uart_port));
     return buf[0];
-
-    if (result == 1) {
-        return 1; // Successfully read 1 byte
-    } else if (result == 0) {
-        return 0; // Timeout: No data arrived in time
-    } else {
-        return -1; // Error (e.g., port disconnected)
-    }
 }
 
-void clear_read_buffer(){
+void clear_read_buffer(const char *hint){
+    int cnt=0;
     while(is_read_ready()){
-        read_one_byte();
+        cnt++;
+        unsigned char buf[2];
+        unsigned int timeout_ms=1;
+        int result = sp_blocking_read(uart_port, buf, 1, timeout_ms);
+        assert(result==1);
+    }
+    if(cnt>0){
+        printf("uart clear read buffer, cleared %d bytes hint=%s\n",cnt,hint);
     }
 }
 /*
@@ -194,8 +178,20 @@ uint8_t GPC;
 
 uint8_t read_3a_inner(){
     if(bk==0){
+        extern uint8_t TMR,IVR;
+        /*if( (TMR&0x20) == 0 and (IVR&0x04) ==0){
+            printf("uart read but both not enabled\n");
+            return 0xff ;
+        }*/
+        if((TMR&0x20) == 0 ){
+            printf("uart read but uart not enabled\n");
+            return 0xff;
+        }
+        /*if((IVR&0x04) == 0 ){
+            printf("uart read but clock not enabled\n");
+            return 0xff;
+        }*/
         return read_one_byte();
-        //TODO receive data
     } else if(bk==1){
         return BSR;
     } else if(bk==2){
@@ -217,8 +213,20 @@ void write_3a(uint8_t value){
         printf("write_3a(), value %02x\n",value);
     }
     if(bk==0){
+        extern uint8_t TMR,IVR;
+        /*if( (TMR&0x20) == 0 and (IVR&0x04) ==0){
+            printf("uart write but both not enabled\n");
+            return ;
+        }*/
+        if((TMR&0x20) == 0 ){
+            printf("uart write but uart not enabled\n");
+            return ;
+        }
+        /*if((IVR&0x04) == 0 ){
+            printf("uart write but clock not enabled\n");
+            return ;
+        }*/
         write_one_byte(value);
-        //TODO send data
     }else if(bk==1){
         BSR=value;
         BSR&=0xcf;// 4 5 are zero when read back
@@ -241,16 +249,16 @@ uint8_t RESERVED;
 
 uint8_t read_3b_inner(){
     if(bk==0){//LSR
-        //handle shift and transmit register emtpy
-        //handle rxRDY
-
         //lda LSReg
         //and #10011110b
         //bne wait_empty_err
 
+        extern uint8_t TMR,IVR;
         uint8_t ret=0;
         if(is_write_ready()) ret|=0x60;
-        if(is_read_ready()) ret|=0x01;
+        if(TMR&0x20 && IVR&0x04){ //uart enabled
+            if(is_read_ready()) ret|=0x01;
+        }
         return ret;
     }else if(bk==1){
         return IRCR;
@@ -295,17 +303,17 @@ uint8_t P05;
 
 uint8_t read_3c_inner(){
     if(bk==0){
-        if(MCR &0x10){
+        if(MCR == 0x02){
             //lda     #00000010b
             //sta     MCReg           ;clear
-
             // handle "clear"?
-
-            // handle fifo reach trigger level
         }
         MCR&=0xef;
-        if(is_read_ready()){
-            MCR|=0x10;
+        extern uint8_t IVR;
+        if(TMR&0x20 && IVR&0x04){ //uart enabled
+            if(is_read_ready()){
+                MCR|=0x10;
+            }
         }
         return MCR;
     } else if(bk==1){
@@ -335,12 +343,15 @@ void write_3c(uint8_t value){
     } else if(bk==1){
         MSR=value;
     } else if(bk==2){
+        if((TMR^value)&0x20){
+            printf("uart enable/disable change\n");
+            clear_read_buffer("uart enable/disable change");
+        }
         TMR=value;
         if(value &0x20){
             //UART enable
         }else{
-            printf("uart disable\n");
-            clear_read_buffer();
+            clear_read_buffer("uart disable");
             //UART disable
         }
     } else if(bk==3){
@@ -376,12 +387,17 @@ void write_3d(uint8_t value){
     uint8_t new_bk=value &3;
     value&=0xfc;
     if(bk==0){
-        //UCE: enable UART clock
-        IVR=value &0x4;
+        if((IVR^value)&0x4){
+            printf("uart clock change\n");
+            //clear_read_buffer("uart clock change");
+        }
+        
+        IVR=value &0x4;//UCE: enable UART clock
         if(value&0x4){
-            //TODO enable uart clock
+            //enable uart clock
         }else{
-            //TODO disable uart clock
+            //clear_read_buffer("uart clock disable");
+            //disable uart clock
         }
 
         //TODO how to handle IV write?
@@ -389,6 +405,7 @@ void write_3d(uint8_t value){
     else if(bk==1){
         if(value & 0x10){
             if(uart_log_level>=1) printf("RFRST\n");
+            clear_read_buffer("RFRST");
             //TODO RFRST
         }
         if(value & 0x20){
