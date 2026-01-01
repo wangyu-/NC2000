@@ -66,7 +66,7 @@ uint8_t BSR;
 uint8_t CSTOP;
 uint8_t GPC;
 
-uint8_t read_3a(){
+uint8_t read_3a_inner(){
     if(bk==0){
         //TODO receive data
     } else if(bk==1){
@@ -78,7 +78,17 @@ uint8_t read_3a(){
     }
     assert(false);
 }
+uint8_t read_3a(){
+    uint8_t ret= read_3a_inner();
+    if(uart_log_level>=2){
+        printf("read_3a(), returned %02x\n",ret);
+    }
+    return ret;
+}
 void write_3a(uint8_t value){
+    if(uart_log_level>=2){
+        printf("write_3a(), value %02x\n",value);
+    }
     if(bk==0){
         //TODO send data
     }else if(bk==1){
@@ -101,7 +111,7 @@ uint8_t IRCR;
 uint8_t CSTART;
 uint8_t RESERVED;
 
-uint8_t read_3b(){
+uint8_t read_3b_inner(){
     if(bk==0){//LSR
         //handle shift and transmit register emtpy
         //handle rxRDY
@@ -136,7 +146,17 @@ uint8_t read_3b(){
     }
     assert(false);
 }
+uint8_t read_3b(){
+    uint8_t ret= read_3b_inner();
+    if(uart_log_level>=2){
+        printf("read_3b(), returned %02x\n",ret);
+    }
+    return ret;
+}
 void write_3b(uint8_t value){
+    if(uart_log_level>=2){
+        printf("write_3b(), value %02x\n",value);
+    }
     if(bk==0){
         LCR=value;
     }else if(bk==1){
@@ -158,7 +178,7 @@ uint8_t MSR;
 uint8_t TMR;
 uint8_t P05;
 
-uint8_t read_3c(){
+uint8_t read_3c_inner(){
     if(bk==0){
         if(MCR &0x10){
             //lda     #00000010b
@@ -180,7 +200,17 @@ uint8_t read_3c(){
     }
     assert(false);
 }
+uint8_t read_3c(){
+    uint8_t ret= read_3c_inner();
+    if(uart_log_level>=2){
+        printf("read_3c(), returned %02x\n",ret);
+    }
+    return ret;
+}
 void write_3c(uint8_t value){
+    if(uart_log_level>=2){
+        printf("write_3c(), value %02x\n",value);
+    }
     if(bk==0){
         MCR=value;
     } else if(bk==1){
