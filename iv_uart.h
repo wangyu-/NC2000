@@ -43,3 +43,5 @@ void write_3c(uint8_t value);
 
 uint8_t read_3d();
 void write_3d(uint8_t value);
+
+void open_serial_port(char *port_name);

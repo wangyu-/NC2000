@@ -64,6 +64,113 @@ void write_rcr1(uint8_t value){
     //the 3 low bits are self clear
     RCR1= value&0xf8;
 }
+
+/*
+====================
+uart host dev handle
+====================
+*/
+
+int check(enum sp_return result)
+{
+    /* For this example we'll just exit on any error by calling abort(). */
+    char *error_message;
+
+    switch (result) {
+    case SP_ERR_ARG:
+        printf("Error: Invalid argument.\n");
+        abort();
+    case SP_ERR_FAIL:
+        error_message = sp_last_error_message();
+        printf("Error: Failed: %s\n", error_message);
+        sp_free_error_message(error_message);
+        abort();
+    case SP_ERR_SUPP:
+        printf("Error: Not supported.\n");
+        abort();
+    case SP_ERR_MEM:
+        printf("Error: Couldn't allocate memory.\n");
+        abort();
+    case SP_OK:
+    default:
+        return result;
+    }
+}
+struct sp_port *uart_port;
+void open_serial_port(char *port_name){
+    printf("Looking for port %s.\n", port_name);
+    check(sp_get_port_by_name(port_name, &uart_port));
+
+    printf("Opening port.\n");
+    sp_open(uart_port, SP_MODE_READ_WRITE);
+
+    const int my_baudrate = 115200;
+    printf("Setting port to %d 8N1, no flow control.\n", my_baudrate);
+    check(sp_set_baudrate(uart_port, my_baudrate));
+    check(sp_set_bits(uart_port, 8));
+    check(sp_set_parity(uart_port, SP_PARITY_NONE));
+    check(sp_set_stopbits(uart_port, 1));
+    check(sp_set_flowcontrol(uart_port, SP_FLOWCONTROL_NONE));
+}
+int is_write_ready(/*struct sp_port *port*/) {
+    int waiting = sp_output_waiting(uart_port);
+    if (waiting < 0) {
+        assert(false);
+        return waiting; // Return error code
+    }
+    return (waiting == 0); 
+}
+
+int is_read_ready(/*struct sp_port *port*/) {
+    int bytes_waiting = sp_input_waiting(uart_port);
+    if (bytes_waiting < 0) {
+        assert(false);
+        return -1;
+    }
+    return bytes_waiting>0;
+}
+int write_one_byte(/*struct sp_port *port*/ uint8_t byte) {
+    // Timeout in milliseconds (e.g., 100ms)
+    unsigned int timeout_ms = 0;
+
+    printf("write one byte %02x\n",byte);
+    
+    // Pass the address of 'byte' (&byte) and size 1
+    int result = sp_blocking_write(uart_port, &byte, 1, timeout_ms);
+    assert(result==1);
+
+    if (result == 1) {
+        return 1; // Success
+    } else if (result == 0) {
+        return 0; // Timeout (port was busy/blocked)
+    } else {
+        return -1; // Error (e.g., disconnected)
+    }
+}
+
+uint8_t read_one_byte() {
+    unsigned int timeout_ms=0;
+    char buf[10];
+    // We pass the pointer 'byte_out' and ask for 1 byte.
+    int result = sp_blocking_read(uart_port, buf, 1, timeout_ms);
+    assert(result==1);
+    printf("read one byte %02x\n",buf[0]);
+    return buf[0];
+
+    if (result == 1) {
+        return 1; // Successfully read 1 byte
+    } else if (result == 0) {
+        return 0; // Timeout: No data arrived in time
+    } else {
+        return -1; // Error (e.g., port disconnected)
+    }
+}
+/*
+====================
+uart wqx io handle
+====================
+*/
+
 uint8_t RHR,THR;
 uint8_t BSR;
 uint8_t CSTOP;
@@ -71,6 +178,7 @@ uint8_t GPC;
 
 uint8_t read_3a_inner(){
     if(bk==0){
+        return read_one_byte();
         //TODO receive data
     } else if(bk==1){
         return BSR;
@@ -93,6 +201,7 @@ void write_3a(uint8_t value){
         printf("write_3a(), value %02x\n",value);
     }
     if(bk==0){
+        write_one_byte(value);
         //TODO send data
     }else if(bk==1){
         BSR=value;
@@ -139,7 +248,10 @@ uint8_t read_3b_inner(){
 0017   60                   RTS
                             .END
         */
-        return 0x60;
+        uint8_t ret=0;
+        if(is_write_ready()) ret|=0x60;
+        if(is_read_ready()) ret|=0x01;
+        return ret;
     }else if(bk==1){
         return IRCR;
     }else if(bk==2){
@@ -190,6 +302,10 @@ uint8_t read_3c_inner(){
             // handle "clear"?
 
             // handle fifo reach trigger level
+        }
+        MCR&=0xef;
+        if(is_read_ready()){
+            MCR|=0x10;
         }
         return MCR;
     } else if(bk==1){
@@ -309,3 +425,4 @@ uint8_t read_3d(){
     }
     return ret;
 }
+

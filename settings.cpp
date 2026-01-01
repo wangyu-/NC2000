@@ -1,3 +1,4 @@
+#include <cstring>
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,6 +6,7 @@
 #include <string>
 #include "comm.h"
 #include "dsp/dsp.h"
+#include "iv_uart.h"
 using namespace std;
 extern WqxRom nc2k_rom;
 void print_help(){
@@ -71,8 +73,10 @@ void process_args(int argc, char *argv[])
 		{"fast-forward-limit", required_argument, 0, 1},
 		{"assert", no_argument, 0, 1},
 		{"uart-log-level", required_argument, 0, 1},
+		{"uart-passthrough", required_argument, 0, 1},
 		{NULL, 0, 0, 0}
 	};
+	string uart_dev_name;
 	int option_index = 0;
     if (argc == 1)
 	{
@@ -295,6 +299,9 @@ void process_args(int argc, char *argv[])
 				extern int uart_log_level;
 				uart_log_level = stoi(optarg);
 			}
+			else if(strcmp(long_options[option_index].name,"uart-passthrough")==0){
+				uart_dev_name = optarg;
+			}
 			else
 			{
 				printf("unknown option\n");
@@ -375,6 +382,10 @@ void process_args(int argc, char *argv[])
 		}else{
 			lcdstripe_suffix = "w1313";
 		}
+	}
+
+	if(!uart_dev_name.empty()){
+		open_serial_port((char*)uart_dev_name.c_str());
 	}
 
 }
