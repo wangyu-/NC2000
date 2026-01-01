@@ -40,7 +40,7 @@ uint8_t peek_iv(){
 uint8_t get_iv(){
     if(iv_set.empty()) return IV_NONE;
     uint8_t value=*iv_set.begin();
-    iv_set.erase(iv_set.begin());
+    //iv_set.erase(iv_set.begin()); //interrupt vectors are not self clear?
     return value;
 }
 
@@ -48,6 +48,9 @@ uint8_t read_rcr0(){
     return RCR0;
 }
 void write_rcr0(uint8_t value){
+    if(debug_level>=1){
+        printf("write_rcr0 %02x\n",value);
+    }
     RCR0=value;
 }
 

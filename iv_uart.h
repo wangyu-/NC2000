@@ -6,7 +6,7 @@ extern uint8_t &RCR1;
 const int RCR0_ALARM= 0x02;
 const int RCR0_2HZ=   0x01;
 
-const int RCR1_SAMPLE= 0x02;
+const int RCR1_SAMPLE= 0x04;
 const int RCR1_ALARM= 0x02;
 const int RCR1_2HZ=   0x01;
 

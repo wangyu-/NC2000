@@ -617,3 +617,12 @@ void io_v2_write(int address, int value) {
             ioReg[address] = value;
     }
 }
+
+void io_warm_reset(){
+    //TODO
+}
+
+void io_cold_reset(){
+    io_warm_reset();
+    //TODO
+}

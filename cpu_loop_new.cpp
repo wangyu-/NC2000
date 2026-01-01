@@ -437,6 +437,9 @@ void cpu_run3(){
 					put_iv(IV_ALARM);
 				}
 				if((RCR0&RCR0_2HZ) ){
+					if(debug_level>=2){
+						printf("2hz!!!!\n");
+					}
 					put_iv(IV_2HZ);
 				}
 			}
