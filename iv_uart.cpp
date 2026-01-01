@@ -104,7 +104,8 @@ void open_serial_port(char *port_name){
     printf("Opening port.\n");
     sp_open(uart_port, SP_MODE_READ_WRITE);
 
-    const int my_baudrate = 115200;
+    int my_baudrate = 115200;
+    //my_baudrate=230400;
     printf("Setting port to %d 8N1, no flow control.\n", my_baudrate);
     check(sp_set_baudrate(uart_port, my_baudrate));
     check(sp_set_bits(uart_port, 8));
@@ -131,9 +132,14 @@ int is_read_ready(/*struct sp_port *port*/) {
 }
 int write_one_byte(/*struct sp_port *port*/ uint8_t byte) {
     // Timeout in milliseconds (e.g., 100ms)
-    unsigned int timeout_ms = 0;
+    unsigned int timeout_ms = 1;
 
     printf("write one byte %02x\n",byte);
+
+    if(!is_write_ready()){
+        printf("uart  write but not ready\n");
+        return -100;
+    }
     
     // Pass the address of 'byte' (&byte) and size 1
     int result = sp_blocking_write(uart_port, &byte, 1, timeout_ms);
@@ -149,7 +155,11 @@ int write_one_byte(/*struct sp_port *port*/ uint8_t byte) {
 }
 
 uint8_t read_one_byte() {
-    unsigned int timeout_ms=0;
+    if(!is_read_ready()){
+        printf("uart read but not ready\n");
+        return 0xff;
+    }
+    unsigned int timeout_ms=1;
     char buf[10];
     // We pass the pointer 'byte_out' and ask for 1 byte.
     int result = sp_blocking_read(uart_port, buf, 1, timeout_ms);
@@ -163,6 +173,12 @@ uint8_t read_one_byte() {
         return 0; // Timeout: No data arrived in time
     } else {
         return -1; // Error (e.g., port disconnected)
+    }
+}
+
+void clear_read_buffer(){
+    while(is_read_ready()){
+        read_one_byte();
     }
 }
 /*
@@ -339,6 +355,8 @@ void write_3c(uint8_t value){
         if(value &0x20){
             //UART enable
         }else{
+            printf("uart disable\n");
+            clear_read_buffer();
             //UART disable
         }
     } else if(bk==3){

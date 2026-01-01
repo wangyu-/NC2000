@@ -412,7 +412,11 @@ void cpu_run3(){
 	}
 
 	if(nc1020mode||nc2000mode||nc3000mode){
-		int trigger256=trigger_x_times_per_s(256);
+		int n=256;
+		if(rtc_speed!=1.0) {
+			n=int(256*rtc_speed);
+		}
+		int trigger256=trigger_x_times_per_s(n);
 		// in some extreme cases, rtc might trigger faster than cpu execution
 		// e.g. when speed_scaledown=512 and CYCLES_SECOND is underclocked to a low value
 		// but practically, trigger256 should be either 0 or 1
@@ -463,6 +467,9 @@ void cpu_run3(){
 			}
 
 			uint32_t sample_hz=get_sample_hz();
+			if(rtc_speed!=1.0) {
+				sample_hz=int(sample_hz*rtc_speed);
+			}
 			if(sample_hz>0 && trigger_x_times_per_s(sample_hz)){
 				if(debug_level>=2) printf("IV_SAMPLE triggered\n");
 				put_iv(IV_SAMPLE);

@@ -27,6 +27,7 @@ void process_args(int argc, char *argv[])
 		{"loop", required_argument, 0, 1},
 		{"io", required_argument, 0, 1},
 		{"oc", required_argument, 0, 1},
+		{"rtc-speed", required_argument, 0, 1},
 		{"nor-read", required_argument, 0, 1},
 		{"nor-write", required_argument, 0, 1},
 		{"nc1020", no_argument, 0, 1},
@@ -164,6 +165,10 @@ void process_args(int argc, char *argv[])
 			else if(strcmp(long_options[option_index].name,"oc")==0)
 			{
 				oc_factor = stod(optarg);
+			}
+			else if(strcmp(long_options[option_index].name,"rtc-speed")==0)
+			{
+				rtc_speed = stod(optarg);
 			}
 			else if(strcmp(long_options[option_index].name,"pixel-size")==0)
 			{
