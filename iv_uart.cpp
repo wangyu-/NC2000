@@ -248,22 +248,6 @@ uint8_t read_3b_inner(){
         //and #10011110b
         //bne wait_empty_err
 
-        /*
-0000   A5 3D      L0000     LDA $3D
-0002   29 FC                AND #$FC
-0004   85 3D                STA $3D
-0006   A5 3B                LDA $3B
-0008   29 07                AND #$07
-000A   D0 09                BNE L0015
-000C   A5 3B                LDA $3B
-000E   29 CB                AND #$CB
-0010   C9 CB                CMP #$CB
-0012   D0 EC                BNE L0000
-0014   60                   RTS
-0015   A9 01      L0015     LDA #$01
-0017   60                   RTS
-                            .END
-        */
         uint8_t ret=0;
         if(is_write_ready()) ret|=0x60;
         if(is_read_ready()) ret|=0x01;

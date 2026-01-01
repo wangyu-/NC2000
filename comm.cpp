@@ -70,7 +70,7 @@ bool enable_assert = false;
 emulation parameter
 ===================
 */
-uint32_t SLICE_INTERVAL= 5;  //unit ms
+uint32_t SLICE_INTERVAL= 1;  //unit ms
 int power_save_interval=1200;
 uint32_t cpu_batch=64;
 
