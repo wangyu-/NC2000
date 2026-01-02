@@ -256,7 +256,7 @@ uint8_t read_3b_inner(){
         extern uint8_t TMR,IVR;
         uint8_t ret=0;
         if(is_write_ready()) ret|=0x60;
-        if(TMR&0x20 && IVR&0x04){ //uart enabled
+        if(TMR&0x20 /*&& IVR&0x04*/){ //uart enabled
             if(is_read_ready()) ret|=0x01;
         }
         return ret;
@@ -310,7 +310,7 @@ uint8_t read_3c_inner(){
         }
         MCR&=0xef;
         extern uint8_t IVR;
-        if(TMR&0x20 && IVR&0x04){ //uart enabled
+        if(TMR&0x20 /*&& IVR&0x04*/){ //uart enabled
             if(is_read_ready()){
                 MCR|=0x10;
             }
