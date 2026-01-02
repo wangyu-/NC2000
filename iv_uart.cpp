@@ -96,7 +96,7 @@ int check(enum sp_return result)
         return result;
     }
 }
-struct sp_port *uart_port;
+struct sp_port *uart_port=nullptr;
 void open_serial_port(char *port_name){
     printf("Looking for port %s.\n", port_name);
     check(sp_get_port_by_name(port_name, &uart_port));
@@ -114,6 +114,7 @@ void open_serial_port(char *port_name){
     check(sp_set_flowcontrol(uart_port, SP_FLOWCONTROL_NONE));
 }
 bool is_write_ready() {
+    if(!uart_port) return false;
     int waiting = sp_output_waiting(uart_port);
     if (waiting < 0) {
         assert(false);
@@ -122,6 +123,7 @@ bool is_write_ready() {
 }
 
 bool is_read_ready() {
+    if(!uart_port) return false;
     int bytes_waiting = sp_input_waiting(uart_port);
     if (bytes_waiting < 0) {
         assert(false);
@@ -129,6 +131,7 @@ bool is_read_ready() {
     return bytes_waiting>0;
 }
 void write_one_byte(uint8_t byte) {
+    if(!uart_port) return ;
     if(!is_write_ready()){
         if(uart_log_level>=1) printf("uart write but not ready\n");
         return ;
@@ -140,6 +143,7 @@ void write_one_byte(uint8_t byte) {
 }
 
 uint8_t read_one_byte() {
+    if(!uart_port) return 0xff;
     if(!is_read_ready()){
         if(uart_log_level>=1) printf("uart read but not ready\n");
         return 0xff;
@@ -153,6 +157,7 @@ uint8_t read_one_byte() {
 }
 
 void clear_read_buffer(const char *hint){
+    if(!uart_port) return ;
     int cnt=0;
     while(is_read_ready()){
         cnt++;
