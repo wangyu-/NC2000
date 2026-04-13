@@ -10,7 +10,6 @@ static bool& should_wake_up = nc2k_states.should_wake_up;
 static bool& wake_up_pending = nc2k_states.pending_wake_up;
 
 static int enable_debug_key_shoot=false;
-extern bool fast_forward;
 
 uint8_t map_key(int32_t sym){
     switch(sym){
@@ -105,7 +104,7 @@ void SetKey(uint8_t key_id, bool down_or_up){
 	if (key_id == 0x0F) {
 		bits = 0xFE;
 	}
-	extern uint8_t* ram_io;
+	uint8_t* ram_io=nc2k_states.ram_io;
 	if (down_or_up) {
 		keypad_matrix[row] |= bits;
 		//hack for now

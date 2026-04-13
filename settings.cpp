@@ -1,3 +1,4 @@
+#include <cstring>
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,6 +6,9 @@
 #include <string>
 #include "comm.h"
 #include "dsp/dsp.h"
+#include "iv_uart.h"
+#include "nor.h"
+#include "settings.h"
 using namespace std;
 extern WqxRom nc2k_rom;
 void print_help(){
@@ -25,6 +29,7 @@ void process_args(int argc, char *argv[])
 		{"loop", required_argument, 0, 1},
 		{"io", required_argument, 0, 1},
 		{"oc", required_argument, 0, 1},
+		{"rtc-speed", required_argument, 0, 1},
 		{"nor-read", required_argument, 0, 1},
 		{"nor-write", required_argument, 0, 1},
 		{"nc1020", no_argument, 0, 1},
@@ -49,9 +54,10 @@ void process_args(int argc, char *argv[])
 		{"stripe", required_argument, 0, 1},
 		{"timer01-speed", required_argument, 0, 1},
 		{"load-state", no_argument, 0, 1},
+		{"load-state-reset", no_argument, 0, 1},
 		{"no-lcd-latency-effect", no_argument, 0, 1},
 		{"state", required_argument, 0, 1},
-		{"auto-save-state", no_argument, 0, 1},
+		//{"auto-save-state", no_argument, 0, 1},
 		{"auto-save-all", no_argument, 0, 1},
 		{"auto-save-flash", no_argument, 0, 1},
 		{"cks", no_argument, 0, 1},
@@ -61,6 +67,7 @@ void process_args(int argc, char *argv[])
 		{"log-level", required_argument, 0, 1},
 		{"lcd-effect", required_argument, 0, 1},
 		{"log-on-key-press", required_argument, 0, 1},
+		{"debug-next-n", required_argument, 0, 1},
 		{"log-all-dsp-io", no_argument, 0, 1},
 		{"battery-level", required_argument, 0, 1},
 		{"nc1020tw", no_argument, 0, 1},
@@ -68,9 +75,14 @@ void process_args(int argc, char *argv[])
 		{"oops", no_argument, 0, 1},
 		{"quit-after-debug-next-n", no_argument, 0, 1},
 		{"rgb-scale", required_argument, 0, 1},
+		{"fast-forward-limit", required_argument, 0, 1},
 		{"assert", no_argument, 0, 1},
+		{"uart-log-level", required_argument, 0, 1},
+		{"uart-passthrough", required_argument, 0, 1},
+		{"uart-advance", no_argument, 0, 1},
 		{NULL, 0, 0, 0}
 	};
+	string uart_dev_name;
 	int option_index = 0;
     if (argc == 1)
 	{
@@ -159,6 +171,10 @@ void process_args(int argc, char *argv[])
 			{
 				oc_factor = stod(optarg);
 			}
+			else if(strcmp(long_options[option_index].name,"rtc-speed")==0)
+			{
+				rtc_speed = stod(optarg);
+			}
 			else if(strcmp(long_options[option_index].name,"pixel-size")==0)
 			{
 				pixel_size = stoi(optarg);
@@ -211,13 +227,18 @@ void process_args(int argc, char *argv[])
 			{
 				enable_load_state = true;
 			}
+			else if (strcmp(long_options[option_index].name,"load-state-reset")==0)
+			{
+				enable_load_state = true;
+				reset_after_load_state = true;
+			}
 			else if (strcmp(long_options[option_index].name,"state")==0){
 				nc2k_rom.statesPath = optarg;
 				nc2k_rom.statesPath += ".state";
 			}
-			else if (strcmp(long_options[option_index].name,"auto-save-state")==0){
+			/*else if (strcmp(long_options[option_index].name,"auto-save-state")==0){
 				save_state_on_exit = true;
-			}
+			}*/
 			else if (strcmp(long_options[option_index].name,"auto-save-all")==0){
 				save_state_on_exit = true;
 				save_flash_on_exit = true;
@@ -261,6 +282,9 @@ void process_args(int argc, char *argv[])
 			else if (strcmp(long_options[option_index].name,"log-on-key-press")==0){
 				log_on_key_press = stoi(optarg);
 			}
+			else if (strcmp(long_options[option_index].name,"debug-next-n")==0){
+				enable_dyn_debug_next_n = stoi(optarg);
+			}
 			else if (strcmp(long_options[option_index].name,"log-all-dsp-io")==0){
 				log_all_dsp_io = true;
 			}
@@ -285,6 +309,18 @@ void process_args(int argc, char *argv[])
 			}
 			else if (strcmp(long_options[option_index].name,"patch-nc1020tw-nor")==0){
 				patch_nc1020tw_nor = true;
+			}
+			else if (strcmp(long_options[option_index].name,"fast-forward-limit")==0){
+				fast_forward_limit = stod(optarg);
+			}
+			else if (strcmp(long_options[option_index].name,"uart-log-level")==0){
+				uart_log_level = stoi(optarg);
+			}
+			else if(strcmp(long_options[option_index].name,"uart-passthrough")==0){
+				uart_dev_name = optarg;
+			}
+			else if(strcmp(long_options[option_index].name,"uart-advance")==0){
+				uart_advance = true;
 			}
 			else
 			{
@@ -328,15 +364,28 @@ void process_args(int argc, char *argv[])
         nc2k_rom.norFlashPath = rom_path + ".nor";
     }
 	if(nc1020mode){
+		string default_rom_path;//without suffix
+		if(nc1020tw_mode) default_rom_path = "roms/nc1020tw";
+		else default_rom_path = "roms/nc1020";
+		string default_with_suffix= default_rom_path + ".rom";
+
 		if(rom_path.empty()){
-			if(nc1020tw_mode) rom_path = "roms/nc1020tw";
-			else rom_path = "roms/nc1020";
+			rom_path = default_rom_path; //without suffix
 		}
 		nc2k_rom.romPath = rom_path + ".rom";
 		nc2k_rom.norFlashPath = rom_path + ".nor";
-		extern uint8_t nor_info_block[100];
 		nor_info_block[8]=0xfc;
 		nor_info_block[9]=0x03;
+
+		if(rom_path != default_with_suffix){
+			if (!fileExists(nc2k_rom.romPath.c_str())) {
+				if(fileExists(default_with_suffix)){
+					//if given rom not exist, try default rom instead (since rom can not be changed, the file can be re-used)
+					printf("WARN: file %s does not exist, but default %s exists, use default instead\n", nc2k_rom.romPath.c_str(), default_with_suffix.c_str());
+					nc2k_rom.romPath = default_with_suffix;
+				}
+			}
+		}
 
 	}
 	if(pc1000mode){
@@ -366,6 +415,10 @@ void process_args(int argc, char *argv[])
 		}else{
 			lcdstripe_suffix = "w1313";
 		}
+	}
+
+	if(!uart_dev_name.empty()){
+		open_serial_port((char*)uart_dev_name.c_str());
 	}
 
 }

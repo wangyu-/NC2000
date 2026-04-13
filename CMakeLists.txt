@@ -4,104 +4,46 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_FLAGS "-O3 -g3 -pthread -DHANDYPSP -Wno-deprecated-declarations")
+#set(CMAKE_CXX_FLAGS "-O2 -g3 -pthread -DHANDYPSP -fsanitize=address,undefined -fno-omit-frame-pointer -Wno-deprecated-declarations")
 
+find_package(SDL2 REQUIRED)
+message(STATUS "sdl includes: ${SDL2_INCLUDE_DIRS}")
+message(STATUS "sdl libs:   ${SDL2_LIBRARIES}")
+include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if (EMSCRIPTEN)
-    message(STATUS "Building for WebAssembly via Emscripten")
-    set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -sUSE_SDL=2 -sALLOW_MEMORY_GROWTH=1")
+if(ENABLE_SERIAL_PORT)
+    message(STATUS "serial port support enabled!")
+    add_definitions(-DENABLE_SERIAL_PORT)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBSERIALPORT REQUIRED libserialport)
+    message(STATUS "libserialport cflags: ${LIBSERIALPORT_CFLAGS}")
+    message(STATUS "libserialport includess: ${LIBSERIALPORT_INCLUDE_DIRS}")
+    message(STATUS "libserialport libs:   ${LIBSERIALPORT_LIBRARIES}")
+    message(STATUS "libserialport libdir:   ${LIBSERIALPORT_LIBDIR}")
+    include_directories(${LIBSERIALPORT_INCLUDE_DIRS})
+    link_directories(${LIBSERIALPORT_LIBDIR})
 endif()
 
-add_executable(wqxsim
-    main.cpp
-    nc2000.cpp
-    disassembler.cpp
-    cpu_loop.cpp
-    comm.cpp
-    mem.cpp
-    io.cpp
-    rom.cpp
-    nor.cpp
-    nand.cpp
-    ram.cpp
-    dsp/dsp.cpp
-    sound.cpp
-    cmd.cpp
-    udp_server.cpp
-    ansi/w65c02cpu.cpp
-    ansi/w65c02op.cpp
-    NekoDriverIO.cpp
-    key_new.cpp
-    compare/c6502.cpp
-    compare/pc1000bus.cpp
-    cpu_loop_new.cpp
-    settings.cpp
-    key.cpp
-    display.cpp
-    io_new.cpp
-    lcdstripe/json.cpp
-    lcdstripe/lcdpainter.cpp
-    cpu.cpp
-    console.cpp
-)
+if(ENABLE_UDP_SERVER)
+    message(STATUS "udp server support enabled!")
+    add_definitions(-DENABLE_UDP_SERVER)
+endif()
 
-if (EMSCRIPTEN)
-    string(REPLACE "-pthread" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    set_target_properties(wqxsim PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}")
-    
-    # 创建一个包装脚本来生成ES6模块
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/es6_wrapper.js.in
-        ${CMAKE_CURRENT_BINARY_DIR}/wqxsim.js
-        @ONLY
-    )
-    
-    set(EM_LINK_FLAGS
-        "-sUSE_SDL=2"
-        "-s MODULARIZE=1"
-        "-s EXPORT_ES6=1"
-        "-s EXPORT_NAME=\"WqxsimModule\""
-        "-sEXPORTED_RUNTIME_METHODS=['FS','cwrap','ccall']"
-        "-sINITIAL_MEMORY=128MB"
-        "-sALLOW_MEMORY_GROWTH=1"
-        "-sASYNCIFY"
-        "-sUSE_PTHREADS=0"
-        "-sENVIRONMENT=web"
-        "-DHAVE_HAPTIC=0"
-        "-s WASM=1"
-        "--bind"
-        "-o ${CMAKE_CURRENT_BINARY_DIR}/wqxsim_internal.js"
-    )
-    
-    # 先生成内部模块
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wqxsim_internal.js
-        COMMAND em++ ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/ansi/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/dsp/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/compare/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/lcdstripe/*.cpp -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CXX_FLAGS} ${EM_LINK_FLAGS}
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/ansi/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/dsp/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/compare/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/lcdstripe/*.cpp
-        COMMENT "Building WASM module with ES6 export"
-    )
-    
-    # 添加自定义目标来生成最终的ES6模块
-    add_custom_target(wqxsim ALL
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/wqxsim.js
-        COMMENT "Creating ES6 module wrapper"
-    )
-    
-    # 创建最终的ES6模块
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wqxsim.js
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/wqxsim_internal.js ${CMAKE_CURRENT_BINARY_DIR}/wqxsim.js
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/wqxsim_internal.js
-        COMMENT "Copying ES6 module to final location"
-    )
-    set_target_properties(wqxsim PROPERTIES SUFFIX ".js")
-    set_target_properties(wqxsim PROPERTIES LINK_FLAGS "${EM_LINK_FLAGS}")
-else()
-    find_package(SDL2 REQUIRED)
-    include_directories(${SDL2_INCLUDE_DIRS})
-    target_link_libraries(wqxsim ${SDL2_LIBRARIES})
+#target_link_libraries(a.out PRIVATE "-Wl,-stack_size -Wl,3f00000")
+#target_link_directories(a.out PUBLIC "/opt/homebrew/lib")
+
+add_executable(a.out main.cpp nc2000.cpp disassembler.cpp cpu_loop.cpp comm.cpp mem.cpp io.cpp rom.cpp nor.cpp nand.cpp ram.cpp dsp/dsp.cpp sound.cpp cmd.cpp udp_server.cpp ansi/w65c02cpu.cpp ansi/w65c02op.cpp NekoDriverIO.cpp key_new.cpp compare/c6502.cpp compare/pc1000bus.cpp cpu_loop_new.cpp settings.cpp key.cpp display.cpp io_new.cpp lcdstripe/json.cpp lcdstripe/lcdpainter.cpp cpu.cpp console.cpp disassembler_new.cpp iv_uart.cpp)
+target_link_libraries(a.out ${SDL2_LIBRARIES})
+
+if(ENABLE_UDP_SERVER)
     if(WIN32)
-        target_link_libraries(wqxsim wsock32 ws2_32)
+        target_link_libraries(a.out wsock32 ws2_32)
     endif()
 endif()
+
+if(ENABLE_SERIAL_PORT)
+    target_compile_options(a.out PRIVATE ${LIBSERIALPORT_CFLAGS})
+    target_link_libraries(a.out ${LIBSERIALPORT_LIBRARIES})
+endif()
+

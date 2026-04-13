@@ -11,14 +11,14 @@
 #include "compare/pc1000bus.h"
 
 extern BusPC1000 *bus_pc1000;
+extern nc2k_states_t nc2k_states;
+
 uint8_t* memmap[8];
 
 
-extern nc2k_states_t nc2k_states;
-
 void init_mem(){	
 	memmap[0] = ram00;
-	super_switch();
+	super_switch(); //will segfault if commented out, since some legacy code is access the memmap
 }
 
 /*
@@ -28,7 +28,6 @@ inline uint8_t & Peek8(uint8_t addr) {
 uint8_t & Peek16(uint16_t addr) {
 	auto ptr= &memmap[addr >> 13][addr & 0x1FFF];
 	if(nc1020tw_mode && debug_level>=2){
-		extern uint8_t nor_buff[1024*1024];
 		/*if(ptr>=&nor_buff[0] && ptr<&nor_buff[0]+32){
 			printf("access problem addr %04x, value=%02x, offset=%04x\n",addr,*ptr,int(ptr-&nor_buff[0]));
 			//printf("peek16 from nor %04x\n",addr);
@@ -155,27 +154,15 @@ void Store(uint16_t addr, uint8_t value) {
 
 }
 extern "C"{
-uint8_t Load2(uint16_t addr) {
+uint8_t CLoad(uint16_t addr) {
 	return Load(addr);
 }
-void Store2(uint16_t addr, uint8_t value){
+void CStore(uint16_t addr, uint8_t value){
 	return Store(addr,value);
 }
 }
 
 uint8_t* GetBank(uint8_t bank_idx){
-	/*if (pc1000mode){
-		if(ram_io[0x0a] &0x80){
-			return nor_banks[bank_idx&0xf];
-		}else{
-			if (ram_io[0x0D] & 0x01) {
-				return rom_volume1[bank_idx];
-			}else{
-				return rom_volume0[bank_idx];
-			}
-		}
-		return NULL;
-	}*/
 
 	if((ram_io[0x0D]&0x3)!=0) {
 		if(debug_level>=99) printf("vol=%02x!!!!!!!!!!!!\n",ram_io[0x0D]&0x3);
@@ -213,12 +200,6 @@ uint8_t* GetBank(uint8_t bank_idx){
 			//assert(bank_idx==0x80);
 
 			return nc2k_states.ext_ram;
-
-			/*
-			if(bank_idx%2==0)
-			return nc1020_states.ext_ram;
-			else
-			return nc1020_states.ext_ram2; */
 		}
     }else{
 		if(debug_level>=1) printf("oops GetBank bank_idx=%02x invalid roa_bbs=%02x \n",bank_idx, ram_io[0x0a]);
@@ -320,9 +301,9 @@ void SwitchBank_2345(){
 
 	}
 
-	if(false){
-		void try_patch();
-		try_patch();
+	if(patch_table_experiment){
+		void handle_patch_table();
+		handle_patch_table();
 	}
 }
 
@@ -342,7 +323,6 @@ uint8_t** GetVolumm(uint8_t volume_idx){
 }
 void Switch0x2000(){
 	if(nc1020mode){
-		//memmap[1] = (roa_bbs & 0x04 ? ram_b : ram02); // this is wrong???? should be ram_io[0x0d]&0x04
 		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
 		/*if(nc1020tw_mode){
 			if(ram_io[0x0d]&0x4){
@@ -472,10 +452,10 @@ void super_switch(){
 }
 
 //experiment hacking code, need rewrite
-void try_patch(){
+void handle_patch_table(){
+	unsigned char *patch_table=nc2k_states.patch_table;
 	int bank_idx = ram_io[0x00];
 	if(nc1020mode &&!nc1020tw_mode){
-		extern unsigned char patch_table[256];
 		if(true) {
 			static bool patched=false;
 			if(bank_idx==0x9d  &&  patch_table[0x1e]==0x9d&&  patch_table[0x1f]==0xa0 && !patched){
@@ -539,7 +519,6 @@ void try_patch(){
 	}
 
 	if(nc1020tw_mode && bank_idx==0x90 && ((ram_io[0x0d]&0x3) ==0)){
-		extern unsigned char patch_table[256];
 		if(true)
 		{
 			static bool patched=false;

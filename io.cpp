@@ -9,10 +9,7 @@
 extern nc2k_states_t nc2k_states;
 
 static bool& slept = nc2k_states.slept;
-static bool& should_wake_up = nc2k_states.should_wake_up;
-
 static uint8_t* keypad_matrix = nc2k_states.keypad_matrix;
-//static uint32_t& lcd_addr = nc1020_states.lcd_addr;
 
 static uint8_t* jg_wav_buff = nc2k_states.jg_wav_data;
 static uint8_t& jg_wav_flags = nc2k_states.jg_wav_flags;

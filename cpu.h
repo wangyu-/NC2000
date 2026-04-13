@@ -7,12 +7,9 @@ extern "C" {
 #include "ansi/w65c02.h"
 }
 
-extern double speed_multiplier;
-
 void cpu_run();
 void cpu_run2();
 void cpu_run3();
-void prepare_soft_reset();
 
 //void init_cpu();
 void init_cpu_new();
@@ -29,7 +26,6 @@ public:
     CPUInterface():A(mA), X(mX), Y(mY), SP(mSP), PC(mPC) {
         printf("using handypsp cpu\n");
         CpuInitialize();
-        setPS(0x24); // seems like no need?
     };
     CPUInterface(C6502 *cpu) :A(cpu->A), X(cpu->X), Y(cpu->Y), SP(cpu->SP), PC(cpu->PC) {
         printf("using emux cpu\n");
@@ -39,8 +35,8 @@ public:
 
     void reset();
     int execute(int max_cycles);
-    void NMI();
-	void irq_now();
+    void set_nmi_pending();
+	void irq_now();//only used for old code
     int P();
 
     void set_irq_pending();
@@ -57,3 +53,8 @@ public:
 };
 
 extern CPUInterface* cpu;
+
+void initalize_illegal_op_tables();
+
+extern unsigned char illegal_op_byte[256];
+extern unsigned char illegal_op_cycle[256];

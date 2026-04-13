@@ -1,39 +1,40 @@
 #ifndef NEKODRIVER_IO_H
 #define NEKODRIVER_IO_H
 
-typedef unsigned char BYTE;
+#include <cstdint>
+typedef uint8_t BYTE;
 #define __iocallconv
 
 
 
 // Full MOS IO Ports?
 // (I/O) io_zp_bsw
-extern bool rw0f_b4_DIR00;
-extern bool rw0f_b5_DIR01;
-extern bool rw0f_b6_DIR023; // 02 03
-extern bool rw0f_b7_DIR047; // 04 05 06 07
-extern bool rw0f_b3_SH;    // Sample & Hold for A/D
-extern BYTE rw0f_b02_ZB02; // b0..b2 (RESCPUB)
+extern bool &rw0f_b4_DIR00;
+extern bool &rw0f_b5_DIR01;
+extern bool &rw0f_b6_DIR023; // 02 03
+extern bool &rw0f_b7_DIR047; // 04 05 06 07
+extern bool &rw0f_b3_SH;    // Sample & Hold for A/D
+extern BYTE &rw0f_b02_ZB02; // b0..b2 (RESCPUB)
 
 // (O/P) io_general_ctrl
-extern bool w04_b7_EPOL;   // 外部中断 (P40 OR P41 OR P00) 极性
-extern BYTE w04_b46_PTYPE; // Port1 PTYPE0~PTYPE7
-extern BYTE w04_b03_TBC;   // LCD地址线, Timebase时钟
+extern bool &w04_b7_EPOL;   // 外部中断 (P40 OR P41 OR P00) 极性
+extern BYTE &w04_b46_PTYPE; // Port1 PTYPE0~PTYPE7
+extern BYTE &w04_b03_TBC;   // LCD地址线, Timebase时钟
 
 // (O/P) io_port1_dir
 // 受限于PTYPE0|5
-extern BYTE w15_port1_DIR107;// DIR10~DIR17
+extern BYTE &w15_port1_DIR107;// DIR10~DIR17
 
 // (I/O) 读取时候逐位判断DIR, 确定从ID(matrix更新)还是OL直接读取
 // 假设速度, 假设1016的输入比6502的执行速度快很多, 例如延迟在10ns, 则基本可以当作输出延迟+输入延迟在STA执行途中已过去.
 // 假设短路, 遇到2个都是输出, 一高一低, matrix连通了他们2者, 则实际因为是导电橡胶联通的, 实际输出高的pmos+导电橡胶+nmos的Rds构成分压网络.
 // 因此定出优化规则: 在改变端口方向和写入端口时候, 立刻同步刷新输入数据. 等同于我们加了缓冲. 而处理按键时候, 忽略输出对输出的传导.
 // 实际流程既是: 先复制输出状态引脚, 再处理导电橡胶传导.
-extern BYTE w08_port0_OL;  // output latch
-extern BYTE r08_port0_ID;  // input data
+extern BYTE &w08_port0_OL;  // output latch
+extern BYTE &r08_port0_ID;  // input data
 
-extern BYTE w09_port1_OL;
-extern BYTE r09_port1_ID;
+extern BYTE &w09_port1_OL;
+extern BYTE &r09_port1_ID;
 
 // TODO: endian on non x86/arm target
 union timer01_u {
@@ -44,14 +45,13 @@ union timer01_u {
     };
 };
 
-extern timer01_u* rw023_timer01val;
+//extern timer01_u* rw023_timer01val;
 
 // 假设spdc的timer如下: 没有接入到io的参数值, 依然存在于外设中, 也即如果io bit被链接到其他设备, 已经设置好的还保持?
-extern BYTE w0c_b67_TMODESL;    // 01一起的计数方式
-extern BYTE w0c_b45_TM0S;       // timer0时钟周期, 在TMODE1下接入
-extern BYTE w0c_b23_TM1S;       // timer1时钟周期, 在TMODE1下接入
-extern BYTE w0c_b345_TMS;       // 其他模式下4个bit只有3个用上
-
+extern BYTE &w0c_b67_TMODESL;    // 01一起的计数方式
+extern BYTE &w0c_b45_TM0S;       // timer0时钟周期, 在TMODE1下接入
+extern BYTE &w0c_b23_TM1S;       // timer1时钟周期, 在TMODE1下接入
+extern BYTE &w0c_b345_TMS;       // 其他模式下4个bit只有3个用上
 
 //extern BYTE rw19_b6_P46T;
 //extern BYTE rw19_b6_P45T;
@@ -74,16 +74,18 @@ extern HotlinkBundle* hotlinkios;
 
 // Temp
 //////extern unsigned char* zpioregs[0x40];
-extern unsigned char* zpioregs;
+//extern unsigned char* zpioregs;
 
 #define _ADD_TM0I_BIT() zpioregs[io01_int_status] |= 0x10
 #define _ADD_TM1I_BIT() zpioregs[io01_int_status] |= 0x20
 
 // io01_int_status use zpioregs.
-extern BYTE w01_int_enable;
+extern BYTE &w01_int_enable;
 
-extern int timer0ticks;
-extern int timer1ticks;
+extern int &timer0ticks;
+extern int &timer1ticks;
+
+extern unsigned /*char*/ keypadmatrix[8][8];
 
 BYTE __iocallconv NullRead (BYTE read);
 void __iocallconv NullWrite (BYTE write, BYTE value);

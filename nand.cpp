@@ -4,6 +4,7 @@
 #include "state.h"
 #include <cassert>
 #include <cstdio>
+#include "nand.h"
 extern WqxRom nc2k_rom;
 extern nc2k_states_t nc2k_states;
 static uint8_t* ram_buff = nc2k_states.ram;
@@ -16,7 +17,7 @@ static deque<uint8_t> nand_data;
 
 static int nand_read_cnt=0;
 //char nand_ori[65536*2][512];
-char nand[65536*2+64][528];
+static char nand[65536*2+64][528];
 //char nand_spare[65536+64][16];
 
 string nand_magic;
@@ -30,12 +31,12 @@ void read_nand0_file(){
         exit(-1);
     }
     fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
+    long long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
     assert(fsize<= 64*528);
     fread(p0, fsize, 1, f);
     fclose(f);
-    printf("<nand0_file_size=%lu>\n",fsize);
+    printf("<nand0_file_size=%llu>\n",fsize);
     for(int i=0;i<10;i++){
         nand_magic.push_back(p0[0x200+0x10+i]);
     }
@@ -51,12 +52,12 @@ void read_nand_file(){
         exit(-1);
     }
     fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
+    long long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
     assert(fsize + 64*528 <= sizeof(nand));
     fread(p0, fsize, 1, f);
     fclose(f);
-    printf("<nand_file_size=%lu>\n",fsize);
+    printf("<nand_file_size=%llu>\n",fsize);
 
 #if 0
     if(nc2000mode){

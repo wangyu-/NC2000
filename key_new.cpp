@@ -8,16 +8,12 @@
 #include <emscripten.h>
 using namespace std;
 extern BusPC1000 *bus_pc1000;
+extern nc2k_states_t nc2k_states;
+static uint8_t * ext_reg=nc2k_states.ext_reg;
 
 struct TKeyItem {
-    //TKeyItem(int ID, const char* graphic, const char* subscript);
     TKeyItem(int ID, int keycode,int code_y, int code_x, const char* graphic, const char* subscript, const char* label,vector<int>);
 
-    //int fRow;
-    //int fColumn;
-    //const char* fGraphic; // TODO:
-    //const char* fSubscript;
-    //const char* fSuperLabel; // label on top
     int code=0;
     int code_y=-1;
     int code_x=-1;
@@ -27,19 +23,12 @@ struct TKeyItem {
 
 // ID keycode are no longer used, but they are kept for comparsion with wayback and nc1020
 TKeyItem::TKeyItem( int ID, int keycode, int code_y, int code_x, const char* graphic, const char* subscript, const char* label, vector<int> sdl_keys0)
-    :// fRow(ID / 10)
-    //, fColumn(ID % 10)
-    //fGraphic(graphic)
-    //, fSubscript(subscript)
-    //, fSuperLabel(label)
-    sdl_keys(sdl_keys0)
+    :sdl_keys(sdl_keys0)
 {
     code=keycode;
     this->code_y = code_y;
     this->code_x = code_x;
 }
-
-extern unsigned /*char*/ keypadmatrix[8][8];
 
 //the comments e.g. P00, P30 has no meaning for nc1020/2000/3000, they are copied from wayback and not changed.
 vector<TKeyItem*> items2000_1020 = {
@@ -139,8 +128,8 @@ vector<TKeyItem*> items = {
         NULL,       // P06, P17
         NULL,       // P07, P17
         //newly added
-        new TKeyItem(0, 0x14, 4,2, "xx", NULL, "xx",{SDLK_QUOTE}),
-        new TKeyItem(0, 0x15, 5,2,"xx", NULL, "xx",{SDLK_SEMICOLON}),
+        new TKeyItem(0, 0x14, 4,2, "报时", NULL, "xx",{SDLK_QUOTE}),
+        new TKeyItem(0, 0x15, 5,2,"发音", NULL, "xx",{SDLK_SEMICOLON}),
         //new TKeyItem(0, 0x01, 1,0, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
     };
 
@@ -199,8 +188,8 @@ vector<TKeyItem*> pro_mode_items = {
         NULL,       // P06, P17
         NULL,       // P07, P17
         //newly added
-        new TKeyItem(0, 0x14, 4,2, "xx", NULL, "xx",{ SDLK_EQUALS}),
-        new TKeyItem(0, 0x15, 5,2,"xx", NULL, "xx",{ SDLK_MINUS }),
+        new TKeyItem(0, 0x14, 4,2, "报时", NULL, "xx",{ SDLK_EQUALS}),
+        new TKeyItem(0, 0x15, 5,2,"发音", NULL, "xx",{ SDLK_MINUS }),
         //new TKeyItem(0, 0x01, 1,0, NULL, NULL, "xx", {SDLK_BACKQUOTE}), 
     };
 
@@ -312,13 +301,6 @@ void init_keyitems(){
             if (current_items[i] == NULL) {
                 //keypadmatrix[y][x] = 2;
             } else {
-                //int row = item[y][x]->fRow;
-                //int col = item[y][x]->fColumn;
-                //int index = row * 10 + col;
-                //MyRectButton* button = [MyRectButton buttonWithType:UIButtonTypeRoundedRect];
-                //button.contentScaleFactor = 1;
-                //button.layer.contentsScale = 1;
-                //item[y][x]->tag = y * 0x10 + x;
                 assert(current_items[i]->code_y>=0);
                 assert(current_items[i]->code_x>=0);
                 for(auto e: current_items[i]->sdl_keys){
@@ -337,29 +319,19 @@ pair<int,int> map_key_wayback(int32_t sym){
 }
 
 void SetKeyWayback(int code_y,int code_x, bool down_or_up){
-  if(pc1000mode || nc1020mode|| nc3000mode){
+  if(pc1000mode || nc3000mode){
     //todo not really works
     if(code_x==0 && code_y==0 && down_or_up){
-      void try_soft_reset();
-      try_soft_reset();
+      void warm_reset_if_clkoff();
+      warm_reset_if_clkoff();
     }
   }
-  if(nc2000mode){
+  if(nc2000mode||nc1020mode){
       if(code_x<2&& down_or_up){
-        void try_soft_reset();
-        try_soft_reset();
+        void warm_reset_if_clkoff();
+        warm_reset_if_clkoff();
       }
   }
-    /*
-    unsigned int y = key_id / 16;
-    unsigned int x = key_id % 16;
-    if (y < 8 && x < 8) {
-        keypadmatrix[y][x] = down_or_up;
-    }*/
-
-    // below make it compatible with nc1020's code
-    //unsigned int y = key_id % 8;
-    //unsigned int x = key_id / 8;
 
     if (code_y < 8 && code_x < 8) {
         keypadmatrix[code_y][code_x] = down_or_up;
@@ -368,25 +340,36 @@ void SetKeyWayback(int code_y,int code_x, bool down_or_up){
 }
 
 void handle_key_wayback(signed int sym, bool key_down){
+        if(debug_level>=2){
+          printf("key %d %s\n", sym, key_down ? "down" : "up");
+        }
+        if(sym==SDLK_F12 && shift_down&& ctrl_down){ // shift+ctrl+F12 triggers reset button
+            if(key_down==1){
+              void cold_reset();
+              cold_reset();
+            }
+            return;
+        }
         /*if(enable_debug_key_shoot){
           printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
         }*/
         auto value=map_key_wayback(sym);
         if(nc1020mode && sym==SDLK_F12 ){
-          extern uint8_t* ram_io;
+          //nc1020's on/off is not on the 8x8 keyboard scanning matrix, it is an independent pin
+          uint8_t* ram_io=nc2k_states.ram_io;
           if(key_down){
-            ram_io[0x0b]|=1;
-          }else {
             ram_io[0x0b]&=~1;
-            void try_soft_reset();
-            try_soft_reset();
+            void warm_reset_if_clkoff();
+            warm_reset_if_clkoff();
+          }else {
+            ram_io[0x0b]|=1;
           }
           if(debug_level>=2) printf("current value of 0x0b bit0: %d\n", ram_io[0x0b]&0x01);
 
         }
         if(value.first!=-1 && value.second!=-1){
-          SetKeyWayback(value.first,value.second, key_down);
-          if(bus_pc1000){
+          SetKeyWayback(value.first,value.second, key_down); //set up the 8x8 key scan matrix
+          if(bus_pc1000){ //for compatibility with pc1000emux bus
             if(key_down){
               bus_pc1000->keyDown2(value.first, value.second);
             }else{
@@ -394,13 +377,14 @@ void handle_key_wayback(signed int sym, bool key_down){
             }
           }
         }
-        if(log_on_key_press && sym== log_on_key_press){
+        if(log_on_key_press==1 &&sym != SDLK_F11 || (log_on_key_press >1 && sym== log_on_key_press)){
+          // --log-on-key-press, enable logging for debug when interested key is pressed
           if(key_down && shift_down){
             enable_dyn_debug_next_n=100*1000000;
           }
         }
         switch ( sym) {
-          case SDLK_BACKQUOTE:
+          case SDLK_BACKQUOTE:    //handles the "pro-key" mode
             if(shift_down){
               if(key_down==1){
                 pro_key^= 0x1;
@@ -413,9 +397,8 @@ void handle_key_wayback(signed int sym, bool key_down){
             }
             break;
 
-          case SDLK_TAB:
+          case SDLK_TAB:       //handles fast forward toggle
             if(key_down==1){
-                extern bool fast_forward;
                 fast_forward^= 0x1;
                 printf("fast_forward %s\n", fast_forward ? "on" : "off");
                 extern SDL_Window* window;

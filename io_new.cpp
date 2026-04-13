@@ -9,16 +9,18 @@
 #include "io.h"
 #include <cassert>
 #include "CC800IOName.h"
+#include "iv_uart.h"
+#include "io_new.h"
 
 extern nc2k_states_t nc2k_states;
 extern Dsp dsp;
 
-static int dspRetData;
-static bool dspTrans=0;
-static bool dspSleep;
+static int &dspRetData=nc2k_states.dspRetData;
+static bool &dspTrans=nc2k_states.dspTrans;
+static bool &dspSleep=nc2k_states.dspSleep;
 
-static int tmaValue;
-static int tmaReload;
+static int &tmaValue=nc2k_states.tmaValue;
+static int &tmaReload=nc2k_states.tmaReload;
 
 const int IO_TIMERA_VAL_L = 0x10;
 const int IO_TIMERA_VAL_H = 0x11;
@@ -26,29 +28,30 @@ const int IO_TIMERAB_CTRL = 0x14;
 
 const int INT_TIME_BASE = 8;
 
-unsigned char inner_interrupt_status=0;
+unsigned char &inner_interrupt_control=nc2k_states.inner_interrupt_control;
 
-unsigned int speed_scaledown=1;
+unsigned int &speed_scaledown=nc2k_states.speed_scaledown;
 
-static uint8_t * rtc_reg=nc2k_states.rtc_reg;
-static uint8_t& interr_flag = nc2k_states.interr_flag;
+static uint8_t * rtc_reg=nc2k_states.ext_reg;
+static uint8_t * ext_reg=nc2k_states.ext_reg;
 
 static unsigned char* ioReg=nc2k_states.ram_io;
 
-uint8_t cks=0;
-uint8_t cps=0;
-uint8_t lcdon=0;
+uint8_t &lcdon=nc2k_states.lcdon;
+
+static int &patch_idx=nc2k_states.patch_idx;
+static unsigned char *patch_table=nc2k_states.patch_table;
 
 /////d0应该是未定指令
 ////不处理这个有声读物会死机
-bool dsp_0xd0=0;
+bool &dsp_0xd0=nc2k_states.dsp_0xd0;
 
-int dsp_0x7001_0x7002=0;
+int &dsp_0x7001_0x7002=nc2k_states.dsp_0x7001_0x7002;
 
 //bool dsp_0x91_volume_adjust=false;
 
-bool dsp_data_feeded_but_hasnt_fetched=0;
-unsigned char dsp_data_low=0;
+bool &dsp_data_feeded_but_hasnt_fetched=nc2k_states.dsp_data_feeded_but_hasnt_fetched;
+unsigned char &dsp_data_low=nc2k_states.dsp_data_low;
 
 // dsp functions adapted from pc1000emux
 int dsp31read_RetData() {
@@ -239,19 +242,20 @@ void dsp33write_cmd_data(int value){
 
 //timerA from pc1000emux
 // 实现的不全，缺TMACT
-void setTimerA() {
+bool setTimerA() {
     int temp = ioReg[IO_TIMERAB_CTRL] >> 4;
     if (temp != 0) {
         tmaValue += (256 >> temp);
         if (tmaValue >= 0x10000) {
             tmaValue = tmaReload;
             if(debug_level>=1) printf("timer A interrupt triggered");
-            if ((inner_interrupt_status & 1) != 0){
+            if ((inner_interrupt_control & 1) != 0){
                 ioReg[io01_int_status] |= 1;
-                cpu->set_irq_pending();  //newly added, not exist in pc1000emux
+                return true;
             }
         }
     }
+    return false;
 }
 //todo timerB
 
@@ -260,7 +264,7 @@ void setIrqTimeBase() {
 }
 
 bool nmiEnable() {
-    return (inner_interrupt_status & 0x10) == 0;
+    return (inner_interrupt_control & 0x10) == 0;
 }
 
 bool timeBaseEnable() {
@@ -280,18 +284,6 @@ int io_v2_read(int address) {
     if(nc2000mode&&log_all_dsp_io&& address>=0x30 && address<=0x33){
         printf("""[io_v2_read] address=%02x\n",address);
     }
-    if(nc1020tw_mode){
-        //hack, need to improve keyboard  (pull high)
-        /*if(address==0x08){
-            if (cpu->PC==0xe0ad+2){
-                if(debug_level>=1||enable_dyn_debug)printf("returning 0x03!!!!!\n");
-                return 0x03;
-            }
-        }*/
-        /*if(address==0x0b){
-            return ram_io[0x0b]|0x01;
-        }*/
-    }
     if(nc1020mode||nc2000mode||nc3000mode||pc1000mode){
         if(address==0x04) return Read04StopTimer0(address);
         if(address==0x05) return Read05StartTimer0(address);
@@ -301,7 +293,6 @@ int io_v2_read(int address) {
         if(address==0x08){
             if(cpu->PC>=0x44c2 &&cpu->PC<=0x44c4) {
                 //printf("<<pc=%04x>>\n",cpu->PC);
-                extern int enable_key_debug_once;
                 //enable_key_debug_once=1;
                 //return 0x01;
             }
@@ -327,17 +318,16 @@ int io_v2_read(int address) {
         }
     }
     if(nc1020mode||nc2000mode||nc3000mode){
-        if(address==0x3b){
-            if((ioReg[0x3d]&3)==0){
-                return rtc_reg[0x3b]&0xfe;
-            }else{
-                return ioReg[0x3b];
-            }
-           //return Read3B(address);
-        }
+        if(address==0x3a) return read_3a();
+        if(address==0x3b) return read_3b();
+        if(address==0x3c) return read_3c();
+        if(address==0x3d) return read_3d();
+
         if(address==0x3f){
-            return rtc_reg[ioReg[0x3e]];
-            //return Read3F(address);
+            uint8_t idx= ioReg[0x3e];
+            if(idx==0x0a) return read_rcr0();
+            if(idx==0x0b) return read_rcr1();
+            return rtc_reg[idx];
         }
     }
     if(nc1020mode||pc1000mode) {
@@ -379,8 +369,7 @@ int io_v2_read(int address) {
             return ioReg[address];
     }
 }
-int patch_idx=0;
-unsigned char patch_table[256];
+
 void io_v2_write(int address, int value) {
     if(nc2000mode&&log_all_dsp_io&&address>=0x30 && address<=0x33){
         printf("[io_v2_write] address=%02x value=%02x\n",address,value);
@@ -409,9 +398,12 @@ void io_v2_write(int address, int value) {
             patch_idx++;
         }
     }
-        if(nc3000mode){
+    if(nc3000mode){
         if(address==0x05){
             uint8_t cks=value>>5;
+            if(debug_level>=2) {
+                printf("cks set to %d\n",cks);
+            }
             if (cks!=ram_io[0x05]>>5){
                 //the defintion is not same as spdc1024
                 switch(cks){
@@ -422,7 +414,7 @@ void io_v2_write(int address, int value) {
                     case 4: speed_scaledown=512;break;
                     case 5: speed_scaledown=256;break;
                     case 6: speed_scaledown=64;break;
-                    case 7: printf("oops clk off\n");speed_scaledown=999999;break;
+                    case 7: printf("clk off\n");speed_scaledown=int_inf;break;
                     default:assert(false);
                 }
                 //printf("<cks=%d scaledown=%d>\n",cks,speed_scaledown);
@@ -436,8 +428,8 @@ void io_v2_write(int address, int value) {
     if(nc2000mode||nc1020mode||pc1000mode) {
         if(address==0x05){
             
-            cks=value>>5;
-            cps=value&0x07;
+            uint8_t cks=value>>5;
+            uint8_t cps=value&0x07;
             lcdon=(value>>3)&1;
             if(debug_level>=3) printf("Write05ClockCtrl %02x cks=%d cps=%d lcdon=%d\n",value,cks,cps,lcdon);
             if (cks!=ram_io[0x05]>>5){
@@ -449,8 +441,7 @@ void io_v2_write(int address, int value) {
                     case 4: speed_scaledown=64;break;
                     case 5: speed_scaledown=32;break;
                     case 6: speed_scaledown=16;break;
-                    //if this value is too large, rtc won't bump correctly because of the code of cpu loop
-                    case 7: printf("oops clk off\n");speed_scaledown=99;break; 
+                    case 7: printf("clk off\n");speed_scaledown=int_inf;break; 
                     default:assert(false);
                 }
                 /*if(nc1020mode && cks==7){ //if accidentally closed during get, at least save what has already been got
@@ -568,10 +559,11 @@ void io_v2_write(int address, int value) {
         }*/
     }
     if(nc1020mode||nc2000mode||nc3000mode){
-        if(address==0x3d){
-            ioReg[0x3d]= ioReg[0x3d] &0xf8 |value &7;
-            return;
-        }
+        if(address==0x3a) return write_3a(value);
+        if(address==0x3b) return write_3b(value);
+        if(address==0x3c) return write_3c(value);
+        if(address==0x3d) return write_3d(value);
+
         if(address==0x3f){
             int index=ioReg[0x3e];
             if(debug_level>=1){
@@ -582,23 +574,18 @@ void io_v2_write(int address, int value) {
                     printf("write to 0x3f idx=0x26 %02x\n",value);
                 }
             }
-            ioReg[0x3f]=value;
-            if(index<7){
-                if((signed char)rtc_reg[0x0b]<0) return;
-            }else{
-                if(index==10){
-                    rtc_reg[10]=value;
-                    interr_flag= interr_flag|value&7;
-                    return;
-                }
-                if(index==0x0b){
-                    if((value&1)==0){
-                        return ;
-                    }
-                    ioReg[0x3d]=0xf8;
-                    return;
+            if(debug_level>=1){
+                if(index==0x24){
+                    printf("write to 0x3f idx=0x24 %02x\n",value);
                 }
             }
+            ioReg[0x3f]=value;
+            if(index<7){
+                //drop invalid value
+                if((signed char)rtc_reg[0x0b]<0) return;
+            }            
+            if(index==0x0a) return write_rcr0(value);
+            if(index==0x0b) return write_rcr1(value);
             rtc_reg[index]=value;
             return;
             //return Write3F(address,value);
@@ -611,7 +598,7 @@ void io_v2_write(int address, int value) {
             /////////////bankSwitch();
             return;
         case io01_int_enable://0x01
-            inner_interrupt_status = value;
+            inner_interrupt_control = value;
             return;
         case io0A_bios_bsw://0x0a
             ioReg[io0A_bios_bsw] = value;

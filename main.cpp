@@ -22,7 +22,6 @@ SDL_Window* window;
 
 bool InitAudioVideo() {
   extern SDL_Renderer* renderer;
-  extern unsigned char *lcd_effect_buffer;
   lcd_effect_buffer = new unsigned char[SCREEN_HEIGHT*total_size* SCREEN_WIDTH*total_size * 4];
   memset(lcd_effect_buffer, 0, SCREEN_HEIGHT*total_size* SCREEN_WIDTH*total_size * 4);
 
@@ -121,8 +120,12 @@ void main_loop() {
             shift_down=it->second;
             continue;
           }
+          if(it->first==SDLK_LCTRL || it->first==SDLK_RCTRL){
+            ctrl_down=it->second;
+            continue;
+          }
           bool console_on_saved=console_on;
-          handle_console(it->first, it->second);
+          handle_console(it->first, it->second);// handles 1. console toggle 2. console itself
           if(console_on_saved){
             continue;
           }
@@ -169,32 +172,28 @@ void main_loop() {
     expected_tick+=SLICE_INTERVAL;
     uint64_t actual_tick= current_time - start_tick;
 
-  if(fast_forward) {
-      expected_tick =actual_tick;
-  }
-
-  //if actual is behind expected_tick too much, we only remember 300ms
-  if(actual_tick >expected_tick + 300) {
-    expected_tick = actual_tick-300;
-  }
-
-  // similiar strategy as above
-  if(expected_tick > actual_tick + 300) {
-    actual_tick = expected_tick-300;
-  }
-
-  if(actual_tick < expected_tick) {
-    SDL_Delay(expected_tick-actual_tick);
-    long long exceed=current_time -start_tick  -expected_tick;
-    if(exceed>10){
-      if(debug_level>=1) printf("oops sleep too much %lld\n",exceed);
+    if(fast_forward && !fast_forward_limit) {
+        expected_tick =actual_tick;
     }
-  }
 
-  /*while((actual_tick=SDL_GetTicks64() - start_tick) <expected_tick) {
-    //{SDL_Delay(expected_tick-actual_tick);}
-  }*/
-    //SDL_Delay(FRAME_INTERVAL < tick ? 0 : FRAME_INTERVAL - tick);
+    //if actual is behind expected_tick too much, we only remember 300ms
+    if(actual_tick >expected_tick + 300) {
+      expected_tick = actual_tick-300;
+    }
+
+    // similiar strategy as above
+    if(expected_tick > actual_tick + 300) {
+      actual_tick = expected_tick-300;
+    }
+
+    if(actual_tick < expected_tick) {
+      SDL_Delay(expected_tick-actual_tick);
+      long long exceed=current_time -start_tick  -expected_tick;
+      if(exceed>10){
+        if(debug_level>=1) printf("oops sleep too much %lld\n",exceed);
+      }
+    }
+
   }
 }
 
@@ -228,6 +227,8 @@ int main(int argc, char* args[]) {
   if(save_state_on_exit){
     save_state("");
   }
+
+  shutdown_audio();
 
   return 0;
 }

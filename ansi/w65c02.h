@@ -31,9 +31,12 @@ typedef bool BOOL;
 ////#define __iocallconv __fastcall
 #define __iocallconv
 
+/*
 typedef BYTE(__iocallconv *iofunction1)(BYTE);
 typedef void (__iocallconv *iofunction2)(BYTE, BYTE);
+*/
 
+/*
 typedef struct _regsrec {
     BYTE a;   // accumulator
     BYTE x;   // index X
@@ -42,7 +45,9 @@ typedef struct _regsrec {
     //WORD pc;  // program counter
     WORD sp;  // stack pointer
 } regsrec, *regsptr;
+*/
 
+/*
 extern iofunction1 ioread[0x40];
 extern iofunction2 iowrite[0x40];
 extern void checkflashprogram(WORD addr, BYTE data);
@@ -62,11 +67,13 @@ extern unsigned char* zp40ptr;  // used in io_zp_bsw
 
 #define iorange 0x40
 extern regsrec    regs;
-extern BOOL       restart;
-extern BOOL       g_irq;    // FIXME: NO MORE REVERSE
-extern BOOL       g_nmi;    // FIXME: NO MORE REVERSE
-extern BOOL       g_wai, g_wai_saved;
-extern BOOL       g_stp;
+*/
+
+//extern BOOL       &restart;
+extern BOOL       &g_irq;    // FIXME: NO MORE REVERSE
+extern BOOL       &g_nmi;    // FIXME: NO MORE REVERSE
+extern BOOL       &g_wai, &g_wai_saved;
+extern BOOL       &g_stp;
 
 
 
@@ -137,8 +144,8 @@ unsigned short GetWord(unsigned short address);
 // Don't use ++/-- in addr, or will be execute multi time
 // TODO: should place io operation in first case to prefer io speed (side effect: slown down other normal memory access)
 inline uint8_t CPU_PEEK(uint16_t addr){
-  uint8_t Load2(uint16_t);
-  return Load2(addr);
+  uint8_t CLoad(uint16_t);
+  return CLoad(addr);
   /*
     if(addr >= 0x80) {
       return *(pmemmap[unsigned(addr) >> 0xD] + (addr & 0x1FFF));
@@ -153,8 +160,8 @@ inline uint16_t CPU_PEEKW(uint16_t addr){
 
 inline void CPU_POKE(uint16_t addr, uint8_t a)   
 { 
-  void       Store2(uint16_t addr, uint8_t value);
-  Store2(addr,a);
+  void       CStore(uint16_t addr, uint8_t value);
+  CStore(addr,a);
   /*
   if ((addr >= 0x80)) { 
     if (addr < 0x4000) {
@@ -169,7 +176,7 @@ inline void CPU_POKE(uint16_t addr, uint8_t a)
   }*/
 }
     
-
+/*
 enum {  illegal = 0,
         accu,
         imm,
@@ -188,6 +195,7 @@ enum {  illegal = 0,
         iabs,
         ind
      };
+*/
 
 //typedef struct {
 //    int PS;     // Processor status register   8 bits
@@ -210,24 +218,25 @@ enum {  illegal = 0,
 
 // CPU Flags & status
 
-extern int mA;     // Accumulator                 8 bits
-extern int mX;     // X index register            8 bits
-extern int mY;     // Y index register            8 bits
-extern int mSP;        // Stack Pointer               8 bits
-extern int mOpcode;  // Instruction opcode          8 bits
-extern int mOperand; // Instructions operand         16 bits
-extern int mPC;        // Program Counter            16 bits
+extern int &mA;     // Accumulator                 8 bits
+extern int &mX;     // X index register            8 bits
+extern int &mY;     // Y index register            8 bits
+extern int &mSP;        // Stack Pointer               8 bits
+extern int &mOpcode;  // Instruction opcode          8 bits
+extern int &mOperand; // Instructions operand         16 bits
+extern int &mPC;        // Program Counter            16 bits
 
-extern int mN;     // N flag for processor status register
-extern int mV;     // V flag for processor status register
-extern int mB;     // B flag for processor status register
-extern int mD;     // D flag for processor status register
-extern int mI;     // I flag for processor status register
-extern int mZ;     // Z flag for processor status register
-extern int mC;     // C flag for processor status register
+extern int &mN;     // N flag for processor status register
+extern int &mV;     // V flag for processor status register
+extern int &mB;     // B flag for processor status register
+extern int &mD;     // D flag for processor status register
+extern int &mI;     // I flag for processor status register
+extern int &mZ;     // Z flag for processor status register
+extern int &mC;     // C flag for processor status register
 
-extern int mIRQActive;
+//extern int mIRQActive;
 
+/*
 #ifdef _LYNXDBG
 extern int mPcBreakpoints[MAX_CPU_BREAKPOINTS];
 extern int mDbgFlag;
@@ -241,6 +250,7 @@ extern int mBCDTable[2][256];
 //
 // Opcode prototypes
 //
+*/
 
 int PS();
 void setPS(int ps);

@@ -83,6 +83,7 @@ extern NorFormat nor_read_format;
 extern NorFormat nor_write_format;
 
 extern bool enable_load_state;
+extern bool reset_after_load_state;
 extern bool save_flash_on_exit;
 extern bool save_state_on_exit;
 
@@ -127,6 +128,8 @@ extern bool enable_debug_timer;
 
 extern bool enable_debug_cks;
 
+extern int enable_key_debug_once;
+
 extern bool enable_assert;
 /*
 ===================
@@ -153,8 +156,13 @@ extern double timer01_speed_fix;
 extern bool forced_erase_before_write;
 
 extern bool fast_forward;
+extern double fast_forward_limit;
 
 extern int debug_level;
+
+extern double rtc_speed;
+
+extern double speed_multiplier;
 /*
 ===================
 display related
@@ -243,8 +251,11 @@ misc
 */
 const int int_inf=10*10000*10000;
 extern bool shift_down;
+extern bool ctrl_down;
 extern int battery_level;
 extern bool patch_nc1020tw_nor;
+
+extern bool patch_table_experiment;
 /*
 ===================
 common functions
@@ -292,4 +303,9 @@ inline string get_title(){
     if(pro_key) ret+=", pro_key";
     if(fast_forward) ret+=", fast_forward";
     return ret;
+}
+
+inline bool fileExists(const std::string& name) {
+    std::ifstream f(name.c_str());
+    return f.good();
 }

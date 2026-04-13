@@ -1,4 +1,6 @@
 #include "comm.h"
+#include <cstdint>
+#include <sys/types.h>
 
 /*
 ===================
@@ -19,6 +21,7 @@ NorFormat nor_read_format = NorFormat::PHYSICAL_ORDER;
 NorFormat nor_write_format = NorFormat::PHYSICAL_ORDER;
 
 bool enable_load_state=false;
+bool reset_after_load_state=false;
 bool save_flash_on_exit=false;
 bool save_state_on_exit=false;
 
@@ -59,6 +62,8 @@ bool enable_debug_dsp=false;
 bool enable_debug_timer=false;
 bool enable_debug_cks = false;
 
+int enable_key_debug_once=0;
+
 int debug_level = 0;
 
 bool enable_assert = false;
@@ -68,7 +73,7 @@ bool enable_assert = false;
 emulation parameter
 ===================
 */
-uint32_t SLICE_INTERVAL= 5;  //unit ms
+uint32_t SLICE_INTERVAL= 1;  //unit ms
 int power_save_interval=1200;
 uint32_t cpu_batch=64;
 
@@ -82,6 +87,10 @@ bool enable_emulate_cks = false;
 bool forced_erase_before_write = true;
 
 bool fast_forward=false;
+
+double speed_multiplier=1.0;
+double rtc_speed=1.0;
+double fast_forward_limit=0;
 /*
 ===================
 cycles related
@@ -141,11 +150,12 @@ double r_scale=rgb_base+0.02,g_scale=rgb_base+0.04,b_scale=rgb_base;
 misc
 ===================
 */
-bool shift_down =false;;
+bool shift_down =false;
+bool ctrl_down =false;
 int battery_level=11;
 bool patch_nc1020tw_nor=false;
 
-
+bool patch_table_experiment=false;
 
 WqxRom nc2k_rom;
 
@@ -252,4 +262,3 @@ int read_file_noexit(string name,vector<char> &v){
     fclose(f);
     return 0;
 }
-

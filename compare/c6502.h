@@ -3,27 +3,31 @@
 
 #pragma once
 #include "ibus6502.h"
+#include "state.h"
+extern nc2k_states_t nc2k_states;
 
 typedef bool boolean;
 typedef unsigned char byte;
 
 class C6502 {
 public:
-	int A;
-    int X;
-    int Y;
-    int P;
-    int SP;
-    int PC;
+
+
+	int &A= nc2k_states.A;
+    int &X= nc2k_states.X;
+    int &Y= nc2k_states.Y;
+    int &P= nc2k_states.P;
+    int &SP= nc2k_states.SP;
+    int &PC= nc2k_states.PC;
 
     IBus6502* bus;
 
-    boolean irqPending;
-    boolean nmiPending;
-    boolean nmiRequest;
-    int clk;
-    unsigned int lineclk;
-    long long total_cycles;
+    boolean &irqPending=nc2k_states.irqPending;
+    boolean &nmiPending=nc2k_states.nmiPending;
+    boolean &nmiRequest=nc2k_states.nmiRequest;
+    int &clk=nc2k_states.clk;
+    unsigned int &lineclk=nc2k_states.lineclk;
+    long long &total_cycles=nc2k_states.total_cycles;
 
 public:
 	C6502(IBus6502* bus);
@@ -43,7 +47,7 @@ public:
 private:
 	int getCodeW();
 	int readAddress(int address);
-	void XXX_xx();
+	void XXX_xx(int code);
 	void BRK_00();
 	void NOP_ea();
 	void BIT_24();

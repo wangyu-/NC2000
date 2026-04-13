@@ -70,7 +70,6 @@ void init_rom(){
 				rom_volume2[i + 128 ] = rom_buff + (0x8000 * (256 + i));
 				//rom_volume2[i  ]=rom_volume0[i  ];
 			}
-			extern uint8_t nor_buff[1024*1024];
 			//memcpy(rom_volume0[0x90]+0x4000, nor_buff +491520,0x1000);
 		}
 		else{//old code for 24m rom from ggv sim

@@ -5,47 +5,48 @@ extern "C" {
 #include "w65c02macro.h"
 }
 #include <stdio.h>
+#include "state.h"
 //regsrec regs;
 
-DWORD     autoboot          = 0;
-BOOL      restart           = 0;
+//DWORD     autoboot          = 0;
+//BOOL      restart           = 0;
 //WORD      iorange           = 0x0040;
+extern nc2k_states_t nc2k_states;
 
-BOOL      g_irq             = 0;    // FIXME: NO MORE REVERSE
-BOOL      g_nmi             = 0;    // FIXME: NO MORE REVERSE
-BOOL      g_stp             = 0;
-BOOL      g_wai             = 0;
-BOOL      g_wai_saved       = 0;
-
+BOOL      &g_irq             = nc2k_states.g_irq;    // FIXME: NO MORE REVERSE
+BOOL      &g_nmi             = nc2k_states.g_nmi;    // FIXME: NO MORE REVERSE
+BOOL      &g_stp             = nc2k_states.g_stp;
+BOOL      &g_wai             = nc2k_states.g_wai;
+BOOL      &g_wai_saved       = nc2k_states.g_wai_saved;
 // CPU Flags & status
 
-int mA;     // Accumulator                 8 bits
-int mX;     // X index register            8 bits
-int mY;     // Y index register            8 bits
-int mSP;        // Stack Pointer               8 bits
-int mOpcode;  // Instruction opcode          8 bits
-int mOperand; // Instructions operand         16 bits
-int mPC;        // Program Counter            16 bits
+int &mA=nc2k_states.mA;     // Accumulator                 8 bits
+int &mX=nc2k_states.mX;     // X index register            8 bits
+int &mY=nc2k_states.mY;     // Y index register            8 bits
+int &mSP=nc2k_states.mSP;        // Stack Pointer               8 bits
+int &mOpcode=nc2k_states.mOpcode;  // Instruction opcode          8 bits
+int &mOperand=nc2k_states.mOperand; // Instructions operand         16 bits
+int &mPC=nc2k_states.mPC;        // Program Counter            16 bits
 
-int mN;     // N flag for processor status register
-int mV;     // V flag for processor status register
-int mB;     // B flag for processor status register
-int mD;     // D flag for processor status register
-int mI;     // I flag for processor status register
-int mZ;     // Z flag for processor status register
-int mC;     // C flag for processor status register
-
-int mIRQActive;
-
+int &mN=nc2k_states.mN;     // N flag for processor status register
+int &mV=nc2k_states.mV;     // V flag for processor status register
+int &mB=nc2k_states.mB;     // B flag for processor status register
+int &mD=nc2k_states.mD;     // D flag for processor status register
+int &mI=nc2k_states.mI;     // I flag for processor status register
+int &mZ=nc2k_states.mZ;     // Z flag for processor status register
+int &mC=nc2k_states.mC;     // C flag for processor status register
+//int mIRQActive;
+/*
 #ifdef _LYNXDBG
 int mPcBreakpoints[MAX_CPU_BREAKPOINTS];
 int mDbgFlag;
 #endif
+*/
 //UBYTE *mRamPointer;
 
 // Associated lookup tables
 
-int mBCDTable[2][256];
+//int mBCDTable[2][256];
 
 
 //int PS();
@@ -70,12 +71,17 @@ void CpuInitialize()
     mI = TRUE;
     mZ = FALSE; // GGV
     mC = FALSE;
-    mIRQActive = FALSE;
+    //mIRQActive = FALSE;
 
     g_nmi = FALSE; // MERGE
     g_irq = FALSE; // MERGE
     g_wai = FALSE;
     g_wai_saved = FALSE;
+
+
+    if(true){
+        setPS(0x24); // originally in NekoDriverMem.cpp, moved here
+    }
 }
 
 //void SetRegs(C6502_REGS &regs)
@@ -124,6 +130,10 @@ void xILLEGAL(void)
     //char addr[1024];
     //sprintf(addr,"C65C02::Update() - Illegal opcode (%02x) at PC=$%04x.",mOpcode,mPC);
     //gError->Warning(addr);
+    uint8_t & Peek16Debug(uint16_t addr);
+    if(debug_level>=1 || enable_dyn_debug || enable_dyn_debug_next_n>0) {
+        printf("illegal opcode %02x at pc=$%04x, bs=%02x roabbs=%02x vol=%02x, but not know how to handle\n",mOpcode,mPC-1, Peek16Debug(0), Peek16Debug(0xa), Peek16Debug(0xd));
+    }
 }
 
 // Answers value of the Processor Status register

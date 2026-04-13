@@ -5,8 +5,7 @@
 
 extern nc2k_states_t nc2k_states;
 
-static SDL_AudioDeviceID beeper_deviceId;
-static SDL_AudioDeviceID dsp_deviceId;
+static SDL_AudioDeviceID g_audio_device = 0;
 static FILE *audio_dump_fp; //for dump data
 /*
 =============
@@ -21,12 +20,24 @@ struct BeeperSignal{
 static BeeperSignal last_beeper{0};
 static deque<signed short> sound_stream_beeper;
 /*buffer to SDL_QueueAudio */
-static vector<signed short> beeper_buffer; 
+//static vector<signed short> beeper_buffer; 
 
 /*filter out DC signal*/
-static double cuttmp=-8000;
-static double cutoff=2.0*3.141592654*40/DSP_AUDIO_HZ;
-
+double filter_beeper(double in){
+	static double cuttmp=-8000;
+	static double cutoff=2.0*3.141592654*40/BEEPER_AUDIO_HZ;
+	double val=in-cuttmp;
+	cuttmp+=cutoff*val;
+	return val;
+}
+/*
+double filter_dsp(double in){
+	static double cuttmp=0;
+	static double cutoff=2.0*3.141592654*40/DSP_AUDIO_HZ;
+	double val=in-cuttmp;
+	cuttmp+=cutoff*val;
+	return val;
+}*/
 /*
 ==============
 dsp
@@ -35,14 +46,17 @@ dsp
 
 Dsp dsp; //make it non-static for dsp_test
 
-static deque<signed short> sound_stream_dsp;
+static deque<signed short> sound_stream_dsp_wqx;
+static deque<signed short> sound_stream_dsp_host;
+/*
 static long long last_audio_queue_check_time=0;
 static long long last_audio_queue_increase_time=0;
 static int target_audio_queue_size_shrink_thres=2000;
 static int target_audio_queue_size=10000;
 static int target_audio_queue_size_min=5000;
 static int target_audio_queue_size_max=20000;
-static int min_audio_queue_size_observed=int_inf;
+static int min_audio_queue_size_observed=int_inf;*/
+
 
 
 // 改进的采样率转换：8000Hz -> 44100Hz
@@ -104,6 +118,7 @@ void manipulate_beeper(int a){
     for(int i=0;i<(samples_end-samples_start);i++){
         sound_stream_beeper.push_back(8000*last_beeper.value);  // 保持8000的音量级别
     }
+
     last_beeper.value=a;
 }
 
@@ -190,7 +205,7 @@ void post_cpu_run_sound_handling(){
 	}
 }
 
-
+/*
 void init_audio_dump_file(){
      audio_dump_fp=fopen("./audio1.dump","wb");
 	 assert(audio_dump_fp!=0);
@@ -200,32 +215,37 @@ void close_audio_dump_file(){
 }
 void write_audio_dump_file(unsigned char *p, int size){
     fwrite(p,size,1,audio_dump_fp);
+}*/
+
+const int dsp_busy_len_wqx = 5000; /* unit: samples */
+const int dsp_drop_len_wqx = 10000;
+const int dsp_drop_len_host = 10000;
+
+
+// Linear resampler state for DSP -> output
+static double g_dsp_phase = 0.0;  // in [0,1)
+static float  g_dsp_s0 = 0.0f;    // last DSP sample
+static float  g_dsp_s1 = 0.0f;    // next DSP sample (lookahead)
+
+static const double g_dsp_ratio = (double)DSP_AUDIO_HZ / (double)BEEPER_AUDIO_HZ;
+
+static inline Sint16 clamp_s16(int x) {
+    if (x > 32767) return 32767;
+    if (x < -32768) return -32768;
+    return (Sint16)x;
 }
 
-/*
-void callback(void* userdata, Uint8* stream, int len) {
-	short * snd = reinterpret_cast<short*>(stream);
-	printf("calling!!\n");
-	if (sound_stream.size()<len){
-		printf("oops!!\n");
-		for(int i=0;i<len;i++){
-			snd[i]=0;
-		}
-	}else{
-		for(int i=0;i<len;i++){
-				int value=sound_stream[0];
-				sound_stream.pop_front();
-				double val=value-cuttmp;
-				cuttmp+=cutoff*val;
-				value=val;
-				if(!sound_stream_dsp.empty()){
-					value+=sound_stream_dsp.front();
-					sound_stream_dsp.pop_front();
-					if(value>32767) value=32767;
-					if(value<-32768) value=-32768;
-				}
-				snd[i]=value;
-		}
+void dsp_call_back(unsigned char* p, int len) {
+	if (enable_debug_dsp) {
+        static int cnt = 0;
+        cnt++;
+        if (cnt % 1000 == 0) {
+            std::printf("dsp fifo_len_wqx=%d, fifo_len_host=%d\n", (int)sound_stream_dsp_wqx.size(), (int)sound_stream_dsp_host.size());
+        }
+        if(sound_stream_dsp_host.size() ==0) {
+            printf("audio queue drain!!! fifo_len_wqx=%d \n", (int)sound_stream_dsp_wqx.size());
+        }
+    }
 
 	}
 }*/
@@ -299,6 +319,29 @@ bool sound_busy(){
 	return false;
 }
 
+// Single audio mixing callback: pulls beeper (44100 Hz) and DSP (8 kHz), resamples DSP, mixes, clamps.
+static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
+    // We open the device as AUDIO_S16LSB mono
+    Sint16* out = (Sint16*)stream;
+    const int frames = len_bytes / (int)sizeof(Sint16);
+
+    // Clear output
+    SDL_memset(stream, 0, len_bytes);
+    static int last_beeper_sample=0;
+
+    for (int i = 0; i < frames; ++i) {
+        // 1) Beeper @ output rate (44100 Hz)
+        int beeper_sample = 0;
+		if(enable_beeper){
+			if (!sound_stream_beeper.empty()) {
+				beeper_sample = sound_stream_beeper.front();
+				sound_stream_beeper.pop_front();
+				last_beeper_sample=beeper_sample;
+			}else{
+				beeper_sample=last_beeper_sample;
+			}
+			beeper_sample=filter_beeper(beeper_sample);
+		}
 
 void init_audio(){
     dsp.callback=dsp_call_back;

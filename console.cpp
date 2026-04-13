@@ -3,16 +3,13 @@
 #include "SDL.h"
 #include "cmd.h"
 #include <SDL_keycode.h>
+#include "display.h"
 
 string promot=">";
 string console_input="";
 
-
 bool console_on=false;
 int cursor=0;
-
-extern uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
-
 
 const int FONT_START = 0;
 const int FONT_WIDTH = 8; //need to <=8

@@ -19,13 +19,14 @@ extern "C" {
 #define qDebug(...)
 
 #define TF_IRQFLAG 0x10
-extern unsigned short gThreadFlags;
-extern unsigned char * zpioregs;
-extern bool timer0run;
-extern bool timer1run_tmie;
-int gDeadlockCounter = 0;
 
 extern nc2k_states_t nc2k_states;
+
+static unsigned short &gThreadFlags=nc2k_states.gThreadFlags;
+static bool &timer0run= nc2k_states.timer0run;
+static bool &timer1run_tmie= nc2k_states.timer1run_tmie;
+static int gDeadlockCounter = 0;
+static unsigned char *zpioregs=nc2k_states.ram_io;
 
 static uint64_t& cycles = nc2k_states.cycles;
 //static bool& should_irq = nc1020_states.should_irq;
@@ -39,30 +40,7 @@ static uint64_t& nmi_cycles = nc2k_states.nmi_cycles;
 
 static bool& should_wake_up = nc2k_states.should_wake_up;
 
-
-double speed_multiplier=1.0;
-
-#if 0
-void reset_cpu_states(){
-	//nc1020_states.should_irq = false;
-	nc1020_states.cycles = 0;
-	/*
-	nc1020_states.cpu.reg_a = 0;
-	nc1020_states.cpu.reg_ps = 0x24;
-	nc1020_states.cpu.reg_x = 0;
-	nc1020_states.cpu.reg_y = 0;
-	nc1020_states.cpu.reg_sp = 0xFF;
-	nc1020_states.cpu.reg_pc = PeekW(RESET_VEC);*/
-	nc1020_states.timer0_cycles = CYCLES_TIMER0;
-	nc1020_states.timer1_cycles = CYCLES_TIMER1;
-	nc1020_states.nmi_cycles = 0;
-	nc1020_states.unknown_timer_cycles = CYCLES_UNKNOWN_TIMER;
-	CpuInitialize();
-	setPS(0x24);
-	CreateHotlinkMapping();
-}
-#endif
-void AdjustTime(){
+void AdjustTime(){ //legacy code, only used in old cpu loop
 	uint8_t* clock_buff = nc2k_states.clock_buff;
     if (++ clock_buff[0] >= 60) {
         clock_buff[0] = 0;
@@ -76,7 +54,7 @@ void AdjustTime(){
     }
 }
 
-bool IsCountDown(){
+bool IsCountDown(){//legacy code, only used in old cpu loop
 	uint8_t* clock_buff = nc2k_states.clock_buff;
 	uint8_t& clock_flags = nc2k_states.clock_flags;
     if (!(clock_buff[10] & 0x02) ||
@@ -106,23 +84,13 @@ void inject(){
 	memcpy(nc2k_states.ext_ram, inject_code.c_str(), inject_code.size());
 	ram_io[0x00]=0x80;
 	ram_io[0x0a]=0x80;
-	//Peek16(0xe3)=0x40;
-	//ram_io[0x0d]&=0x5d;
 	super_switch();
-	//Peek16(0x280)=0xFF;
-	//Peek16(0x281)=0xFF;
-	//Peek16(0x282)=0xFF;
-	//Peek16(0x283)=0xFF;
-	//Peek16(0xe3)=0x40;
-	//Peek16(0xe4)=0xb2;
-	//nc1020_states.ext_ram[0x17]=0x58;
 	cpu->PC=0x4018;
 }
 
 
-void CheckTimebaseAndSetIRQTBI()
+void CheckTimebaseAndSetIRQTBI()//legacy code, only used in old cpu loop
 {
-	//////////TODO: remove the or true
     if (zpioregs[io04_general_ctrl] & 0x0F) {
         gThreadFlags |= 0x10; // Add IRQ flag
         //irq = 0; // TODO: move to NMI check
@@ -130,7 +98,7 @@ void CheckTimebaseAndSetIRQTBI()
     }
 }
 
-void CheckTimebaseSetTimer0IntStatusAddIRQFlag()
+void CheckTimebaseSetTimer0IntStatusAddIRQFlag()//legacy code, only used in old cpu loop
 {
     if ( zpioregs[io04_general_ctrl] & 0x0F )
     {
@@ -140,7 +108,7 @@ void CheckTimebaseSetTimer0IntStatusAddIRQFlag()
     }
 }
 
-void EnableWatchDogFlag()
+void EnableWatchDogFlag()//legacy code, only used in old cpu loop
 {
     gThreadFlags |= 0x80;
 }
@@ -258,15 +226,10 @@ void cpu_run(){
 			injected=true;
 		}
 
-		//if(tick>=6012850) enable_debug_pc=true;
-		//if(injected && reg_pc==0x2000) enable_debug_pc=true;
-
 		if(injected && tick%1==0){
 			//printf("bs=%x roa_bbs=%x pc=%x  %x %x %x %x \n",ram_io[0x00], ram_io[0x0a], reg_pc,  Peek16(reg_pc), Peek16(reg_pc+1),Peek16(reg_pc+2),Peek16(reg_pc+3));
 			//getchar();
 		}
-
-		//printf("%d\n",cycles);
 
 		if(pc1000mode){
 			//using spdc1016freq is a hack for diff with wayback
@@ -387,24 +350,7 @@ void cpu_run(){
 
 }
 
-/*void init_cpu(){
-	if(cpu_version== CPU1) {
-		cpu=new CPUInterface();
-	} else if(cpu_version==CPU_EMUX) {
-		auto cpu_impl = new C6502(dummy_bus);
-		cpu = new CPUInterface(cpu_impl);
-	} else {
-		assert(false);
-	}
-	// now in resetStates()
-	//cpu->reset();
-}*/
 void cpu_run2(){
-	//assert(use_emux_cpu);
-	//assert(!use_emux_bus||use_legacy_cpu_loop);
-
-	//assert(cycles==cpu->getTotalCycles()/12);
-
 	string msg=get_message();
 	if(!msg.empty()){
 		handle_cmd(msg);
@@ -426,9 +372,8 @@ void cpu_run2(){
 		gThreadFlags &= 0xFFF7u; // remove 0x08 NMI Flag
 		// FIXME: NO MORE REVERSE
 		g_nmi = TRUE; // next CpuExecute will execute two instructions
-		cpu->NMI();
+		cpu->set_nmi_pending();
 		qDebug("ggv wanna NMI.");
-		//fprintf(stderr, "ggv wanna NMI.\n");
 		gDeadlockCounter--; // wrong behavior of wqxsim
 	} else if ((gThreadFlags & TF_IRQFLAG) != 0) {
 		gThreadFlags &= 0xFFEFu; // remove 0x10 IRQ Flag

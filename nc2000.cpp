@@ -18,6 +18,7 @@
 #include "sound.h"
 #include "compare/c6502.h"
 #include "console.h"
+#include "iv_uart.h"
 extern WqxRom nc2k_rom;
 
 nc2k_states_t nc2k_states;
@@ -25,51 +26,8 @@ BusWrapper *dummy_bus = nullptr;
 
 //static uint32_t& version = nc1020_states.version;
 
-static bool& slept = nc2k_states.slept;
-static bool& should_wake_up = nc2k_states.should_wake_up;
-
 static uint8_t* keypad_matrix = nc2k_states.keypad_matrix;
-//static uint32_t& lcd_addr = nc1020_states.lcd_addr;
 
-static bool& wake_up_pending = nc2k_states.pending_wake_up;
-static uint8_t& wake_up_key = nc2k_states.wake_up_flags;
-
-/*void ResetStates(){
-	//version = VERSION;
-	memset(&nc1020_states,0,sizeof(nc1020_states_t));
-	init_mem();
-	reset_cpu_states();
-	//cpu->reset();
-}*/
-
-/*
-void Reset() {
-	init_nor();
-	ResetStates();
-}*/
-
-#if 0
-void LoadStates(){
-	FILE* file = fopen(nc1020_rom.statesPath.c_str(), "rb");
-	if (file == NULL) {
-		return;
-	}
-	fread(&nc1020_states, 1, sizeof(nc1020_states), file);
-	fclose(file);
-	/*
-	if (version != VERSION) {
-		return;
-	}*/
-	super_switch();
-}
-
-void SaveStates(){
-	FILE* file = fopen(nc1020_rom.statesPath.c_str(), "wb");
-	fwrite(&nc1020_states, 1, sizeof(nc1020_states), file);
-	fflush(file);
-	fclose(file);
-}
-#endif
 
 void save_state(string file_name){
 	if(file_name.empty()) file_name=nc2k_rom.statesPath;
@@ -108,32 +66,14 @@ void load_state(){
 }
 
 void LoadNC2k(){
-	memset(&nc2k_states,0,sizeof(nc2k_states_t));
+	//memset(&nc2k_states,0,sizeof(nc2k_states_t));
 	dummy_bus= new BusWrapper();
 
-	init_io();
+	init_io(); //for old io implemet only
 	
 	void CreateHotlinkMapping();
 	CreateHotlinkMapping();
 
-	/*
-	if(cpu_loop_version==CPU_RUN1) {
-		init_cpu();
-	}
-	if(cpu_loop_version==CPU_RUN2) {
-		if(io_version==IO_V1) {
-			init_cpu();
-		}else if(io_version==IO_V2) {
-			init_cpu_new();
-		} else {
-			assert(false);
-		}
-	}
-	if(cpu_loop_version==CPU_RUN3) { 
-		init_cpu_new();
-	}*/
-
-	//rom_switcher();
 	init_nor();
 	if(pc1000mode||nc1020mode) {
 		init_rom();
@@ -144,9 +84,22 @@ void LoadNC2k(){
 	}
 
 	init_mem();
+
+	if(nc1020mode){
+		ram_io[0x0b]=0x01;
+	}
+
+	//reset_cpu_states();
+	initalize_illegal_op_tables();
+	init_cpu_new();
+
+	if(nc2000mode||nc3000mode){
+		//nc3000c-lee has it but seems like no need?
+		//ram_io[0x18]=0x20;
+	}
+
 	if(enable_load_state){
 		load_state();
-		prepare_soft_reset();
 		if(nc2000mode){
 			void sync_time_2000();
 			if(enable_auto_time_sync) sync_time_2000();
@@ -157,29 +110,21 @@ void LoadNC2k(){
 		}
 	}
 
-	if(nc1020mode){
-		ram_io[0x0b]=0x01;
-	}
+	super_switch();
 
-	//reset_cpu_states();
-	init_cpu_new();
-
-	if(nc2000mode||nc3000mode){
-		//nc3000c-lee has it but seems like no need?
-		//ram_io[0x18]=0x20;
+	if(enable_load_state&&reset_after_load_state){
+		void set_warm_reset_flag();
+		set_warm_reset_flag();
+		void warm_reset();
+		warm_reset();
 	}
-	//LoadStates();
 }
-/*
-void SaveNC1020(){
-	SaveNor();
-	//SaveStates();
-}*/
 
+static unsigned short &lcdbuffaddr = nc2k_states.lcdbuffaddr;
+static unsigned short &lcdbuffaddrmask = nc2k_states.lcdbuffaddrmask;
 bool is_grey_mode(){
 	if(console_on) return false;
-    extern unsigned short lcdbuffaddr;
-    extern unsigned short lcdbuffaddrmask;
+
 	unsigned short lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
 	//printf("lcdaddr=%x\n",lcd_addr);
 	//fflush(stdout);
@@ -188,8 +133,6 @@ bool is_grey_mode(){
 	return false;
 }
 bool CopyLcdBuffer(uint8_t* buffer){
-    extern unsigned short lcdbuffaddr;
-    extern unsigned short lcdbuffaddrmask;
     unsigned short lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
 	if (lcd_addr == 0) return false;
 
@@ -217,16 +160,19 @@ bool CopyLcdBuffer(uint8_t* buffer){
 	assert(false);
 }
 
-
 void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 	uint32_t new_cycles = time_slice * CYCLES_MS;
 
-	new_cycles= new_cycles * speed_multiplier;
+	if(!fast_forward) {
+		new_cycles= new_cycles * speed_multiplier;
+	}else if(fast_forward_limit==0){
+		new_cycles= new_cycles;
+	}else{
+		new_cycles= new_cycles * fast_forward_limit;
+	}
 
 	uint64_t target_cycles=nc2k_states.cycles +new_cycles;
 
-	//auto old=sound_stream.size();
-	//printf("<%u,%u, %lld>",cycles,end_cycles,SDL_GetTicks64());
 	while (nc2k_states.cycles < target_cycles) {
 		if(cpu_loop_version == CPU_RUN1){
 			cpu_run();
@@ -237,22 +183,92 @@ void RunTimeSlice(uint32_t time_slice, bool speed_up) {
 		}else{
 			assert(false);
 		}
+		post_cpu_run_sound_handling();
 	}
-
-	post_cpu_run_sound_handling();
-
-	//nc1020_states.previous_cycles+=end_cycles;
-	//nc1020_states.cycles -= end_cycles;
-	//nc1020_states.timer0_cycles -= end_cycles;
-	//nc1020_states.timer1_cycles -= end_cycles;
-
-
 }
-
 
 void save_flash(string file){
 	write_nand0_file(file);
 	write_nand_file(file);
 	SaveNor(file);
 	printf("flash saved to file!!\n");
+}
+
+void nc2k_state_warm_reset(){
+
+	uint8_t* ioReg=nc2k_states.ram_io;
+
+	const int simple_warm_reset=true;
+  if(simple_warm_reset){
+	ioReg[0x05] &=0x1f;  //reset cks
+	nc2k_states.speed_scaledown=1;
+  } else {
+    //0x00
+    ioReg[0x00]=0;
+
+    //0x01
+    nc2k_states.inner_interrupt_control&=0xfc; //TMBIE TMAIE clear
+    
+    //0x02
+    ////ioReg[0x02]=0;          //if reset both 0x02 and 0x03, on/off key will trigger cold reset
+    
+    //0x03
+    ////ioReg[0x03]=0;
+
+    //0x04
+    nc2k_states.w04_b03_TBC &=0xf0;
+    
+    //0x05
+    ioReg[0x05] &=0x1f;
+    ioReg[0x05] &=0xf7;
+    nc2k_states.lcdon=0;
+    nc2k_states.speed_scaledown=1;
+
+    //0x0a
+    ioReg[0x0a] &=0xe0;
+    
+    //0x0b
+    ioReg[0x0b]&=0xfd;
+    nc2k_states.lcden=0;
+
+    //0x0c
+    ioReg[0x0c]&=0xfc;
+    nc2k_states.w0c_b67_TMODESL =0;
+    nc2k_states.w0c_b45_TM0S =0;
+    nc2k_states.w0c_b23_TM1S = 0;
+    nc2k_states.w0c_b345_TMS = 0;
+
+    //0x0d
+    ioReg[0x0d]&=0xf8;
+
+    //0x14
+    ioReg[0x14]=0;
+
+    //0x19
+    ioReg[0x19]=0xef;
+
+    //0x1a
+    ioReg[0x1a]=0;
+
+    //0x1b
+    ioReg[0x1b]=0;
+
+    //0x1c
+    ioReg[0x1c]&=0xbf;
+
+    //0x1e
+    ioReg[0x1e]=0;
+  }
+
+    super_switch();
+}
+
+void nc2k_state_cold_reset(){
+    nc2k_state_warm_reset();
+    clear_iv();//if this is put into warm_reset, alarm wakeup will not work correcly
+
+    //memset(ram_io,0,sizeof(nc2k_states.ram_io));
+    //memset(ext_reg, 0, sizeof(nc2k_states.ext_reg));
+    nc2k_states.reset();
+    super_switch();
 }
