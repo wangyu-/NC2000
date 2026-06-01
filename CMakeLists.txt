@@ -3,6 +3,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_FLAGS "-O2 -g3 -fsanitize=address -I/opt/homebrew/include")
 set(CMAKE_CXX_FLAGS "-O3 -g3 -pthread -DHANDYPSP -Wno-deprecated-declarations")
+#set(CMAKE_CXX_FLAGS "-O3 -g3 -pthread -DHANDYPSP -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field")
 #set(CMAKE_CXX_FLAGS "-O2 -g3 -pthread -DHANDYPSP -fsanitize=address,undefined -fno-omit-frame-pointer -Wno-deprecated-declarations")
 
 find_package(SDL2 REQUIRED)

@@ -125,8 +125,8 @@ struct nc2k_states_t{
 	long long total_cycles; //used internally in c6502 cpu only
 	//c6502 cpu states end
 
-	uint64_t cycles;
-	uint64_t last_cycles;
+	u64_t cycles;
+	u64_t last_cycles;
 
 	uint8_t SAVE_STATE_END;
 
@@ -151,11 +151,11 @@ below are all legacy fields, only used in old cpu_loop or io
 
 	bool timer0_toggle;
 
-	uint64_t unknown_timer_cycles;
-	uint64_t timer0_cycles;
-	uint64_t timer1_cycles;
-	uint64_t timebase_cycles;
-	uint64_t nmi_cycles;
+	u64_t unknown_timer_cycles;
+	u64_t timer0_cycles;
+	u64_t timer1_cycles;
+	u64_t timebase_cycles;
+	u64_t nmi_cycles;
 	uint8_t keypad_matrix[8];
 
 	nc2k_states_t(){

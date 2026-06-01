@@ -28,15 +28,15 @@ static bool &timer1run_tmie= nc2k_states.timer1run_tmie;
 static int gDeadlockCounter = 0;
 static unsigned char *zpioregs=nc2k_states.ram_io;
 
-static uint64_t& cycles = nc2k_states.cycles;
+static u64_t& cycles = nc2k_states.cycles;
 //static bool& should_irq = nc1020_states.should_irq;
 static bool& timer0_toggle = nc2k_states.timer0_toggle;
-static uint64_t& unknown_timer_cycles = nc2k_states.unknown_timer_cycles;
-static uint64_t& timer0_cycles = nc2k_states.timer0_cycles;
-static uint64_t& timer1_cycles = nc2k_states.timer1_cycles;
-static uint64_t& timebase_cycles = nc2k_states.timebase_cycles;
+static u64_t& unknown_timer_cycles = nc2k_states.unknown_timer_cycles;
+static u64_t& timer0_cycles = nc2k_states.timer0_cycles;
+static u64_t& timer1_cycles = nc2k_states.timer1_cycles;
+static u64_t& timebase_cycles = nc2k_states.timebase_cycles;
 
-static uint64_t& nmi_cycles = nc2k_states.nmi_cycles;
+static u64_t& nmi_cycles = nc2k_states.nmi_cycles;
 
 static bool& should_wake_up = nc2k_states.should_wake_up;
 

@@ -291,7 +291,7 @@ void __iocallconv Write23Unknow( BYTE write, BYTE value )
 //////////////////////////////////////////////////////////////////////////
 // Keypad registers
 //////////////////////////////////////////////////////////////////////////
-unsigned /*char*/ keypadmatrix[8][8] = {0,};
+unsigned /*char*/ keypadmatrix[8][8] = {};
 void UpdateKeypadRegisters()
 {
     const bool use_pull_high_emulation = true;

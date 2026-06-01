@@ -62,14 +62,14 @@ void main_loop() {
   bool loop = true;
   bool power_save= false;
 
-  uint64_t start_tick = SDL_GetTicks64();
-  uint64_t expected_tick = 0;
+  u64_t start_tick = SDL_GetTicks64();
+  u64_t expected_tick = 0;
 
-  uint64_t last_key_pressed_tick = 0;
+  u64_t last_key_pressed_tick = 0;
 
 
-  uint64_t last_time_rtc=0;
-  uint64_t current_time_rtc=0;
+  u64_t last_time_rtc=0;
+  u64_t current_time_rtc=0;
 
 
   while (loop) {
@@ -97,7 +97,7 @@ void main_loop() {
       SDL_Delay(200);
     }
     if(! power_save){
-      RunTimeSlice(SLICE_INTERVAL, false);
+      RunTimeSlice(SLICE_INTERVAL);
     }
 
     SDL_Event event;
@@ -138,7 +138,7 @@ void main_loop() {
     if(!power_save){
       Render(expected_tick);
     }
-    uint64_t current_time = SDL_GetTicks64();
+    u64_t current_time = SDL_GetTicks64();
 
     if (key_pressed) {
       last_key_pressed_tick = current_time;
@@ -168,7 +168,7 @@ void main_loop() {
     }
 
     expected_tick+=SLICE_INTERVAL;
-    uint64_t actual_tick= current_time - start_tick;
+    u64_t actual_tick= current_time - start_tick;
 
     if(fast_forward && !fast_forward_limit) {
         expected_tick =actual_tick;

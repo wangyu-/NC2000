@@ -147,7 +147,7 @@ void SetKey(uint8_t key_id, bool down_or_up){
 
 void handle_key(signed int sym, bool key_down){
         if(enable_debug_key_shoot){
-          printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
+          printf("event <%d,%d; %llu>\n", sym,key_down,(u64_t)SDL_GetTicks64()%1000);
         }
         uint8_t value=map_key(sym);
         if(value!=0xff){

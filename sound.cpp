@@ -17,7 +17,7 @@ struct BeeperSignal{
     int value;
 };
 
-static BeeperSignal last_beeper{0};
+static BeeperSignal last_beeper{};
 static deque<signed short> sound_stream_beeper;
 /*buffer to SDL_QueueAudio */
 //static vector<signed short> beeper_buffer; 

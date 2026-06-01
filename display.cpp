@@ -47,9 +47,9 @@ inline void handle_pixel(int u,int v,const unsigned char * color_arr[], int idx)
     }
 }
 int render_cnt=0;
-uint64_t last_inner_render_tick=0;
-uint64_t last_outer_render_tick=0;
-void Render(uint64_t tick) {
+u64_t last_inner_render_tick=0;
+u64_t last_outer_render_tick=0;
+void Render(u64_t tick) {
   if(tick/LCD_INNER_REFRESH_INTERVAL == last_inner_render_tick/LCD_INNER_REFRESH_INTERVAL){
     return; //not time to render
   }

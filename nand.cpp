@@ -10,7 +10,7 @@ extern nc2k_states_t nc2k_states;
 static uint8_t* ram_buff = nc2k_states.ram;
 static uint8_t* ram_io = nc2k_states.ram_io;
 
-static uint64_t last_tick=0;
+static u64_t last_tick=0;
 static deque<uint8_t> nand_cmd;
 static deque<uint8_t> nand_addr;
 static deque<uint8_t> nand_data;

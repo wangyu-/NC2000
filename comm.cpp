@@ -39,7 +39,7 @@ debug related
 */
 
 string inject_code;
-uint64_t tick=0;  //tick is mostly for debug
+u64_t tick=0;  //tick is mostly for debug
 
 bool enable_dyn_debug=false;
 int enable_dyn_debug_next_n=0;

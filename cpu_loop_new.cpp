@@ -15,12 +15,12 @@
 
 
 extern nc2k_states_t nc2k_states;
-static uint64_t& cycles = nc2k_states.cycles;
-static uint64_t& last_cycles = nc2k_states.last_cycles;
+static u64_t& cycles = nc2k_states.cycles;
+static u64_t& last_cycles = nc2k_states.last_cycles;
 static uint8_t * rtc_reg=nc2k_states.ext_reg;
 static uint8_t * ext_reg=nc2k_states.ext_reg;
 //static uint8_t& interr_flag = nc2k_states.interr_flag;
-struct BusPC1000 *bus_pc1000=0;
+class BusPC1000 *bus_pc1000=0;
 extern IBus6502 *dummy_bus;
 
 void init_cpu_new(){
@@ -288,7 +288,7 @@ void cpu_run3(){
 	if(nc1020mode){
 		if(!nc1020tw_mode){
 			static bool time_adjusted_phase2=0;
-			static uint64_t time_adjusted_cycle=0;
+			static u64_t time_adjusted_cycle=0;
 			if(!time_adjusted && Peek16(0x472)==0x79 /*&&rtc_reg[0]==1*/){
 				time_adjusted=1;
 				time_adjusted_cycle=cycles;

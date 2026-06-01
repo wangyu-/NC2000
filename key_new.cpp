@@ -351,7 +351,7 @@ void handle_key_wayback(signed int sym, bool key_down){
             return;
         }
         /*if(enable_debug_key_shoot){
-          printf("event <%d,%d; %llu>\n", sym,key_down,SDL_GetTicks64()%1000);
+          printf("event <%d,%d; %llu>\n", sym,key_down,(u64_t)SDL_GetTicks64()%1000);
         }*/
         auto value=map_key_wayback(sym);
         if(nc1020mode && sym==SDLK_F12 ){

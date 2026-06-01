@@ -161,18 +161,18 @@ bool CopyLcdBuffer(uint8_t* buffer){
 	assert(false);
 }
 
-void RunTimeSlice(uint32_t time_slice, bool speed_up) {
+void RunTimeSlice(uint32_t time_slice) {
 	uint32_t new_cycles = time_slice * CYCLES_MS;
 
 	if(!fast_forward) {
 		new_cycles= new_cycles * speed_multiplier;
 	}else if(fast_forward_limit==0){
-		new_cycles= new_cycles;
+		new_cycles= new_cycles*1;
 	}else{
 		new_cycles= new_cycles * fast_forward_limit;
 	}
 
-	uint64_t target_cycles=nc2k_states.cycles +new_cycles;
+	u64_t target_cycles=nc2k_states.cycles +new_cycles;
 
 	while (nc2k_states.cycles < target_cycles) {
 		if(cpu_loop_version == CPU_RUN1){

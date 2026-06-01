@@ -27,8 +27,8 @@ TStripeMiscInfo getStripeMiscInfo(json::jobject& json);
 void quickdump(unsigned int addr, const unsigned char *data, unsigned int amount);
 
 MyLCDView::MyLCDView(const char* jsonpath)
-    : fPixel{0,}
-    , fLCDTexture(0)
+    : fLCDTexture(0)
+    , fPixel{0,}
 {
     initLCDStripe(jsonpath);
 }
@@ -57,10 +57,8 @@ uint32_t getpixel(SDL_Surface *surface, int x, int y)
             break;
 
         case 3:
-        if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return p[0] << 16 | p[1] << 8 | p[2];
-        else
-            return p[0] | p[1] << 8 | p[2] << 16;
+            if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {return p[0] << 16 | p[1] << 8 | p[2];}
+            else {return p[0] | p[1] << 8 | p[2] << 16;}
             break;
 
         case 4:

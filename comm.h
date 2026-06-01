@@ -23,6 +23,12 @@ using std::vector;
 
 #define IO_API
 
+typedef unsigned long long u64_t;  // this works on most platform,avoid using the PRId64
+typedef long long i64_t;
+typedef unsigned int u32_t;
+typedef int i32_t;
+typedef unsigned short u16_t;
+typedef short i16_t;
 /*
 ===================
 common types
@@ -102,7 +108,7 @@ debug related
 */
 
 extern string inject_code;
-extern uint64_t tick;
+extern u64_t tick;
 
 extern bool enable_dyn_debug;
 extern int enable_dyn_debug_next_n;
