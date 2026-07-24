@@ -306,6 +306,11 @@ inline string get_title(){
 }
 
 inline bool fileExists(const std::string& name) {
-    std::ifstream f(name.c_str());
-    return f.good();
+    FILE *file;
+    if ((file = fopen(name.c_str(), "r")))
+    {
+        fclose(file);
+        return 1;
+    }
+    return 0;
 }
