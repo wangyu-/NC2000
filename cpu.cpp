@@ -58,14 +58,14 @@ int CPUInterface::execute(int max_cycles){
         cycle+=CpuExecuteNMI();
 		mI = true;     //todo: is this needed?
     }
+	if (g_irq && !mI){
+		g_irq = false;
+		if(enable_dyn_debug_next_n) printf("execute irq!!!!!!!\n");
+		cycle+=CpuExecuteIRQ();
+		//cycle+=1;
+	}
 
     do{
-		if (g_irq && !mI){
-			g_irq = false;
-			if(enable_dyn_debug_next_n) printf("execute irq!!!!!!!\n");
-			cycle+=CpuExecuteIRQ();
-			//cycle+=1;
-		}
 		void debug_pc();
 		debug_pc();
 		if(g_wai) {cycle=max_cycles;if(cycle<=0) cycle=jam_cycles;break;}
