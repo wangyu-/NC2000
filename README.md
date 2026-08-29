@@ -218,7 +218,9 @@ Ftplink。 作者：Lee。
 
 **早期版本基于：**
 
-[nc1020模拟器SDL版](https://github.com/Wang-Yue/NC1020) 作者：Wang-Yue。 (貌似此项目源头也是Sim800)
+[nc1020模拟器SDL版](https://github.com/Wang-Yue/NC1020) 作者：Wang-Yue。
+
+nc1020模拟器C++源码（`nc1020.cpp`, `nc1020.h`），在多个项目中出现，原作者未知。
 
 ### 感谢
 
