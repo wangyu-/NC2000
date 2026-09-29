@@ -62,13 +62,13 @@ void init_cpu_new(){
 }
 
 bool trigger_every_x_ms(int x){
-	uint32_t target_cycles=  CYCLES_SECOND*x/1000;
-	return (cycles/target_cycles > last_cycles/target_cycles);
+	uint32_t trigger_cycles=  CYCLES_SECOND*x/1000;
+	return (cycles/trigger_cycles > last_cycles/trigger_cycles);
 }
 
 int trigger_x_times_per_s(int x){
-	uint32_t target_cycles=CYCLES_SECOND/x;
-	return cycles/target_cycles - last_cycles/target_cycles;
+	uint32_t trigger_cycles=CYCLES_SECOND/x;
+	return cycles/trigger_cycles - last_cycles/trigger_cycles;
 }
 
 void setTime1000emux() {
@@ -339,23 +339,23 @@ void cpu_run3(){
 		}
 	}
 
-	uint32_t target_cycles=cpu_batch;
+	uint32_t expect_cycles=cpu_batch;
 	uint32_t CycleDelta;
 	if(is_clk_off()){
-		CycleDelta=target_cycles;
+		CycleDelta=expect_cycles;
 		last_cycles=cycles;
 		cycles+=CycleDelta;
 	}
 	else if(enable_emulate_cks){
 		//TODO FIX ME
 		//todo study datasheet of how speed affect timers
-		target_cycles/=speed_scaledown;
-		CycleDelta=cpu->execute(target_cycles);
+		expect_cycles/=speed_scaledown;
+		CycleDelta=cpu->execute(expect_cycles);
 		last_cycles=cycles;
 		cycles+=CycleDelta*speed_scaledown;
 	}
 	else{
-		CycleDelta=cpu->execute(target_cycles);
+		CycleDelta=cpu->execute(expect_cycles);
 		last_cycles=cycles;
 		cycles+=CycleDelta;
 	}
