@@ -127,8 +127,7 @@ struct nc2k_states_t{
 
 	u64_t cycles;
 	u64_t last_cycles;
-
-	int gDeadlockCounter; //only used in leacy cpu loop
+	u64_t target_cycles;
 
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
@@ -166,6 +165,8 @@ below are all legacy fields, only used in old cpu_loop or io
 	u64_t timebase_cycles;
 	u64_t nmi_cycles;
 	uint8_t keypad_matrix[8];
+
+	int gDeadlockCounter; //only used in leacy cpu loop
 
 	nc2k_states_t(){
 		init();

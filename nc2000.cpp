@@ -58,6 +58,14 @@ void load_state(){
 	fclose(file);
 	printf("loaded states from %s, ret=%d\n", nc2k_rom.statesPath.c_str(),ret);
 	//super_switch();
+
+	if(nc2k_states.target_cycles==0){
+		//if target_cycles is not set, initialize it to the current cycles
+		// this keeps save format backward compatible
+		// this code can be dropped in future for simplicity
+		printf("using current cycles as target_cycles!\n");
+		nc2k_states.target_cycles = nc2k_states.cycles;
+	}
 }
 
 void LoadNC2k(){
@@ -179,9 +187,9 @@ void RunTimeSlice(uint32_t time_slice) {
 		new_cycles= new_cycles * fast_forward_limit;
 	}
 
-	u64_t target_cycles=nc2k_states.cycles +new_cycles;
+	nc2k_states.target_cycles += new_cycles;
 
-	while (nc2k_states.cycles < target_cycles && !reload_pending) {
+	while (nc2k_states.cycles < nc2k_states.target_cycles && !reload_pending) {
 		if(cpu_loop_version == CPU_RUN1){
 			cpu_run();
 		}else if (cpu_loop_version == CPU_RUN2){
