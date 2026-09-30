@@ -160,6 +160,8 @@ bool patch_table_experiment=false;
 
 bool reload_pending=false;
 
+bool spin_wait=false;
+
 WqxRom nc2k_rom;
 
 void init_parameters(){
@@ -264,4 +266,11 @@ int read_file_noexit(string name,vector<char> &v){
     fread(&v[0], fsize, 1, f);
     fclose(f);
     return 0;
+}
+
+void spin_iterations(int iterations){
+    volatile int dummy = 0;
+    for (int i = 0; i < iterations; ++i) {
+        dummy += i;
+    }
 }

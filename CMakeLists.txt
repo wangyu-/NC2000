@@ -6,6 +6,8 @@ set(CMAKE_CXX_FLAGS "-O3 -g3 -pthread -DHANDYPSP -Wno-deprecated-declarations")
 #set(CMAKE_CXX_FLAGS "-O3 -g3 -pthread -DHANDYPSP -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field")
 #set(CMAKE_CXX_FLAGS "-O2 -g3 -pthread -DHANDYPSP -fsanitize=address,undefined -fno-omit-frame-pointer -Wno-deprecated-declarations")
 
+set(CMAKE_C_FLAGS ${CMAKE_CXX_FLAGS})
+
 find_package(SDL2 REQUIRED)
 message(STATUS "sdl includes: ${SDL2_INCLUDE_DIRS}")
 message(STATUS "sdl libs:   ${SDL2_LIBRARIES}")

@@ -70,6 +70,17 @@ long long get_current_time_milliseconds() {
     return (long long)spec.tv_sec * 1000 + (long long)spec.tv_nsec / 1000000; 
 }
 
+void delay_milliseconds(int ms){
+  if(spin_wait){
+    u64_t start_tick = SDL_GetTicks64();
+    while(SDL_GetTicks64() < start_tick + ms) {
+        spin_iterations(100*1000);
+    }
+  }
+  else {
+    SDL_Delay(ms);
+  }
+}
 void main_loop() {
   bool loop = true;
   bool power_save= false;
@@ -106,7 +117,7 @@ void main_loop() {
     }
 
     if(power_save) {
-      SDL_Delay(200);
+      delay_milliseconds(200);
     }
     if(! power_save){
       RunTimeSlice(SLICE_INTERVAL);
@@ -202,8 +213,8 @@ void main_loop() {
     }
 
     if(actual_tick < expected_tick) {
-      SDL_Delay(expected_tick-actual_tick);
-      long long exceed=current_time -start_tick  -expected_tick;
+      delay_milliseconds(expected_tick-actual_tick);
+      long long exceed=SDL_GetTicks64() -start_tick  -expected_tick;
       if(exceed>10){
         if(debug_level>=1) printf("oops sleep too much %lld\n",exceed);
       }

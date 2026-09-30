@@ -134,6 +134,7 @@ void process_args(int argc, char *argv[])
 		{"uart-passthrough", required_argument, 0, 1},
 		{"uart-advance", no_argument, 0, 1},
 		{"mi-clear-delay", required_argument, 0, 1},
+		{"spin-wait", no_argument, 0, 1},
 		{NULL, 0, 0, 0}
 	};
 	string uart_dev_name;
@@ -386,6 +387,9 @@ void process_args(int argc, char *argv[])
 			}
 			else if (strcmp(long_options[option_index].name,"mi-clear-delay")==0){
 				mi_clear_delay_value = stoi(optarg);
+			}
+			else if (strcmp(long_options[option_index].name,"spin-wait")==0){
+				spin_wait = true;
 			}
 			else
 			{

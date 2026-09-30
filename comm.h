@@ -269,6 +269,8 @@ extern bool patch_nc1020tw_nor;
 extern bool patch_table_experiment;
 
 extern bool reload_pending;
+
+extern bool spin_wait;
 /*
 ===================
 common functions
@@ -327,3 +329,5 @@ inline bool fileExists(const std::string& name) {
     }
     return 0;
 }
+
+void spin_iterations(int iterations);
