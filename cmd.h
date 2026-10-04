@@ -282,10 +282,55 @@ WRITE:
    JMP WRITE
 PREEND:
      INT $0517
+     INT $051C
 END: INT $0528
      JMP END  
 */
 
+// nc3000 get
+/*
+INT:.MACRO INT_PARAM
+    .DB $00
+    .DW INT_PARAM
+    .ENDM
+ .ORG $3000
+OPEN:   
+   LDA #$80 ; open mode
+   STA $08c9
+   LDA #$EF ; not really needed??
+   STA $08ca 
+   STA $08cb 
+   INT $0515
+READ:
+   LDA #$00
+   STA $3f6 ;prevent auto shutdown
+   LDA #$00
+   STA $e0
+   LDA #$32
+   STA $e1
+   LDA #$1   ; read 1 byte
+   STA $08c6
+   LDA #$0   ; read 1 byte (high value 0)
+   STA $08c7  
+   STA $08c8
+   INT $0516  ; read
+   LDA $08c6   ; actual read byte here
+   BEQ PREEND  ;
+   LDA #$1
+   STA $3FFF
+   LDA $3200
+   STA $3FFF
+   CLV
+   BVC READ
+PREEND:
+    LDA #$0
+    STA $3FFF  ;indicate dummy close
+    INT $0517  ;close file
+END: 
+    INT $0528  ;open file manager
+    CLV
+    BVC END
+*/
 
 
 /*=======
