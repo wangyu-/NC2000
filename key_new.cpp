@@ -278,8 +278,9 @@ void copy_items_deref(vector<TKeyItem*> &src, vector<TKeyItem> &dst){
   for(auto x: src) if(x) dst.push_back(*x);
 }
 void init_keyitems(){
-    sdl_to_item.clear();
-    vector<TKeyItem> current_items;
+  sdl_to_item.clear();
+  vector<TKeyItem> current_items;
+  if(nc2000mode || nc1020mode || nc3000mode){ // their keyboard scans are similar
     if(!pro_key){
       copy_items_deref(items, current_items);
     }else{
@@ -298,17 +299,22 @@ void init_keyitems(){
     if(nc3000mode) {
       copy_items_deref(items3000, current_items);
     }
-    if(pc1000mode){
-      copy_items_deref(items1000, current_items);
+  }
+
+  if(pc1000mode){ //pc1000's keyboard scan shares no common part with nc2000/nc1020/nc3000
+    if(pro_key){
+      printf("WARN: pro_key is not supported for pc1000 mode\n");
     }
-    for (int i=0; i<current_items.size(); i++) {
-        assert(current_items[i].code_y>=0);
-        assert(current_items[i].code_x>=0);
-        for(auto e: current_items[i].sdl_keys){
-            //sdl_to_item[e]=item[y][x]->code;
-            sdl_to_item[e]=pair<int,int>(current_items[i].code_y, current_items[i].code_x);
-        }
-    }
+    copy_items_deref(items1000, current_items);
+  }
+
+  for (int i=0; i<current_items.size(); i++) {
+      assert(current_items[i].code_y>=0);
+      assert(current_items[i].code_x>=0);
+      for(auto e: current_items[i].sdl_keys){
+          sdl_to_item[e]=pair<int,int>(current_items[i].code_y, current_items[i].code_x);
+      }
+  }
 }
 
 pair<int,int> map_key_wayback(int32_t sym){
