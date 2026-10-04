@@ -675,7 +675,7 @@ void handle_cmd(string str){
 	}
 
 	if(cmds[0]=="sync_time") {
-		if(nc2000mode){
+		if(nc2000mode||nc3000mode){
 			extern void sync_time_2000();
 			sync_time_2000();
 		}

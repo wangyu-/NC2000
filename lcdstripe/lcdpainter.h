@@ -22,6 +22,7 @@ private:
     int fTextureWidth, fTextureHeight;
     int fLCDWidth, fLCDHeight;
     unsigned char fPixel[160*80]; // TODO: bit or gray
+    unsigned char fPixelNC3000[80]={}; // NC3000 compatibility layer
 public:
     void loadStripeTexture(const char * texpath, SDL_Renderer* render);
     void setPixel(int x, int y, unsigned char);

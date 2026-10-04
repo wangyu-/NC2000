@@ -306,6 +306,12 @@ void cpu_run3(){
 			}
 		}
 	}
+	if(nc3000mode){
+		if(!time_adjusted && Peek16(0x3fa)==0x7b &&rtc_reg[0]==1){
+			time_adjusted=1;
+			if(enable_auto_time_sync) sync_time_2000();
+		}	
+	}
 	if(nc1020mode){
 		if(!nc1020tw_mode){
 			bool & time_adjusted_phase2=nc2k_states.nc1020_time_adjusted_phase2;

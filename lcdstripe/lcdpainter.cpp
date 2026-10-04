@@ -302,9 +302,81 @@ void MyLCDView::initLCDStripe(const char* jsonpath)
     fLCDPixelPoint.y = Pixel.top;
 }
 
+static int nc3000_remap(int y){
+        switch(y){
+            /* right side 1st-7th, compatible with nc2000*/
+            case 4:  //同反义
+            case 12:
+            case 20: //相关字
+            case 28:
+            case 36: //辨析
+            case 44:
+            case 52: //例句
+                return y;
+            
+            /* right side 8th-10th */
+            case 59:
+                return 60;  //8th icon at right side
+            case 68:
+                return 68;  //9th icon at right side
+            case 75:
+                return 74;  //10th icon at right side
+            
+            /*arrows*/
+            case 71: //right arrow
+                return 70;
+            case 74: //left arrow
+                return 63;
+            case 64: //up arrow
+                return 79;
+            case 77: //down arrow
+                return 66;
+
+            /*left upper icons*/
+            case 3:  //num
+                return 39;
+            case 11: //eng
+                return 40;
+            case 19: //caps
+                return 41;
+            case 27: //shift
+                return 42;
+
+            /*left middle icons*/
+            case 37: //pronunciation, 发音可用标志
+                return 50;
+            case 43: //alarm, 闹铃开启标志
+                return 47;
+            case 54: //整点铃声开启（但是nc3000官方固件貌似忘了实现它）
+                return 51;
+
+            /*battery, nc2000面板上没有对应图标*/
+            case 57: return -1;   //battery shell
+            case 58: return -1;   //battery bar1
+            case 60: return -1;   //battery bar3
+            case 61: return -1;   //battery bar4
+            case 62: return -1;   //battery bar2
+            
+            default:
+                return -1;
+        }
+}
+
 void MyLCDView::setPixel(int x, int y, unsigned char value)
 {
+    if(nc3000mode && enable_lcd_debug){//log unknow lcd changes
+        if(fPixel[y * 160 + x] != value && nc3000_remap(y) == -1){
+            printf("Pixel value at %d changed from %d to %d\n", y, fPixel[y * 160 + x], value);
+        }
+    }
+
     fPixel[y * 160 + x] = value;
+    if(nc3000mode){
+        int remapped_y = nc3000_remap(y);
+        if(remapped_y != -1){
+            fPixelNC3000[remapped_y] = value;
+        }
+    }
 }
 
 void MyLCDView::paint(SDL_Renderer* render, bool lcdon, bool draw_stripe)
@@ -323,6 +395,8 @@ void MyLCDView::paint(SDL_Renderer* render, bool lcdon, bool draw_stripe)
 
     for (int y = 79; y >= 0; y--) {
         unsigned char pixel = fPixel[160 * y];
+        if(nc3000mode) pixel = fPixelNC3000[y];
+
         int alpha =0;
         if(pixel==3) {
             alpha = 255;

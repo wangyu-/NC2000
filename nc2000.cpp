@@ -107,7 +107,7 @@ void LoadNC2k(){
 
 	if(enable_load_state){
 		load_state();
-		if(nc2000mode){
+		if(nc2000mode||nc3000mode){
 			void sync_time_2000();
 			if(enable_auto_time_sync) sync_time_2000();
 		}
