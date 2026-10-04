@@ -75,6 +75,10 @@ int &timer1ticks = nc2k_states.timer1ticks;
 
 BYTE &w01_int_enable = nc2k_states.w01_int_enable;
 
+/* NC3000: port 6 drives the other 4 keyboard column lines */
+BYTE &w1e_port6_OL = nc2k_states.w1e_port6_OL;  //added for nc3000
+BYTE &r1e_port6_ID = nc2k_states.r1e_port6_ID;  //added for nc3000
+
 BYTE __iocallconv Read05StartTimer0( BYTE ) // 05
 {
     // SPDC1016
@@ -292,8 +296,171 @@ void __iocallconv Write23Unknow( BYTE write, BYTE value )
 // Keypad registers
 //////////////////////////////////////////////////////////////////////////
 unsigned /*char*/ keypadmatrix[8][8] = {};
+
+/* (AI written)
+ * NC3000 物理引脚导通键盘模型 (SPDC1064 SoC):
+ *
+ * 模拟 24 个 I/O 引脚之间的无源双向开闭开关网络：
+ * - 行线 (y = 0..7): 连接至 Port 1 (P10..P17)，方向由 IO $15 控制 (1=输出, 0=输入)。
+ * - 列线 (x = 0..7):
+ *     x = 0:    Port 0 bit 0 (P00) - 顶部热键 (网络, PDA, 计算, 时间, 开/关, 英汉, AHD, 剑桥)
+ *     x = 1:    Port 6 bit 1 (P61) - 方向键与导航 (O, L, ↑, ↓, P, ⇟, 输入, →)
+ *               (同时响应 Port 0 bit 1，兼容 NC2000 移植游戏)
+ *     x = 2:    Port 6 bit 0 (P60) - 功能与摇杆键 (F1..F4, 跟读, 发音暂停, 发音, 复读)
+ *               (同时响应 Port 0 bit 2，兼容 NC2000 移植游戏)
+ *     x = 3:    Port 6 bit 2/3 (y!=3 为 P62，y==3 为 P63)
+ *     x = 4:    Port 0 bit 4 (P04) - QWERTY 字母排 (Q, W, E, R, T, Y, U, I)
+ *     x = 5:    Port 0 bit 5 (P05) - ASDF 字母排 (A, S, D, F, G, H, J, K)
+ *     x = 6:    Port 0 bit 6 (P06) - ZXCV 字母排 (Z, X, C, V, B, N, M, ⇞)
+ *     x = 7:    Port 0 bit 7 (P07) - 底部控制排 (←, 求助, 中英数, 跳出, 符号, ., 空格, 输入法)
+ * - 机身侧面键:
+ *     录音键 (RECORD, $22): P62 <-> P00
+ *     红外接收 (IRDA, $21): P63 <-> P00
+ *
+ * 物理传导规律:
+ *   若 Pin A 为输出且 Pin B 为输入 -> Pin B 接收 Pin A 的输出电平。
+ *   若 Pin B 为输出且 Pin A 为输入 -> Pin A 接收 Pin B 的输出电平。
+ *   若两端同为输入 -> 无驱动信号，均维持下拉默认电平 (0)。
+ *   支持 24 个引脚任意混杂的输入/输出配置，支持高电平有效与低电平有效扫描。
+ */
+static void UpdateKeypadRegistersNC3000_Physical() //AI written
+{
+    // 1. Determine Port 1 direction: 1 = output, 0 = input
+    uint8_t p1_dir = w15_port1_DIR107;
+
+    // 2. Determine Port 0 direction from IO $0F
+    uint8_t p0_dir = 0;
+    if (rw0f_b4_DIR00)  p0_dir |= 0x01;
+    if (rw0f_b5_DIR01)  p0_dir |= 0x02;
+    if (rw0f_b6_DIR023) p0_dir |= 0x0C;
+    if (rw0f_b7_DIR047) p0_dir |= 0xF0;
+
+    // Detect if Port 0 or Port 6 is driving active-low (scanning with single 0 bit)
+    bool p0_active_low = false;
+    uint8_t p0_hi = w08_port0_OL & 0xF0;
+    if (p0_hi == 0xE0 || p0_hi == 0xD0 || p0_hi == 0xB0 || p0_hi == 0x70) p0_active_low = true;
+    uint8_t p0_lo = w08_port0_OL & 0x0F;
+    if (p0_lo == 0x0E || p0_lo == 0x0D || p0_lo == 0x0B || p0_lo == 0x07) p0_active_low = true;
+
+    bool p6_active_low = false;
+    uint8_t p6_lo = w1e_port6_OL & 0x0F;
+    if (p6_lo == 0x0E || p6_lo == 0x0D || p6_lo == 0x0B || p6_lo == 0x07) p6_active_low = true;
+
+    bool col_active_low = (p0_active_low || p6_active_low);
+
+    // Initial input states
+    uint8_t p1_in_hi = 0, p1_in_lo = 0;
+    uint8_t p0_in_hi = 0, p0_in_lo = 0;
+    uint8_t p6_in_hi = 0, p6_in_lo = 0;
+
+    // 3. Main Matrix Conduction: 8 rows (P10..P17) x 8 cols (P0/P6)
+    for (int y = 0; y < 8; y++) {
+        bool a_is_out = (p1_dir & (1 << y)) != 0;
+        bool a_val    = (w09_port1_OL & (1 << y)) != 0;
+
+        for (int x = 0; x < 8; x++) {
+            if (!keypadmatrix[y][x]) continue;
+
+            // Pin B: Column line
+            bool b_is_out = false;
+            bool b_val = false;
+            int port_type = 0; // 0 = Port 0, 6 = Port 6
+            int pin_bit = 0;
+
+            bool p0_is_driving = (p0_dir != 0);
+
+            if (x == 0) {
+                port_type = 0; pin_bit = 0;
+                b_is_out = (p0_dir & 0x01) != 0;
+                b_val    = (w08_port0_OL & 0x01) != 0;
+            } else if (x == 1) {
+                // NC3000 hardware is P61 (bit 1 of Port 6)
+                port_type = 6; pin_bit = 1;
+                bool nc2k_col = ((w08_port0_OL & 0x02) != 0) && ((p0_dir & 0x02) != 0);
+                bool p6_col = !p0_is_driving && ((w1e_port6_OL & 0x02) != 0);
+                b_is_out = p6_col || nc2k_col;
+                b_val    = p6_col || nc2k_col;
+            } else if (x == 2) {
+                // NC3000 hardware is P60 (bit 0 of Port 6)
+                port_type = 6; pin_bit = 0;
+                bool nc2k_col = ((w08_port0_OL & 0x04) != 0) && ((p0_dir & 0x04) != 0);
+                bool p6_col = !p0_is_driving && ((w1e_port6_OL & 0x01) != 0);
+                b_is_out = p6_col || nc2k_col;
+                b_val    = p6_col || nc2k_col;
+            } else if (x == 3) {
+                port_type = 6; pin_bit = (y == 3) ? 3 : 2;
+                uint8_t p6_mask = (y == 3) ? 0x08 : 0x04;
+                bool nc2k_col = ((w08_port0_OL & 0x08) != 0) && ((p0_dir & 0x08) != 0);
+                bool p6_col = !p0_is_driving && ((w1e_port6_OL & p6_mask) != 0);
+                b_is_out = p6_col || nc2k_col;
+                b_val    = p6_col || nc2k_col;
+            } else {
+                port_type = 0; pin_bit = x;
+                b_is_out = ((p0_dir & (1 << pin_bit)) != 0) || p0_active_low;
+                b_val    = (w08_port0_OL & (1 << pin_bit)) != 0;
+            }
+
+            // Conduction Rule: Pin A (Port 1) <-> Pin B (Port 0 or Port 6)
+            // Case A -> B: Row is output, Column is input
+            if (a_is_out && !b_is_out) {
+                if (a_val) {
+                    if (port_type == 0) p0_in_hi |= (1 << pin_bit);
+                    if (port_type == 6) {
+                        p6_in_hi |= (1 << pin_bit);
+                        // Reflect to Port 0 for NC2000 compatibility if Port 0 is in input mode
+                        if (x == 1 && !(p0_dir & 0x02)) p0_in_hi |= 0x02;
+                        if (x == 2 && !(p0_dir & 0x04)) p0_in_hi |= 0x04;
+                        if (x == 3 && !(p0_dir & 0x08)) p0_in_hi |= 0x08;
+                    }
+                    // Special wake-up / ON-OFF key at (4, 0)
+                    if (y == 4 && x == 0 && port_type == 0) p0_in_hi |= 0x04;
+                } else {
+                    if (port_type == 0) p0_in_lo |= (1 << pin_bit);
+                    if (port_type == 6) {
+                        p6_in_lo |= (1 << pin_bit);
+                        if (x == 1 && !(p0_dir & 0x02)) p0_in_lo |= 0x02;
+                        if (x == 2 && !(p0_dir & 0x04)) p0_in_lo |= 0x04;
+                        if (x == 3 && !(p0_dir & 0x08)) p0_in_lo |= 0x08;
+                    }
+                }
+            }
+            // Case B -> A: Column is output, Row is input
+            else if (b_is_out && !a_is_out) {
+                if (col_active_low) {
+                    if (!b_val) p1_in_lo |= (1 << y);
+                } else {
+                    if (b_val) p1_in_hi |= (1 << y);
+                }
+            }
+        }
+    }
+
+    // 4. Side keys (RECORD: P62 <-> P00, IRDA: P63 <-> P00)
+    if (keypadmatrix[0][3]) { // RECORD
+        if (w1e_port6_OL & 0x04) p0_in_hi |= 0x01;
+    }
+    if (keypadmatrix[3][3]) { // IRDA
+        if (w1e_port6_OL & 0x08) p0_in_hi |= 0x01;
+    }
+
+    // 5. Synthesize final input registers
+    if (col_active_low) {
+        r09_port1_ID = (p1_dir & w09_port1_OL) | (~p1_dir & ~p1_in_lo);
+    } else {
+        r09_port1_ID = (p1_dir & w09_port1_OL) | (~p1_dir & p1_in_hi);
+    }
+
+    r08_port0_ID = (p0_dir & w08_port0_OL) | (~p0_dir & p0_in_hi & ~p0_in_lo);
+    r1e_port6_ID = (w1e_port6_OL | p6_in_hi) & ~p6_in_lo;
+}
+
 void UpdateKeypadRegisters()
 {
+    if (nc3000mode) {
+        UpdateKeypadRegistersNC3000_Physical();
+        return;
+    }
+
     const bool use_pull_high_emulation = true;
     // if( (~ext_reg[0x24])&0xf) enable_key_debug_once=1;
     // TODO: 2pass check
@@ -381,7 +548,7 @@ void UpdateKeypadRegisters()
                 } else {
                     // port0x -> port1y, and y is receive
                     // port0,port1 -> p30
-                    if (y >= 2 ||nc2000mode||nc3000mode||nc1020mode) {
+                    if (y >= 2 || nc2000mode || nc1020mode) {
                         if (keypadmatrix[y][x]==1 && ((port0data & xbit) != 0)) {
                             tmpdest1 |= port1controlbit;
                         }
@@ -504,18 +671,6 @@ BYTE __iocallconv ReadPort0( BYTE read )
     (void)read;
 }
 
-//// hack, 主要是为了骗nc3000的按键运行起来
-BYTE __iocallconv ReadPort6EX( BYTE read )
-{
-    UpdateKeypadRegisters();
-    //qDebug("ggv wanna read keypad port6, [%04x] -> %02x", read, mem[read]);
-    ///////////////////return r1e_port0_ID_EXP;
-    return ((r08_port0_ID&0x0c)>>2);
-
-    (void)read;
-}
-
-
 BYTE __iocallconv ReadPort1( BYTE read )
 {
     // Reset by IBF change from 1 to 0
@@ -551,7 +706,6 @@ void __iocallconv Write08Port0( BYTE write, BYTE value )
         passdata |= value & 0xF0;
     }
     r08_port0_ID = (r08_port0_ID & ~passmask) | passdata;
-
     UpdateKeypadRegisters();
     (void)write;
 }
@@ -714,4 +868,32 @@ void CreateHotlinkMapping()
     if(hotlinkios) {free(hotlinkios);hotlinkios = nullptr;}
     hotlinkios = (HotlinkBundle*)malloc(sizeof(HotlinkBundle));
     memset(hotlinkios, 0, sizeof(HotlinkBundle));
+}
+
+
+
+BYTE __iocallconv Read1EPort6( BYTE read ) //added for nc3000
+{
+    UpdateKeypadRegisters();
+    return r1e_port6_ID;
+    (void)read;
+}
+
+/* (AI written)
+ * Port 6 is the NC3000's other half of the keyboard column lines.
+ *
+ * The keyboard is 8 column lines x 8 row lines, and port 1 carries the rows:
+ *   - port 0 bits 4..7  drive 4 column lines (the firmware's table at $94B6,
+ *     entries 10 20 40 80 = one bit high, and EF DF BF 7F = one bit low)
+ *   - port 6 bits 0..3  drive the other 4 column lines ($94AE: 01 02 04 08)
+ * With no key pressed the driven level simply reads back on port 1 (the two
+ * ports share the row wires), which is why the firmware compares the read
+ * against the pattern it just wrote.  Pressing a key connects one column line
+ * to one row line and perturbs that value.
+ */
+void __iocallconv Write1EPort6( BYTE write, BYTE value ) //added for nc3000
+{
+    w1e_port6_OL = value;
+    UpdateKeypadRegisters();
+    (void)write;
 }

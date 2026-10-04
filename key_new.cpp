@@ -44,16 +44,118 @@ vector<TKeyItem*> items2000_1020 = {
         new TKeyItem(5, 0x08, 0,1, "时间", NULL, "其他",{SDLK_F10}),        // P05, P30
         new TKeyItem(6, 0x0E, 6,1, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
 };
-vector<TKeyItem*> items3000 = {
-        new TKeyItem(18, 0x0,0,0, "网络", NULL, "", {SDLK_F12}),        // GND, P30
-        new TKeyItem(0, 0x0, 1,0, "pda", NULL, "游戏", {SDLK_F5}), 
-        new TKeyItem(0, 0x0, 2,0, "计算", NULL, "换算",{SDLK_F6}),          // P00, P30
-        new TKeyItem(1, 0x0, 3,0, "时间", NULL, "系统",{SDLK_F7}),          // P01, P30
-        ///new TKeyItem(2, 0x0, 4,0, "开关？？？", NULL, "汉英",{SDLK_F8}),          // P02, P30
-        new TKeyItem(3, 0x0, 5,0, "英汉", NULL, "汉英",{SDLK_F9}),          // P03, P30
-        new TKeyItem(4, 0x0, 6,0, "ahd", NULL, "词库",{SDLK_F10}),          // P04, P30
-        new TKeyItem(5, 0x0, 7,0, "剑桥", NULL, "学习",{SDLK_F11}),        // P05, P30
-       // new TKeyItem(6, 0x0, 6,1, "网络", NULL, NULL,{SDLK_F11}),        // P06, P30
+vector<TKeyItem*> items3000_special = {
+    /* (AI written)
+     * NC3000 front panel.  Layout taken from the official keyboard artwork
+     * (info 里的 "nc3000+键盘图.JPG"):
+     *
+     *   ON/OFF (左上圆键，独立)    插入 删除 查找 修改 = F1..F4 (矩阵 (0..3,2))
+     *   网络  (左上第二个圆键，独立)  上面那片"12 个标签"其实只有 6 个实体按键，
+     *                            每个键按一次是主功能、再按一次是副功能，
+     *                            主菜单是 2 行 x 6 列，正好一一对应（用户在真机上核对过）：
+     *                              英汉/汉英   -> 菜单 (1,1) / (2,1)
+     *                              AHD/词库    -> 菜单 (1,2) / (2,2)
+     *                              剑桥/学习   -> 菜单 (1,3) / (2,3)
+     *                              PDA(游戏)   -> 菜单 (1,4) / (2,4)
+     *                              计算/换算   -> 菜单 (1,5) / (2,5)
+     *                              时间/系统   -> 菜单 (1,6) / (2,6)
+     *   右侧摇杆(一个四向键)：复读 / 跟读 / 发音暂停 / 录音
+     *   机身侧面两个键：红外接收、单词精灵
+     *
+     * 矩阵列的含义（由 --key-probe 实测反推）：
+     *   col 4 = Q W E R T Y U I      (QWERTY 排)
+     *   col 5 = A S D F G H J K      (ASDF 排)
+     *   col 6 = Z X C V B N M ⇞      (ZXCV 排)
+     *   col 7 = 求助 中英数 输入法 跳出 符号 . 空格 ←   (底部功能排)
+     *   col 0..3 = port6 的四条列线 = 上面那 6 个机型键 + 网络 + 摇杆
+     *
+     * 注意：col 0..3 的电学模型还没完全对上（见 docs/NC3000_按键矩阵实测.md 第 6.2 节），
+     * 所以这些键的坐标是按实物布局排的，能跑通哪些要靠 --key-probe 复核。
+     */
+    /*
+     * 矩阵第 0 列的 8 个位置 = 机身顶部那 8 个按键，两端正好对上：
+     *   固件热键扫描（bank3 $4576）把 $4628 = FE FD FB F7 EF DF BF 7F 依次写进 port1、
+     *   再读 port0 bit0；命中后 $4632 = 0C 04 02 00 01 06 08 0A 写进 $03E3。
+     *   即"行 0..7"就是那 8 个键。
+     * 与用户核对的实物：左上两个独立圆键(开/关、网络) + 6 个两档键
+     * (英汉/汉英、AHD/词库、剑桥/学习、PDA/游戏、计算/换算、时间/系统)。
+     */
+    /*
+     * ★ 行号与键位的对应（由 common.txt 的 *_FUN 常量 + 热键表 $4632
+     *   （0C 04 02 00 18 06 08 0A）实测确认）：
+     *     y=0 → $0C = NET_FUN   （网络，独立键）
+     *     y=1 → $04 = NAMECARD/PIM_FUN（PDA，与 $05 GAME_FUN 复用）
+     *     y=2 → $02 = CALCULATOR_FUN （计算/$03 CHANGE_FUN 换算）
+     *     y=3 → $00 = 时间（与 $01 OTHER_FUN 系统 复用）
+     *     y=4 → $18 = ONOFF_KEY （开/关，独立键，也是唤醒键）
+     *     y=5 → $06 = 英汉（与 $07 HANYING_FUN 复用）
+     *     y=6 → $08 = AHD_FUN （与 $09 CIKU_FUN 词库 复用）
+     *     y=7 → $0A = CB_FUN/JIANQIAO（与 $0B 复用）
+     * 注意：之前把"网络"和"开/关"写反了（网络在 y=4、开/关在 y=0），
+     *       结果按网络键固件收到的是 ONOFF（$18）→ 直接关机黑屏。
+     */
+    new TKeyItem(0,  0x0, 0,0, "网络", NULL, NULL,   {SDLK_F11}),
+    new TKeyItem(0,  0x0, 1,0, "PDA",  NULL, "游戏", {SDLK_F8}),
+    new TKeyItem(1,  0x0, 2,0, "计算", NULL, "换算", {SDLK_F9}),
+    new TKeyItem(2,  0x0, 3,0, "时间", NULL, "系统", {SDLK_F10}),
+    new TKeyItem(18, 0x0, 4,0, "开/关", NULL, "ON/OFF", {SDLK_F12}), // 也是模拟器的唤醒键
+    new TKeyItem(3,  0x0, 5,0, "英汉", NULL, "汉英", {SDLK_F5}),
+    new TKeyItem(4,  0x0, 6,0, "AHD",  NULL, "词库", {SDLK_F6}),
+    new TKeyItem(5,  0x0, 7,0, "剑桥", NULL, "学习", {SDLK_F7}),
+    /*
+     * 机身侧面两个按键（键盘图之外，用户 2026-09-27 指正）：
+     *   左：录音        键值 0x22 = RECORD_KEY
+     *   右：红外接收    键值 0x21 = IRDA_KEY
+     * 右侧摇杆：复读 0x25 / 跟读 0x27 / 发音暂停 0x0F / 录音 0x22。
+     *
+     * 这些键**不在主键盘矩阵里**，固件是分两条路认的（见 docs/NC3000_按键矩阵实测.md 第 28 节）：
+     *   1) BIOS $EC3E 的"特殊键组"扫描：往 IO $1C 写 $EAB2[X]|$40，看 bit5；
+     *      X=1→$16(→) X=2→$22(录音) X=3→$25(复读) X=4→$17(←) X=5→$0F(发音暂停)
+     *      ⇒ 录在了 x=3 这条"虚拟列"上（主扫根本看不到 x=3，不会串键）
+     *   2) 主扫表 $EF32 里的普通位置：跟读 0x27 在 col3/rowbit2 ⇒ 矩阵 (4,2)（x=2 = port6 bit0）
+     * 红外 0x21 在主扫表 $EF32 与特殊键组扫描里都找不到，是红外接收硬件那条路产生的；
+     * 落位沿用 (3,3) 这个空位。**2026-09-29 用户实测这条路没问题**（上游作者 wangyu-
+     * 也确认红外通信一切正常），所以不再是"待查/没建模"的状态。
+     */
+    new TKeyItem(0, 0x22, 0,3, "录音", NULL, "side", {SDLK_INSERT}),
+    new TKeyItem(0, 0x25, 1,3, "复读", NULL, NULL, {SDLK_HOME}),
+    new TKeyItem(0, 0x0F, 2,3, "发音暂停", NULL, NULL, {SDLK_PAGEUP}),
+    new TKeyItem(0, 0x21, 3,3, "红外接收", NULL, "side", {SDLK_LALT}),
+    new TKeyItem(0, 0x27, 4,2, "跟读", NULL, NULL, {SDLK_END}),
+};
+vector<TKeyItem*> items3000_col1 = {
+    /* (AI written)
+     * 主键盘。坐标不是猜的：用 --hold 长按 + 读固件自己解出的 $C7，
+     * 逐个位置实测出来的（见 docs/NC3000_按键矩阵实测.md 第 19 节）：
+     *   col 4 = Q W E R T Y U I     (0..7)   数字 1..8 是它们的第二功能
+     *   col 5 = A S D F G H J K     (0..7)
+     *   col 6 = Z X C V B N M ⇞     (0..7)
+     *   col 7 = 求助 中英数 输入法 跳出 符号 . 空格 ←
+     *   col 1 = O L ↑ ↓ P 输入 ⇟ →  (0..7)   数字 9 / 0 在 O 和 P 上
+     */
+    
+    /*这部分会覆盖nc2000/nc1020原有的定义*/
+    new TKeyItem(0,0,0,1,"O",NULL,NULL,{SDLK_o}),
+    new TKeyItem(0,0,1,1,"L",NULL,NULL,{SDLK_l}),
+    new TKeyItem(0,0,2,1,"↑",NULL,NULL,{SDLK_UP}),
+    new TKeyItem(0,0,3,1,"↓",NULL,NULL,{SDLK_DOWN}),
+    new TKeyItem(0,0,4,1,"P",NULL,NULL,{SDLK_p}),
+    new TKeyItem(0,0,5,1,"输入",NULL,NULL,{SDLK_RETURN,SDLK_KP_ENTER}),
+    new TKeyItem(0,0,6,1,"⇟",NULL,NULL,{SDLK_SLASH}),
+    new TKeyItem(0,0,7,1,"→",NULL,NULL,{SDLK_RIGHT}),
+
+    /*主键盘其它部分跟nc2000是一样的，不用重复定义*/
+};
+
+vector<TKeyItem*> items3000_col1_pro_mode = {
+    new TKeyItem(0,0,0,1,"O",NULL,NULL,{SDLK_9}),
+    new TKeyItem(0,0,1,1,"L",NULL,NULL,{SDLK_o}),
+    new TKeyItem(0,0,2,1,"↑",NULL,NULL,{SDLK_UP,SDLK_l}),
+    new TKeyItem(0,0,3,1,"↓",NULL,NULL,{SDLK_DOWN,SDLK_PERIOD}),
+    new TKeyItem(0,0,4,1,"P",NULL,NULL,{SDLK_0}),
+    new TKeyItem(0,0,5,1,"输入",NULL,NULL,{SDLK_RETURN, SDLK_p}),
+    new TKeyItem(0,0,6,1,"⇟",NULL,NULL,{SDLK_SEMICOLON}),
+    new TKeyItem(0,0,7,1,"→",NULL,NULL,{SDLK_RIGHT,SDLK_SLASH}),
 };
 vector<TKeyItem*> items = {
         NULL,       // P10, P30
@@ -297,7 +399,12 @@ void init_keyitems(){
       }
     }
     if(nc3000mode) {
-      copy_items_deref(items3000, current_items);
+      copy_items_deref(items3000_special, current_items);
+      if(!pro_key){
+          copy_items_deref(items3000_col1, current_items);
+      }else {
+          copy_items_deref(items3000_col1_pro_mode, current_items);
+      }
     }
   }
 
@@ -325,12 +432,18 @@ pair<int,int> map_key_wayback(int32_t sym){
 }
 
 void SetKeyWayback(int code_y,int code_x, bool down_or_up){
-  if(pc1000mode || nc3000mode){
+  if(pc1000mode){
     //todo not really works
     if(code_x==0 && code_y==0 && down_or_up){
       void warm_reset_if_clkoff();
       warm_reset_if_clkoff();
     }
+  }
+  if(nc3000mode){
+      if(code_x==0 && code_y==4 && down_or_up){
+          void warm_reset_if_clkoff();
+          warm_reset_if_clkoff();
+      }
   }
   if(nc2000mode||nc1020mode){
       if(code_x<2&& down_or_up){

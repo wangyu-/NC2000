@@ -129,6 +129,9 @@ struct nc2k_states_t{
 	u64_t last_cycles;
 	u64_t target_cycles;
 
+	uint8_t w1e_port6_OL;
+	uint8_t r1e_port6_ID;
+
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
 	uint8_t SAVE_STATE_END; // =========END of SAVE STATE=========

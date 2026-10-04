@@ -342,8 +342,23 @@ int io_v2_read(int address) {
         if(address==0x39) {
             return read_nand();
         }
+        if(address==0x1c){ //AI written
+            uint8_t v = ioReg[address];
+            uint8_t code = v & 0x7F;
+            uint8_t out = v & (uint8_t)~0x20;
+            bool rep   = keypadmatrix[1][3] != 0;
+            bool play  = keypadmatrix[2][3] != 0;
+            bool special = rep || play;
+            switch (code) {
+                case 0x41: if (!special) out |= 0x20; break;  /* 无特殊键 */
+                case 0x53: if (rep)      out |= 0x20; break;  /* 复读 0x25 */
+                case 0x5F: if (play)     out |= 0x20; break;  /* 发音暂停 0x0F */
+                default: break;
+            }
+            return out;
+        }
         if(address==0x1e){
-            return ReadPort6EX(address);
+            return Read1EPort6(address);
         }
     } 
     if(nc2000mode){
@@ -464,6 +479,10 @@ void io_v2_write(int address, int value) {
         if(address==0x39) {
             return nand_write(value);
         } 
+        if(address==0x1e){
+            /* port 6 drives the NC3000's other four keyboard column lines */
+            return Write1EPort6(address, value);
+        }
     }
 
     if(nc2000mode||nc3000mode){
@@ -597,6 +616,11 @@ void io_v2_write(int address, int value) {
             if(index==0x0a) return write_rcr0(value);
             if(index==0x0b) return write_rcr1(value);
             rtc_reg[index]=value;
+            if(nc3000mode){
+                if(index == 0x20 || index == 0x24){
+                    UpdateKeypadRegisters();
+                }
+            }
             return;
             //return Write3F(address,value);
         }

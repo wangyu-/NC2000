@@ -97,7 +97,7 @@ BYTE __iocallconv Read06StopTimer1 (BYTE read); // $06
 BYTE __iocallconv ReadPort0 (BYTE read); // $08
 BYTE __iocallconv ReadPort1 (BYTE read); // $09
 BYTE __iocallconv Read18Port4 (BYTE read); // $09
-BYTE __iocallconv ReadPort6EX (BYTE read); // 0x1e //newly added
+BYTE __iocallconv Read1EPort6 (BYTE read); // 0x1E //added for nc3000
 
 BYTE __iocallconv Read00BankSwitch (BYTE read); // $00
 void __iocallconv Write00BankSwitch (BYTE write, BYTE value); // $00
@@ -116,6 +116,7 @@ void __iocallconv Write15Dir1( BYTE write, BYTE value ); // $15
 void __iocallconv Write19CkvSelect(BYTE write, BYTE value); // $19
 void __iocallconv Write07PortConfig (BYTE write, BYTE value); // $07
 void __iocallconv Write18Port4(BYTE write, BYTE value); // $18
+void __iocallconv Write1EPort6(BYTE write, BYTE value); // $1E //added for nc3000
 
 void __iocallconv WriteZeroPageBankswitch (BYTE write, BYTE value); // $0F
 void __iocallconv Write0AROABBS (BYTE write, BYTE value); // $0A
@@ -125,5 +126,6 @@ void __iocallconv Write23Unknow(BYTE write, BYTE value); // $20
 
 void CreateHotlinkMapping();
 void RemoveHotlinkMapping();
+void UpdateKeypadRegisters();
 
 #endif
