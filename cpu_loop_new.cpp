@@ -496,21 +496,21 @@ void cpu_run3(){
 						ram_io[0x0c]&=0xfe;
 				}
 			}
+		}
 
-			uint32_t sample_hz=get_sample_hz();
-			if(rtc_speed!=1.0) {
-				sample_hz=int(sample_hz*rtc_speed);
-			}
-			if(sample_hz>0 && trigger_x_times_per_s(sample_hz)){
-				if(debug_level>=2) printf("IV_SAMPLE triggered\n");
-				put_iv(IV_SAMPLE);
-			}
+		uint32_t sample_hz=get_sample_hz();
+		if(rtc_speed!=1.0) {
+			sample_hz=int(sample_hz*rtc_speed);
+		}
+		if(sample_hz>0 && trigger_x_times_per_s(sample_hz)){
+			if(debug_level>=2) printf("IV_SAMPLE triggered\n");
+			put_iv(IV_SAMPLE);
+		}
 
-			uint8_t iv=peek_iv();
-			if(iv!=IV_NONE){
-				cpu->set_irq_pending();
-				warm_reset_if_clkoff();
-			}
+		uint8_t iv=peek_iv();
+		if(iv!=IV_NONE){
+			cpu->set_irq_pending();
+			warm_reset_if_clkoff();
 		}
 	}
 	if(pc1000mode_normal() && trigger_x_times_per_s(2)){
