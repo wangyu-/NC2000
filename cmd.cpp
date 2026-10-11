@@ -2,6 +2,7 @@
 
 #include "nand.h"
 #include "nor.h"
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <time.h>
@@ -19,7 +20,7 @@ extern "C" {
 #include "nor.h"
 #include "settings.h"
 #include <SDL2/SDL.h>
-#include "misc/bin_dec.h"
+#include "misc/convert.h"
 extern nc2k_states_t nc2k_states;
 extern CPUInterface *cpu;
 
@@ -553,11 +554,35 @@ void handle_cmd(string str){
 				printf("not enough argument\n");
 				return;
 			}
-			string outname="bindec.tmp";
-			if(bin_dec(cmds[1],outname)){
-				printf("binary decode failed.\n");
+			vector<string> name_vec=split_s(cmds[1],".");
+			if(name_vec.size()<2){
+				printf("file has no suffix!\n");
+				return;
+			}
+			string suffix=name_vec.back();
+			for(auto &e:suffix) {
+				if(!std::isalnum(e)){
+					printf("illegal character <%x> in suffix!\n", e);
+					return;
+				}
+				e=std::tolower(e);
+			}
+			string outname="tmpfile.tmp";
+			if(suffix=="bin"){
+				if(bin_dec(cmds[1],outname)){
+					printf("binary decode failed.\n");
+					return ;
+				}
+			}else if(suffix=="txt"){
+				if(add_txt_head(cmds[1],outname)){
+					printf("adding text header failed.\n");
+					return ;
+				}
+			}else{
+				printf("unsupported file suffix for putx: %s\n", suffix.c_str());
 				return ;
 			}
+
 			cmds[0]="put";
 			if(cmds.size()<3){
 				cmds.push_back(split_s(cmds[1],"/").back());

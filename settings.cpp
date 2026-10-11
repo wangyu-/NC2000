@@ -9,7 +9,7 @@
 #include "iv_uart.h"
 #include "nor.h"
 #include "settings.h"
-#include "misc/bin_dec.h"
+#include "misc/convert.h"
 using namespace std;
 extern WqxRom nc2k_rom;
 void print_help(){
@@ -140,17 +140,28 @@ void process_args(int argc, char *argv[])
 	};
 	string uart_dev_name;
 	int option_index = 0;
-    if (argc >= 2&& (strcmp(argv[1],"bindec")==0||strcmp(argv[1],"--bindec")==0)){
+	string argv1 = argc >= 2 ? argv[1] : "";
+	if (argc >= 2&& argv1=="bin-dec"){
 		//built-in binary decode tool for convinence
 		if(argc<4) {
 			printf("not enough parameters. usage:\n");
-			printf("    ./this_program bindec <input_file> <output_file>\n");
+			printf("    ./this_program bin-dec <input_file> <output_file>\n");
 			exit(-1) ;
 		}
 		printf("decypting bin %s into %s\n",argv[2],argv[3]);
 		bin_dec(argv[2], argv[3]);
 		exit(-1) ;
-        //printf("no argument provided\n");
+	}
+	if (argc >= 2&& argv1=="txt-add-hdr"){
+		//built-in txt add header tool for convenience
+		if(argc<4) {
+			printf("not enough parameters. usage:\n");
+			printf("    ./this_program txt-add-hdr <input_file> <output_file>\n");
+			exit(-1) ;
+		}
+		printf("adding text header to %s into %s\n",argv[2],argv[3]);
+		add_txt_head(argv[2], argv[3]);
+		exit(-1) ;
 	}
 	for (i = 0; i < argc; i++)
 	{

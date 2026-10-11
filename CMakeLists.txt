@@ -35,7 +35,7 @@ endif()
 #target_link_libraries(a.out PRIVATE "-Wl,-stack_size -Wl,3f00000")
 #target_link_directories(a.out PUBLIC "/opt/homebrew/lib")
 
-add_executable(a.out main.cpp nc2000.cpp misc/disassembler.cpp cpu_loop.cpp comm.cpp mem.cpp io.cpp rom.cpp nor.cpp nand.cpp ram.cpp dsp/dsp.cpp sound.cpp cmd.cpp misc/udp_server.cpp ansi/w65c02cpu.cpp ansi/w65c02op.cpp NekoDriverIO.cpp key_new.cpp compare/c6502.cpp compare/pc1000bus.cpp cpu_loop_new.cpp settings.cpp key.cpp display.cpp io_new.cpp lcdstripe/json.cpp lcdstripe/lcdpainter.cpp cpu.cpp console.cpp misc/disassembler_new.cpp iv_uart.cpp misc/bin_dec.cpp)
+add_executable(a.out main.cpp nc2000.cpp misc/disassembler.cpp cpu_loop.cpp comm.cpp mem.cpp io.cpp rom.cpp nor.cpp nand.cpp ram.cpp dsp/dsp.cpp sound.cpp cmd.cpp misc/udp_server.cpp ansi/w65c02cpu.cpp ansi/w65c02op.cpp NekoDriverIO.cpp key_new.cpp compare/c6502.cpp compare/pc1000bus.cpp cpu_loop_new.cpp settings.cpp key.cpp display.cpp io_new.cpp lcdstripe/json.cpp lcdstripe/lcdpainter.cpp cpu.cpp console.cpp misc/disassembler_new.cpp iv_uart.cpp misc/convert.cpp)
 target_link_libraries(a.out ${SDL2_LIBRARIES})
 
 if(ENABLE_UDP_SERVER)
