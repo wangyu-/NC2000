@@ -307,6 +307,18 @@ inline vector<string> split_s(const string &str, const string &sp) {
     return res;
 }
 
+inline string trim(string &vec){
+    deque<char> deq(vec.begin(), vec.end());
+    while (!deq.empty() && !std::isgraph(deq.front()) ) {
+        deq.pop_front();
+    }
+    while (!deq.empty() && !std::isgraph(deq.back()) ) {
+        deq.pop_back();
+    }
+    string str(deq.begin(), deq.end());
+    return str;
+}
+
 inline string get_str_of_mode(){
     if(nc1020mode) return "NC1020";
     if(nc2000mode) return "NC2000";

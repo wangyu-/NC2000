@@ -257,7 +257,6 @@ void read_file(string name,vector<char> &v){
 int read_file_noexit(string name,vector<char> &v){
     FILE *f = fopen(name.c_str(), "rb");
     if(f==0) {
-        printf("open file %s fail!\n",name.c_str());
         return -1;
     }
     fseek(f, 0, SEEK_END);

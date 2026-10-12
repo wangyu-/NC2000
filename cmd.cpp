@@ -561,7 +561,7 @@ void handle_cmd(string str){
 			}
 			string suffix=name_vec.back();
 			for(auto &e:suffix) {
-				if(!std::isalnum(e)){
+				if(!std::isgraph(e)){
 					printf("illegal character <%x> in suffix!\n", e);
 					return;
 				}
@@ -598,6 +598,7 @@ void handle_cmd(string str){
 			}
 			vector<char> file;
 			if(read_file_noexit(cmds[1], file)!=0){
+				printf("open file %s fail!\n",cmds[1].c_str());
 				return ;
 			}
 			string target=split_s(cmds[1],"/").back();

@@ -163,6 +163,7 @@ void process_args(int argc, char *argv[])
 		add_txt_head(argv[2], argv[3]);
 		exit(-1) ;
 	}
+
 	for (i = 0; i < argc; i++)
 	{
 		if(strcmp(argv[i],"-h")==0||strcmp(argv[i],"--help")==0||strcmp(argv[i],"?")==0||strcmp(argv[i],"/?")==0)
@@ -430,6 +431,37 @@ void process_args(int argc, char *argv[])
 	mode_cnt+= pc1000mode;
 	mode_cnt+= nc2000mode;
 	mode_cnt+= nc3000mode;
+	if(mode_cnt==0 && rom_path.empty()){
+		vector<char> tmp;
+		printf("no mode and no rom path specified, reading default.txt\n");
+		if(!read_file_noexit("default.txt", tmp)){
+			string default_str(tmp.begin(), tmp.end());
+			default_str = trim(default_str);
+			vector<string> vec = split_s(default_str, ",");
+			if (vec.size()==2) {
+				bool ok=1;
+				if(vec[0] == "nc1020") nc1020mode = true;
+				else if(vec[0] == "nc1020tw") {nc1020mode= true; nc1020tw_mode = true;}
+				else if(vec[0] == "pc1000") pc1000mode = true;
+				else if(vec[0] == "nc2000") nc2000mode = true;
+				else if(vec[0] == "nc3000") nc3000mode = true;
+				else {
+					printf("invalid model %s\n", vec[0].c_str());
+					ok = 0;
+				}
+				if(ok) {
+					printf("using model [%s] from default.txt\n", vec[0].c_str());
+					mode_cnt++;
+					printf("using rom path [%s] from default.txt\n", vec[1].c_str());
+					rom_path = vec[1];
+				}
+			} else{
+				printf("default.txt invalid format, should be like 'nc2000,roms/xxx'\n");
+			}
+		}else{
+			printf("default.txt not exist!\n");
+		}
+	}
 	if(mode_cnt==0){
 		printf("no mode specified, default to nc2000\n");
 		nc2000mode = true;
