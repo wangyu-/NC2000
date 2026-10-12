@@ -141,7 +141,7 @@ void process_args(int argc, char *argv[])
 	string uart_dev_name;
 	int option_index = 0;
 	string argv1 = argc >= 2 ? argv[1] : "";
-	if (argc >= 2&& argv1=="bin-dec"){
+	if (argv1=="bin-dec"){
 		//built-in binary decode tool for convinence
 		if(argc<4) {
 			printf("not enough parameters. usage:\n");
@@ -152,7 +152,7 @@ void process_args(int argc, char *argv[])
 		bin_dec(argv[2], argv[3]);
 		exit(-1) ;
 	}
-	if (argc >= 2&& argv1=="txt-add-hdr"){
+	if (argv1=="txt-add-hdr"){
 		//built-in txt add header tool for convenience
 		if(argc<4) {
 			printf("not enough parameters. usage:\n");
