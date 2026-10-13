@@ -138,10 +138,14 @@ bool dummy_io_for_write(uint16_t addr, uint8_t value){
 			printf("[get] done, total size=%d\n",(int)queue_for_write.size());
 			if(dummy_io_write_cnt!=-1){
 				auto fp=fopen(file_name_for_write.c_str(),"wb");
-				for(auto c: queue_for_write){
-					fwrite(&c,1,1,fp);
+				if(!fp){
+					printf("failed to open file %s for writing\n", file_name_for_write.c_str());
+				}else{
+					for(auto c: queue_for_write){
+						fwrite(&c,1,1,fp);
+					}
+					fclose(fp);
 				}
-				fclose(fp);
 				queue_for_write.clear();
 			}
 			dummy_io_write_cnt=-1;
@@ -485,9 +489,13 @@ void handle_cmd(string str){
 				printf("not enough argument\n");
 				return;
 			}
+			if(split_s(cmds[1],"/").size()==0){
+				printf("invalid source %s\n", cmds[1].c_str());
+				return;
+			}
 			//if(!nc2000mode) return;
 			string src=cmds[1];
-			string target=cmds[1];
+			string target=split_s(cmds[1],"/").back();
 			if(cmds.size()>2) target=cmds[2];
 			file_name_for_write=target;
 			dummy_io_write_cnt = 0;
@@ -554,6 +562,10 @@ void handle_cmd(string str){
 				printf("not enough argument\n");
 				return;
 			}
+			if(split_s(cmds[1],"/").size()==0){
+				printf("invalid source %s\n", cmds[1].c_str());
+				return;
+			}
 			vector<string> name_vec=split_s(cmds[1],".");
 			if(name_vec.size()<2){
 				printf("file has no suffix!\n");
@@ -594,6 +606,10 @@ void handle_cmd(string str){
 	if(cmds[0]=="put"){
 			if(cmds.size()<2){
 				printf("not enough argument\n");
+				return;
+			}
+			if(split_s(cmds[1],"/").size()==0){
+				printf("invalid source %s\n", cmds[1].c_str());
 				return;
 			}
 			vector<char> file;
