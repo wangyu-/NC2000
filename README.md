@@ -78,7 +78,7 @@ The rest of Readme is going to be in Chinese, there are a few more english mater
 
 经测试支持的rom:
 * nc2000c `官方3.5`
-* nc2600c `官方3.2`, `3.5内核 by Sun`,`4.1内核 by qiqi`, `4.1内核保留剑桥版 by qiqi`, `非常4.2内核 by 41824984`, `5.0内核 by epc`
+* nc2600c `官方3.2`, `3.5内核 by 73139`,`3.5内核简体版 by luxietian` ,`4.1内核 by qiqi`, `4.1内核保留剑桥版 by qiqi`, `非常4.2内核 by 41824984`, `5.0内核 by epc`
 * 哈电族nc2000 `官方3.6B`
 * nc1020 `官方3.6` `4.3内核by SAILOR-HB` `4.9内核 by ZHY` `5.3内核 by 逍遥人`
 * 哈电族nc1020 `官方5.2`
