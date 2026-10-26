@@ -193,7 +193,7 @@ vector<TKeyItem*> items = {
         new TKeyItem(44, 0x34, 4,6, "B", "1",NULL,{SDLK_b,SDLK_1}),           // P04, P13
         new TKeyItem(45, 0x35, 5,6, "N", "2",NULL,{SDLK_n,SDLK_2}),           // P05, P13
         new TKeyItem(46, 0x36, 6,6, "M", "3",NULL,{SDLK_m,SDLK_3}),           // P06, P13
-        new TKeyItem(47, 0x37, 7,6, "⇞", "税",NULL,{SDLK_COMMA}),   // P07, P13
+        new TKeyItem(47, 0x37, 7,6, "⇞", "税",NULL,{SDLK_COMMA,SDLK_PAGEUP}),   // P07, P13
         
         new TKeyItem(30, 0x28, 0,5, "A", "log", "10x",{SDLK_a}),       // P00, P14
         new TKeyItem(31, 0x29, 1,5, "S", "ln", "ex",{SDLK_s}),       // P01, P14
@@ -219,7 +219,7 @@ vector<TKeyItem*> items = {
         new TKeyItem(58, 0x1B, 3,3, "▼", "+",NULL,{SDLK_DOWN}),     // P03, P16
         new TKeyItem(29, 0x1C, 4,3, "P", "MC", "☎",{SDLK_p}),           // P04, P16
         new TKeyItem(39, 0x1D, 5,3, "输入", "MR",NULL,{SDLK_RETURN}),   // P05, P16
-        new TKeyItem(49, 0x1E, 6,3, "⇟", "M-",NULL,{SDLK_SLASH}), // P06, P16
+        new TKeyItem(49, 0x1E, 6,3, "⇟", "M-",NULL,{SDLK_SLASH,SDLK_PAGEDOWN}), // P06, P16
         new TKeyItem(59, 0x1F, 7,3, "→", "M+",NULL,{SDLK_RIGHT}),   // P07, P16
         
         NULL,       // P00, P17
