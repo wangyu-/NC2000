@@ -128,4 +128,6 @@ void CreateHotlinkMapping();
 void RemoveHotlinkMapping();
 void UpdateKeypadRegisters();
 
+bool KeepTimer01( unsigned int cpuTick );
+
 #endif

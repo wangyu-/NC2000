@@ -69,7 +69,7 @@ bool IsCountDown(){//legacy code, only used in old cpu loop
         );
 }
 
-void inject(){
+void inject(){ //experiment only, only used in old cpu loop
 	for(int i=0;i<8;i++){
 		for(int j=0;j<=0xFE;j+=2){
 			ram_b[0x100*i+j]=j;
@@ -113,104 +113,6 @@ void EnableWatchDogFlag()//legacy code, only used in old cpu loop
 {
     gThreadFlags |= 0x80;
 }
-
-// TODO: increase timer value by speed
-// seems PC1000's rom never start timer0/1 in tracing
-bool KeepTimer01( unsigned int cpuTick )
-{
-    bool needirq = false;
-    // 0: no timerbase 1~15 = LN0,L0..L13
-    unsigned char tbc = zpioregs[io04_general_ctrl] & 0xF;
-    //if (tbc == 0) {
-    //    return false;
-    //}
-    // proctimeer0 first
-    if (timer0run) {
-        timer0ticks += cpuTick;
-        qDebug("timer0ticks: %d", timer0ticks);
-        int mul0 = 1 + (w0c_b67_TMODESL == 1?w0c_b45_TM0S:w0c_b345_TMS);
-        int inc0, inc1;
-        inc0 = timer0ticks >> mul0;
-        if (inc0) {
-            timer0ticks -= inc0 << mul0;
-        }
-        if (w0c_b67_TMODESL == 1 || w0c_b67_TMODESL == 0) {
-            // TODO: speed by CpuTicks
-            unsigned short newt = zpioregs[io02_timer0_val] + inc0;
-            bool overflow = newt > 0xFF;
-            if (overflow) {
-                if (w0c_b67_TMODESL == 1) {
-                    _ADD_TM0I_BIT();
-                    needirq = true;
-                } else if (timer1run_tmie) {
-                    _ADD_TM0I_BIT();
-                    needirq = true;
-                }
-            }
-            zpioregs[io02_timer0_val] = w0c_b67_TMODESL==1?newt:newt + zpioregs[io03_timer1_val]; // as reload value
-        }
-        // 16bit
-        if (w0c_b67_TMODESL == 2) {
-            unsigned short newt = zpioregs[io02_timer0_val] + inc0;
-            zpioregs[io02_timer0_val] = newt;
-            bool overflow = newt > 0xFF;
-            if (overflow) {
-                unsigned short newt1 = zpioregs[io03_timer1_val] + (newt >> 8);
-                if (newt1 > 0xFF) {
-                    _ADD_TM1I_BIT();
-                    needirq = true;
-                }
-                zpioregs[io03_timer1_val] = newt1;
-            }
-        }
-        if (w0c_b67_TMODESL == 3) {
-            unsigned short newt = zpioregs[io02_timer0_val] + inc0;
-            zpioregs[io02_timer0_val] = newt;
-            bool overflow = newt > 0xFF;
-            if (overflow) {
-                _ADD_TM0I_BIT();
-                needirq = true;
-                if (timer1run_tmie) {
-                    unsigned short newt1 = zpioregs[io03_timer1_val] + (newt >> 8);
-                    if (newt1 > 0xFF) {
-                        _ADD_TM1I_BIT();
-                        needirq = true;
-                    }
-                    zpioregs[io03_timer1_val] = newt1;
-                }
-            }
-
-        }
-    }
-    // timer 1 next, only mode1
-    if (timer1run_tmie && w0c_b67_TMODESL == 1) {
-        timer1ticks += cpuTick;
-        qDebug("timer1ticks: %d", timer1ticks);
-
-        int inc1 = timer1ticks >> ((w0c_b23_TM1S+1)*2);
-        if (inc1) {
-            timer1ticks -= inc1 << ((w0c_b23_TM1S+1)*2);
-        }
-
-        //originl wayback code. seems like it's wrong according to datasheet
-        ////systools wav播放fill buffer速度不对造成破音
-        if(false){
-            int inc1 = timer1ticks >> (1 + w0c_b23_TM1S);
-            if (inc1) {
-                timer1ticks -= inc1 << (1 + w0c_b23_TM1S);
-            }
-        }
-        unsigned short newt = zpioregs[io03_timer1_val] + inc1;
-        zpioregs[io03_timer1_val] = newt;
-        bool overflow = newt > 0xFF;
-        if (overflow) {
-            _ADD_TM1I_BIT();
-            needirq = true;
-        }
-    }
-    return needirq;
-}
-
 
 void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison and debug
 		string msg=get_message();
