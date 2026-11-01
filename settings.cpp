@@ -136,6 +136,7 @@ void process_args(int argc, char *argv[])
 		{"mi-clear-delay", required_argument, 0, 1},
 		{"spin-wait", no_argument, 0, 1},
 		{"lcd-debug", no_argument, 0, 1},
+		{"sdl-hint-render-driver", required_argument, 0, 1},
 		{NULL, 0, 0, 0}
 	};
 	string uart_dev_name;
@@ -407,6 +408,10 @@ void process_args(int argc, char *argv[])
 			else if (strcmp(long_options[option_index].name,"lcd-debug")==0){
 				enable_lcd_debug = true;
             }
+			else if (strcmp(long_options[option_index].name,"sdl-hint-render-driver")==0){
+				//empty value means don't set SDL_HINT_RENDER_DRIVER
+				render_driver = optarg;
+			}
 			else
 			{
 				printf("unknown option <%s>\n", long_options[option_index].name);

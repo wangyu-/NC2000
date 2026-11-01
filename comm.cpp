@@ -140,6 +140,13 @@ uint32_t LCD_OUTER_REFRESH_INTERVAL=16;
 string lcdstripe_suffix;
 bool enable_lcd_debug = false;
 
+//value for SDL_HINT_RENDER_DRIVER. can be overridden by --sdl-hint-render-driver, an empty value disables the hint.
+#if defined(_WIN32)
+string render_driver = "opengl";
+#else
+string render_driver;
+#endif
+
 int lcd_effect_charge_a=1;
 int lcd_effect_charge_b=6;
 int lcd_effect_discharge_a=1;

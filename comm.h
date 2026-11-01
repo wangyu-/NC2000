@@ -207,6 +207,9 @@ extern string lcdstripe_suffix;
 
 extern bool enable_lcd_debug;
 
+// SDL_HINT_RENDER_DRIVER. empty means no hint is set.
+extern string render_driver;
+
 extern bool pro_key;
 
 extern int lcd_effect_charge_a;

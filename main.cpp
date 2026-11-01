@@ -25,9 +25,12 @@ MyLCDView*  lcdview;
 // If you are trying to create an emscripten/android/ios version, init_resource() should be called only once,
 // emu_entry() is the only function you need to re-call after switching rom or model. 
 void init_resource() {
-  #if defined(__MINGW32__)
-  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-#endif
+  //render_driver defaults to "opengl" on windows, empty on other platforms.
+  //an empty value (e.g. --sdl-hint-render-driver "") means don't set the hint at all.
+  if(!render_driver.empty()) {
+    if(debug_level>=1) printf("SDL_HINT_RENDER_DRIVER=%s\n", render_driver.c_str());
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, render_driver.c_str());
+  }
   int res1=SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
   if(debug_level>=1) printf("SDL_SetThreadPriority returned %d\n", res1);
 
