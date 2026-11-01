@@ -162,6 +162,7 @@ misc
 bool shift_down =false;
 bool ctrl_down =false;
 int battery_level=11;
+int battery_level_nc3000=28;
 bool patch_nc1020tw_nor=false;
 
 bool patch_table_experiment=false;

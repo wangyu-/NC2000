@@ -269,6 +269,7 @@ const int int_inf=10*10000*10000;
 extern bool shift_down;
 extern bool ctrl_down;
 extern int battery_level;
+extern int battery_level_nc3000;
 extern bool patch_nc1020tw_nor;
 
 extern bool patch_table_experiment;
