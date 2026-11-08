@@ -73,7 +73,7 @@ int CPUInterface::execute(int max_cycles){
 
 		void debug_pc();
 		debug_pc();
-		if(g_wai) {cycle=max_cycles;if(cycle<=0) cycle=jam_cycles;break;}
+		if(g_wai) {cycle=max_cycles;if(cycle<=0) cycle=dummy_cycles;break;}
 		bool old_mi=mI;
 		cycle += CpuExecuteOP();
 		if(old_mi==true && mI==false) {//mI flipped from true to false
@@ -348,14 +348,14 @@ void initalize_illegal_op_tables(){
 	//以下是猜的没有验证
 	//============================================================
 	// x2 列偶数行 (立即数模式 DOP)
-	byte[0x12]=2;cycle[0x12]=jam_cycles;
-	byte[0x32]=2;cycle[0x32]=jam_cycles;
-	byte[0x52]=2;cycle[0x52]=jam_cycles;
-	byte[0x72]=2;cycle[0x72]=jam_cycles;
-	byte[0x92]=2;cycle[0x92]=jam_cycles;
-	byte[0xb2]=2;cycle[0xb2]=jam_cycles;
-	byte[0xd2]=2;cycle[0xd2]=jam_cycles;
-	byte[0xf2]=2;cycle[0xf2]=jam_cycles;
+	byte[0x12]=2;cycle[0x12]=2;
+	byte[0x32]=2;cycle[0x32]=2;
+	byte[0x52]=2;cycle[0x52]=2;
+	byte[0x72]=2;cycle[0x72]=2;
+	byte[0x92]=2;cycle[0x92]=2;
+	byte[0xb2]=2;cycle[0xb2]=2;
+	byte[0xd2]=2;cycle[0xd2]=2;
+	byte[0xf2]=2;cycle[0xf2]=2;
 
 	// xB 列奇数行 (bbb=110 复合指令，基于 sun说的 0x5B=2 推导，整个 B 列低位规整统一为 2 字节)
 	byte[0x1b]=2;cycle[0x1b]=2;

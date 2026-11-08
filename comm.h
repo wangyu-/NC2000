@@ -247,7 +247,7 @@ extern uint32_t CYCLES_MS;
 const uint32_t DSP_AUDIO_HZ = 8000;
 const uint32_t BEEPER_AUDIO_HZ = 44100;
 
-const int jam_cycles=6;//jam hangs the cpu it doesn't really has cycles, use 6 as a placeholder
+const int dummy_cycles=6; //a place holder when we don't know what to do
 /*
 ===================
 rom related
