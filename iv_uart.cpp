@@ -119,7 +119,8 @@ bool is_write_ready() {
     if(!uart_port) return false;
     int waiting = check(sp_output_waiting(uart_port));
     if (waiting < 0) {
-        assert(false);
+        printf("oops in is_write_ready(), waiting=%d\n", waiting);
+        return false;
     }
     return (waiting == 0); 
 }
@@ -128,7 +129,8 @@ bool is_read_ready() {
     if(!uart_port) return false;
     int bytes_waiting = check(sp_input_waiting(uart_port));
     if (bytes_waiting < 0) {
-        assert(false);
+        printf("oops in is_read_ready(), bytes_waiting=%d\n", bytes_waiting);
+        return 0;
     }
     return bytes_waiting>0;
 }
@@ -143,7 +145,10 @@ void write_one_byte(uint8_t byte) {
     unsigned int timeout_ms = 1000;
     if(uart_log_level>=2) printf("write one byte %02x , write pedning=%d\n",byte, sp_output_waiting(uart_port));
     int result = check(sp_blocking_write(uart_port, &byte, 1, timeout_ms));
-    assert(result==1);
+    if(result!=1){
+        printf("oops in write_one_byte(), result=%d\n", result);
+        return;
+    }
 }
 
 uint8_t read_one_byte() {
@@ -155,7 +160,10 @@ uint8_t read_one_byte() {
     unsigned int timeout_ms=1000;
     unsigned char buf[2];
     int result = check(sp_blocking_read(uart_port, buf, 1, timeout_ms));
-    assert(result==1);
+    if(result!=1){
+        printf("oops in read_one_byte(), result=%d\n", result);
+        return 0xff;
+    }
     if(uart_log_level>=2) printf("read one byte %02x, read pending=%d\n",buf[0], sp_input_waiting(uart_port));
     return buf[0];
 }
@@ -168,7 +176,10 @@ void clear_read_buffer(const char *hint){
         unsigned char buf[2];
         unsigned int timeout_ms=1000;
         int result = check(sp_blocking_read(uart_port, buf, 1, timeout_ms));
-        assert(result==1);
+        if(result!=1){
+            printf("oops in clear_read_buffer(), result=%d\n", result);
+            return;
+        }
     }
     if(cnt>0){
         if(uart_log_level>=2) printf("uart clear read buffer, cleared %d bytes hint=%s\n",cnt,hint);
