@@ -268,17 +268,18 @@ void initalize_illegal_op_tables(){
 
 	//JAM (KIL,HLT)
 	//byte[0x02]=1;cycle[0x02]=jam_cycles;
-	byte[0x12]=1;cycle[0x12]=jam_cycles;
 	//byte[0x22]=1;cycle[0x22]=jam_cycles;
-	byte[0x32]=1;cycle[0x32]=jam_cycles;
 	//byte[0x42]=1;cycle[0x42]=jam_cycles;
-	byte[0x52]=1;cycle[0x52]=jam_cycles;
 	//byte[0x62]=1;cycle[0x62]=jam_cycles;
-	byte[0x72]=1;cycle[0x72]=jam_cycles;
-	byte[0x92]=1;cycle[0x92]=jam_cycles;
-	byte[0xb2]=1;cycle[0xb2]=jam_cycles;
-	byte[0xd2]=1;cycle[0xd2]=jam_cycles;
-	byte[0xf2]=1;cycle[0xf2]=jam_cycles;
+	
+	////byte[0x12]=1;cycle[0x12]=jam_cycles;
+	////byte[0x32]=1;cycle[0x32]=jam_cycles;
+	////byte[0x52]=1;cycle[0x52]=jam_cycles;
+	////byte[0x72]=1;cycle[0x72]=jam_cycles;
+	////byte[0x92]=1;cycle[0x92]=jam_cycles;
+	////byte[0xb2]=1;cycle[0xb2]=jam_cycles;
+	////byte[0xd2]=1;cycle[0xd2]=jam_cycles;
+	////byte[0xf2]=1;cycle[0xf2]=jam_cycles;
 
 	// =========================================================================
 	// 【经 ftp.bin 动态跟踪逆向与理论推断确认的非法指令汇总】（AI总结）
@@ -331,6 +332,8 @@ void initalize_illegal_op_tables(){
 	//    - 结论: 结合场景 A 排除 3、场景 B 排除 1，0x03 唯一确定为 2 字节（标准 6502 阵列中 x3 亦为 2 字节 SLO）。
 
 	// 赋值汇总：
+
+	// x2 列奇数行 (bbb=100 单字节操作数寻址 DOP
 	byte[0x02]=2;cycle[0x02]=2;
 	byte[0x22]=2;cycle[0x22]=2;
 	byte[0x42]=2;cycle[0x42]=2;
@@ -340,4 +343,18 @@ void initalize_illegal_op_tables(){
 	byte[0x6f]=3;cycle[0x6f]=6;
 	byte[0xff]=3;cycle[0xff]=7;
 	byte[0x03]=2;cycle[0x03]=8;
+
+	//============================================================
+	//以下是猜的没有验证
+	//============================================================
+	// x2 列偶数行 (立即数模式 DOP)
+	byte[0x12]=2;cycle[0x12]=jam_cycles;
+	byte[0x32]=2;cycle[0x32]=jam_cycles;
+	byte[0x52]=2;cycle[0x52]=jam_cycles;
+	byte[0x72]=2;cycle[0x72]=jam_cycles;
+	byte[0x92]=2;cycle[0x92]=jam_cycles;
+	byte[0xb2]=2;cycle[0xb2]=jam_cycles;
+	byte[0xd2]=2;cycle[0xd2]=jam_cycles;
+	byte[0xf2]=2;cycle[0xf2]=jam_cycles;
+
 }
