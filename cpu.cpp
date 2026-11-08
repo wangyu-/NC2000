@@ -149,7 +149,7 @@ void initalize_illegal_op_tables(){
 	byte[0xd7]=2;cycle[0xd7]=6;
 	byte[0xcf]=3;cycle[0xcf]=6;
 	//byte[0xdf]=3;cycle[0xdf]=7; // 移至文末统一赋值
-	byte[0xdb]=3;cycle[0xdb]=7;
+	//////byte[0xdb]=3;cycle[0xdb]=7;
 	byte[0xc3]=2;cycle[0xc3]=8;
 	byte[0xd3]=2;cycle[0xd3]=8;
 
@@ -158,12 +158,12 @@ void initalize_illegal_op_tables(){
 	byte[0xf7]=2;cycle[0xf7]=6;
 	byte[0xef]=3;cycle[0xef]=6;
 	//byte[0xff]=3;cycle[0xff]=7; // 移至文末统一赋值
-	byte[0xfb]=3;cycle[0xfb]=7;
+	//////byte[0xfb]=3;cycle[0xfb]=7;
 	byte[0xe3]=2;cycle[0xe3]=8;
 	byte[0xf3]=2;cycle[0xf3]=8;
 
 	//LAS (LAR)
-	byte[0xbb]=3;cycle[0xbb]=4;
+	//////byte[0xbb]=3;cycle[0xbb]=4;
 
 	//LAX
 	byte[0xa7]=2;cycle[0xa7]=3;
@@ -181,7 +181,7 @@ void initalize_illegal_op_tables(){
 	byte[0x37]=2;cycle[0x37]=6;
 	byte[0x2f]=3;cycle[0x2f]=6;
 	byte[0x3f]=3;cycle[0x3f]=7;
-	byte[0x3b]=3;cycle[0x3b]=7;
+	//////byte[0x3b]=3;cycle[0x3b]=7;
 	byte[0x23]=2;cycle[0x23]=8;
 	byte[0x33]=2;cycle[0x33]=8;
 
@@ -190,7 +190,7 @@ void initalize_illegal_op_tables(){
 	byte[0x77]=2;cycle[0x77]=6;
 	//byte[0x6f]=3;cycle[0x6f]=6; // 移至文末统一赋值
 	byte[0x7f]=3;cycle[0x7f]=7;
-	byte[0x7b]=3;cycle[0x7b]=7;
+	//////byte[0x7b]=3;cycle[0x7b]=7;
 	byte[0x63]=2;cycle[0x63]=8;
 	byte[0x73]=2;cycle[0x73]=8;
 
@@ -218,7 +218,7 @@ void initalize_illegal_op_tables(){
 	byte[0x17]=2;cycle[0x17]=6;
 	byte[0x0f]=3;cycle[0x0f]=6;
 	byte[0x1f]=3;cycle[0x1f]=7;
-	byte[0x1b]=3;cycle[0x1b]=7;
+	//////byte[0x1b]=3;cycle[0x1b]=7;
 	//byte[0x03]=2;cycle[0x03]=8; // 移至文末统一赋值
 	byte[0x13]=2;cycle[0x13]=8;
 
@@ -227,12 +227,12 @@ void initalize_illegal_op_tables(){
 	byte[0x57]=2;cycle[0x57]=6;
 	byte[0x4f]=3;cycle[0x4f]=6;
 	byte[0x5f]=3;cycle[0x5f]=7;
-	byte[0x5b]=3;cycle[0x5b]=7;
+	//////byte[0x5b]=3;cycle[0x5b]=7;
 	byte[0x43]=2;cycle[0x43]=8;
 	byte[0x53]=2;cycle[0x53]=8;
 
 	//TAS(XAS,SHS)
-	byte[0x9b]=3;cycle[0x9b]=5;
+	//////[0x9b]=3;cycle[0x9b]=5;
 
 	//USBC(SBC)
 	byte[0xeb]=2;cycle[0xeb]=2;
@@ -356,5 +356,15 @@ void initalize_illegal_op_tables(){
 	byte[0xb2]=2;cycle[0xb2]=jam_cycles;
 	byte[0xd2]=2;cycle[0xd2]=jam_cycles;
 	byte[0xf2]=2;cycle[0xf2]=jam_cycles;
+
+	// xB 列奇数行 (bbb=110 复合指令，基于 sun说的 0x5B=2 推导，整个 B 列低位规整统一为 2 字节)
+	byte[0x1b]=2;cycle[0x1b]=2;
+	byte[0x3b]=2;cycle[0x3b]=2;
+	byte[0x5b]=2;cycle[0x5b]=2;
+	byte[0x7b]=2;cycle[0x7b]=2;
+	byte[0x9b]=2;cycle[0x9b]=2;
+	byte[0xbb]=2;cycle[0xbb]=2;
+	byte[0xdb]=2;cycle[0xdb]=2;
+	byte[0xfb]=2;cycle[0xfb]=2;
 
 }
