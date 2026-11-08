@@ -1528,7 +1528,10 @@ DWORD CpuExecuteIRQ(void) {
 #endif
 
         mI = TRUE;              // Stop further interrupts
-        mD = FALSE;             // Clear decimal mode
+
+        if(false){//文曲星真机进入interrupt不会自动clear D
+            mD = FALSE;             // Clear decimal mode
+        }
 
         // Pick up the new PC
         mPC = CPU_PEEKW(IRQ_VECTOR);
