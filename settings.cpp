@@ -133,6 +133,7 @@ void process_args(int argc, char *argv[])
 		{"uart-log-level", required_argument, 0, 1},
 		{"uart-passthrough", required_argument, 0, 1},
 		{"uart-advance", no_argument, 0, 1},
+		{"uart-timeout", required_argument, 0, 1},
 		{"mi-clear-delay", required_argument, 0, 1},
 		{"spin-wait", no_argument, 0, 1},
 		{"lcd-debug", no_argument, 0, 1},
@@ -398,6 +399,10 @@ void process_args(int argc, char *argv[])
 			}
 			else if(strcmp(long_options[option_index].name,"uart-advance")==0){
 				uart_advance = true;
+			}
+			else if(strcmp(long_options[option_index].name,"uart-timeout")==0){
+				extern int uart_timeout_ms;
+				uart_timeout_ms = stoi(optarg);
 			}
 			else if (strcmp(long_options[option_index].name,"mi-clear-delay")==0){
 				mi_clear_delay_value = stoi(optarg);

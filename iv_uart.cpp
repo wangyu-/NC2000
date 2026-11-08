@@ -11,6 +11,8 @@ using namespace std;
 int uart_log_level=0;
 bool uart_advance=0;
 
+int uart_timeout_ms=100;
+
 extern nc2k_states_t nc2k_states;
 static uint8_t * ram_io=nc2k_states.ram_io;
 static uint8_t * ext_reg=nc2k_states.ext_reg;
@@ -130,7 +132,7 @@ bool is_read_ready() {
     int bytes_waiting = check(sp_input_waiting(uart_port));
     if (bytes_waiting < 0) {
         printf("oops in is_read_ready(), bytes_waiting=%d\n", bytes_waiting);
-        return 0;
+        return false;
     }
     return bytes_waiting>0;
 }
@@ -141,8 +143,8 @@ void write_one_byte(uint8_t byte) {
         return ;
     }
     //on some windows, timeout 1ms or sp_nonblocking_write doesn't work, even if is_write_ready() is true.
-    //here use 1000ms for compatibility
-    unsigned int timeout_ms = 1000;
+    //here use larger value for compatibility
+    unsigned int timeout_ms = uart_timeout_ms;
     if(uart_log_level>=2) printf("write one byte %02x , write pedning=%d\n",byte, sp_output_waiting(uart_port));
     int result = check(sp_blocking_write(uart_port, &byte, 1, timeout_ms));
     if(result!=1){
@@ -157,7 +159,7 @@ uint8_t read_one_byte() {
         if(uart_log_level>=1) printf("uart read but not ready\n");
         return 0xff;
     }
-    unsigned int timeout_ms=1000;
+    unsigned int timeout_ms=uart_timeout_ms;
     unsigned char buf[2];
     int result = check(sp_blocking_read(uart_port, buf, 1, timeout_ms));
     if(result!=1){
@@ -174,7 +176,7 @@ void clear_read_buffer(const char *hint){
     while(is_read_ready()){
         cnt++;
         unsigned char buf[2];
-        unsigned int timeout_ms=1000;
+        unsigned int timeout_ms=uart_timeout_ms;
         int result = check(sp_blocking_read(uart_port, buf, 1, timeout_ms));
         if(result!=1){
             printf("oops in clear_read_buffer(), result=%d\n", result);
