@@ -256,7 +256,7 @@ void SwitchBank_2345(){
 
 		memmap[4] = bank + 0x0000;
 		memmap[5] = bank + 0x2000;
-		return;
+		return; //pc1000mode nerver run to below
 	}
 
 

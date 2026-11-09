@@ -502,7 +502,7 @@ void cpu_run3(){
 						ram_io[0x0c]&=0xfe;
 				}
 			}
-		}
+		}//end of for(int i=0;i<trigger256;i++)
 
 		uint32_t sample_hz=get_sample_hz();
 		if(rtc_speed!=1.0) {
