@@ -12,6 +12,7 @@ int uart_log_level=0;
 bool uart_advance=0;
 
 int uart_timeout_ms=100;
+int baudrate_override = 0;
 
 extern nc2k_states_t nc2k_states;
 static uint8_t * ram_io=nc2k_states.ram_io;
@@ -110,6 +111,7 @@ void open_serial_port(char *port_name){
     check(sp_open(uart_port, SP_MODE_READ_WRITE));
 
     //my_baudrate=9600;
+    if(baudrate_override) current_baudrate = baudrate_override;
     printf("Setting port to %d 8N1, no flow control.\n", current_baudrate);
     check(sp_set_baudrate(uart_port, current_baudrate));
     check(sp_set_bits(uart_port, current_wordlen));
@@ -211,7 +213,7 @@ void handle_uart_parameter_change(){
         default:
             assert(false);
     }
-    if(translated_baudrate != current_baudrate){
+    if(translated_baudrate != current_baudrate && !baudrate_override){
         if(uart_log_level>=1) printf("changing baudrate to %d\n",translated_baudrate);
         check(sp_set_baudrate(uart_port, translated_baudrate));
         current_baudrate=translated_baudrate;
