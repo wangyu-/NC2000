@@ -169,19 +169,24 @@ uint8_t* GetBank(uint8_t bank_idx){
 	}
 
 	uint8_t volume_idx = ram_io[0x0D];
-    if (bank_idx < num_nor_pages) { 
+    if (bank_idx < 0x80) {
+		//todo:
+		// not sure if this is real hardware behavior
+		// if access non-existent nor page, only use the lower bits that fit
+		if(bank_idx>=num_nor_pages){
+			if(debug_level>=1) printf("oops GetBank bank_idx=%02x invalid roa_bbs=%02x \n",bank_idx, ram_io[0x0a]);
+			assert((num_nor_pages&(num_nor_pages-1))==0);//double check num_nor_pages if power of 2
+			bank_idx&=(num_nor_pages-1);//this works because num_nor_pages is always power of 2
+		}
 		if(bank_idx >= 0x10 && nc1020mode && nc1020tw_mode){
 			//printf("bidx=%02x\n",bank_idx);
 		}
-
 		if(ram_io[0x0a] & 0x80){
 			if(debug_level>=2) printf("oops, GetBank bank_idx=%02x ram_io[0x0a]&0x80 is true\n",bank_idx);
 		}
-		//todo: improve emulation of non-exist nor pages?
-		//      current behavor is do not switch, is this correct? even if from ext_ram to nor
-		//      maybe whenever fall into nor range, should use last worked bank_idx
     	return nor_banks[bank_idx];
-    } else if (bank_idx >= 0x80) {
+    } else {
+		assert(bank_idx >= 0x80);
 		if(nc3000mode){
 			return NULL;
 		}
@@ -201,9 +206,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 
 			return nc2k_states.ext_ram;
 		}
-    }else{
-		if(debug_level>=1) printf("oops GetBank bank_idx=%02x invalid roa_bbs=%02x \n",bank_idx, ram_io[0x0a]);
-	}
+    }
     return NULL;
 }
 

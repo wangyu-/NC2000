@@ -189,6 +189,9 @@ void write_nor0(uint16_t addr,uint8_t value){
         if(debug_level>=1) printf("oops, in nor write, bank_idx>=num_nor_pages, bank_idx=%02x\n",bank_idx);
         //note: bank_idx is not really used in below code
         return;
+
+        //if don't return and use below code, the nc1020 offical rom won't boot
+        //bank_idx &= (num_nor_pages-1);
     }
 
     //uint8_t* bank = nor_banks[bank_idx];
