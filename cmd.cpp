@@ -213,6 +213,8 @@ string translate_cmd_alias(string name){
 	if(name=="sp") name="speed";
 	if(name=="ed"||name=="ec"||name=="modify") name="edit";
 	if(name=="ffl") name="fast_forward_limit";
+	if(name=="bv") name="beeper_volume";
+	if(name=="sv") name="speaker_volume";
 
 	if(name=="rl") name="reload";
 	if(name=="rls") name="reload_state";
@@ -482,6 +484,22 @@ void handle_cmd(string str){
 			fast_forward_limit= stod(cmds[1]);
 		}
 		printf("set fast forward limit to %f\n",fast_forward_limit);
+		return;
+	}
+	if(cmds[0]=="beeper_volume"){
+		if(cmds.size()>=2){
+			beeper_volume = stod(cmds[1]);
+			if(beeper_volume < 0.0) beeper_volume = 0.0;
+		}
+		printf("beeper volume: %f\n", beeper_volume);
+		return;
+	}
+	if(cmds[0]=="speaker_volume"){
+		if(cmds.size()>=2){
+			speaker_volume = stod(cmds[1]);
+			if(speaker_volume < 0.0) speaker_volume = 0.0;
+		}
+		printf("speaker volume: %f\n", speaker_volume);
 		return;
 	}
 	if(cmds[0]=="get"){

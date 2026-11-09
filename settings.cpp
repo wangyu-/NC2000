@@ -94,6 +94,8 @@ void process_args(int argc, char *argv[])
 		{"no-sync-on-resume", no_argument, 0, 1},
 		{"debug-beeper", no_argument, 0, 1},
 		{"debug-dsp", no_argument, 0, 1},
+		{"beeper-volume", required_argument, 0, 1},
+		{"speaker-volume", required_argument, 0, 1},
 		{"debug-timer", no_argument, 0, 1},
 		{"power-save", required_argument, 0, 1},
 		{"rom", required_argument, 0, 1},
@@ -213,6 +215,16 @@ void process_args(int argc, char *argv[])
 			else if(strcmp(long_options[option_index].name,"debug-dsp")==0)
 			{
 				enable_debug_dsp = true;
+			}
+			else if(strcmp(long_options[option_index].name,"beeper-volume")==0)
+			{
+				beeper_volume = stod(optarg);
+				if(beeper_volume < 0.0) beeper_volume = 0.0;
+			}
+			else if(strcmp(long_options[option_index].name,"speaker-volume")==0)
+			{
+				speaker_volume = stod(optarg);
+				if(speaker_volume < 0.0) speaker_volume = 0.0;
 			}
 			else if(strcmp(long_options[option_index].name,"debug-timer")==0)
 			{

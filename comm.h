@@ -137,6 +137,9 @@ extern bool injected;
 const bool enabled_dsp=true;
 const bool enable_beeper=true;
 
+extern double beeper_volume;
+extern double speaker_volume;
+
 extern bool enable_debug_beeper;
 extern bool enable_debug_dsp;
 

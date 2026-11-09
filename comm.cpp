@@ -56,6 +56,9 @@ bool enable_inject=false;
 bool wanna_inject=false;
 bool injected=false;
 
+double beeper_volume = 1.0;
+double speaker_volume = 1.0;
+
 bool enable_debug_beeper=false;
 bool enable_debug_dsp=false;
 

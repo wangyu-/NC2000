@@ -240,7 +240,7 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
         //dsp_f=filter2(dsp_f);
 
         // 3) Mix and clamp (you can add per-stream gains here if needed)
-        int mixed = beeper_sample + (int)dsp_f;
+        int mixed = (int)(beeper_sample * beeper_volume + dsp_f * speaker_volume);
         out[i] = clamp_s16(mixed);
     }
 }
