@@ -230,6 +230,7 @@ string translate_cmd_alias(string name){
 	if(name=="ls1t"||name=="ls1tw") name="load_state_nc1020tw";
 	if(name=="ls2") name="load_state_nc2000";
 	if(name=="ls3") name="load_state_nc3000";
+	if(name=="ps") name="power_save";
 	return name;
 }
 void handle_cmd(string str){
@@ -744,6 +745,18 @@ void handle_cmd(string str){
 			sync_time_1020();
 		}
 		return ;
+	}
+	if(cmds[0]=="power_save") {
+		if(cmds.size()<2){
+			printf("not enough argument for power_save\n");
+			return;
+		}
+		power_save_interval = std::stoi(cmds[1]);
+		printf("power save interval set to %d\n", power_save_interval);
+		if(power_save_interval==0){
+			power_save_interval = int_inf;
+		}
+		return;
 	}
 	printf("unknow command <%s>\n",cmds[0].c_str());
 	fflush(stdout);
