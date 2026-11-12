@@ -192,7 +192,7 @@ uint8_t read_nand(){
         robust check
     */
     if(nand_cmd[0]!=0x0 && nand_cmd[0]!=0x1 &&nand_cmd[0]!=0x60 &&nand_cmd[0]!=0x50){
-        printf("<<%x>>!!!\n",(unsigned char)nand_cmd[0]);
+        printf("oops unknown nand command <<%x>>!!!\n",(unsigned char)nand_cmd[0]);
         for(int i=0;i<nand_cmd.size();i++){
             printf("<%x>",(unsigned char)nand_cmd[i]);
         }
@@ -206,7 +206,7 @@ uint8_t read_nand(){
     unsigned char cmd=nand_cmd[0];
     if(cmd ==0 ||cmd==1||cmd==0x50){
         if(nand_cmd.size()!=1 || nand_addr.size()!=4  ||nand_data.size()!=0){
-            printf("oops cmd size!=5\n");
+            printf("oops unexpected sizes in nand read, cmd_size=%d addr_size=%d data_size=%d\n", (int)nand_cmd.size(), (int)nand_addr.size(), (int)nand_data.size());
             for(int i=0;i<nand_cmd.size();i++){
                 printf("<%x>",(unsigned char)nand_cmd[i]);
             }
@@ -218,8 +218,6 @@ uint8_t read_nand(){
             }*/
             nand_read_assert(false);
         }
-
-        nand_read_assert(nand_cmd.size()==1 && nand_addr.size()==4 && nand_data.size()==0);
 
         unsigned char low=nand_addr[0];
         unsigned char mid=nand_addr[1];
@@ -418,7 +416,7 @@ void nand_write(uint8_t value){
                 memset(p+final,0xff,32*528);
             }
             if(value==0x80){
-                nand_write_assert(nand_cmd.size()>=1);
+                nand_write_assert(nand_cmd.size()==1);
                 nand_write_assert(nand_cmd[0]==0x50||nand_cmd[0]==0x00);
                 nand_write_assert(nand_addr.size()==0);
                 nand_write_assert(nand_data.size()==0);
@@ -434,7 +432,9 @@ void nand_write(uint8_t value){
             printf("got addr %02x while nand_cmd is empty\n",value);
             nand_write_assert(false);
         }
+        //todo: more rust check of nand_cmd values can be put here
 
+        nand_write_assert(nand_addr.size()<4);
         nand_addr.push_back(value);
         goto out;
     }
@@ -442,13 +442,15 @@ void nand_write(uint8_t value){
 
     if(nand_cmd.size()!=0) {
         if(nand_cmd[0]==0x50) {
-            nand_write_assert(nand_cmd.size()>=2);
+            nand_write_assert(nand_cmd.size()==2);
             nand_write_assert(nand_cmd[1]==0x80);
-            nand_write_assert(nand_cmd.size()<22);
+            nand_write_assert(nand_addr.size()==4);
+            nand_write_assert(nand_data.size()<16);
         }else if (nand_cmd[0]==0x00){
-            nand_write_assert(nand_cmd.size()>=2);
+            nand_write_assert(nand_cmd.size()==2);
             nand_write_assert(nand_cmd[1]==0x80);
-            nand_write_assert(nand_cmd.size()<534);
+            nand_write_assert(nand_addr.size()==4);
+            nand_write_assert(nand_data.size()<528);
         }else{
             nand_write_assert(false);
         }
