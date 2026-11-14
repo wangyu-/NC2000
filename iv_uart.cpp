@@ -194,7 +194,6 @@ void handle_uart_parameter_change(){
     if(!uart_advance) return;
     if(!uart_port) return ;
     int baud=nc2k_states.BSR & 0x0f;
-    if(baud>12) baud=12;
     int translated_baudrate;
     switch (baud){
         case 0: translated_baudrate= 230400; break;
@@ -209,9 +208,23 @@ void handle_uart_parameter_change(){
         case 9: translated_baudrate= 600; break;
         case 10: translated_baudrate= 300; break;
         case 11: translated_baudrate= 150; break;
-        case 12: translated_baudrate= 75; break;
+        case 12: case 13: case 14: case 15:
+            translated_baudrate= 75; break;
         default:
             assert(false);
+    }
+    if(nc3000mode){
+        // looks like datasheet is wrong or out dated.
+        // value comfirmed by wqxfixer
+        // 0 -----> 230400  same as spdc1024
+        // 1 -----> 115200  same as spdc1024
+        // 15 -----> 921600
+        if(baud == 15) { //confirmed
+            translated_baudrate= 921600;
+        }
+        if(baud == 14) { //guess only
+            translated_baudrate= 460800;
+        }
     }
     if(translated_baudrate != current_baudrate && !baudrate_override){
         if(uart_log_level>=1) printf("changing baudrate to %d\n",translated_baudrate);
