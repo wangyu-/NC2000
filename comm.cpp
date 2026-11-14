@@ -17,6 +17,8 @@ CpuVersion cpu_version = CPU_HANDYPSP;
 CpuLoopVersion cpu_loop_version = CPU_RUN3;
 IoVersion io_version = IO_V2;
 
+bool use_legacy_key_io = false;
+
 NorFormat nor_read_format = NorFormat::PHYSICAL_ORDER;
 NorFormat nor_write_format = NorFormat::PHYSICAL_ORDER;
 

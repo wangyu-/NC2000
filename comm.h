@@ -93,7 +93,7 @@ extern CpuVersion cpu_version;
 extern CpuLoopVersion cpu_loop_version;
 extern IoVersion io_version;
 
-const bool use_legacy_key_io = false;
+extern bool use_legacy_key_io;
 
 extern NorFormat nor_read_format;
 extern NorFormat nor_write_format;

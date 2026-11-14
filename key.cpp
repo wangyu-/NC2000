@@ -11,7 +11,7 @@ static bool& wake_up_pending = nc2k_states.pending_wake_up;
 
 static int enable_debug_key_shoot=false;
 
-uint8_t map_key(int32_t sym){ //legacy code guarded by use_legacy_key_io, disabled at compile time.
+uint8_t map_key(int32_t sym){ //legacy code guarded by use_legacy_key_io, disabled by default, only for compare.
     switch(sym){
           case SDLK_RIGHT: return 0x1F;
           case SDLK_LEFT: return 0x3F;
@@ -97,7 +97,7 @@ uint8_t map_key(int32_t sym){ //legacy code guarded by use_legacy_key_io, disabl
     */
 }
 
-void SetKey(uint8_t key_id, bool down_or_up){ //legacy code guarded by use_legacy_key_io, disabled at compile time.
+void SetKey(uint8_t key_id, bool down_or_up){ //legacy code guarded by use_legacy_key_io, disabled by default, only for compare
 	uint8_t row = key_id % 8;
 	uint8_t col = key_id / 8;
 	uint8_t bits = 1 << col;
@@ -145,7 +145,7 @@ void SetKey(uint8_t key_id, bool down_or_up){ //legacy code guarded by use_legac
 	}
 }
 
-void handle_key(signed int sym, bool key_down){ //legacy code guarded by use_legacy_key_io, disabled at compile time.
+void handle_key(signed int sym, bool key_down){ //legacy code guarded by use_legacy_key_io, disabled by default, only for compare
         if(enable_debug_key_shoot){
           printf("event <%d,%d; %llu>\n", sym,key_down,(u64_t)SDL_GetTicks64()%1000);
         }

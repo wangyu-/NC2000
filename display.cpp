@@ -59,6 +59,10 @@ void Render(u64_t tick) {
     if(ram_io[0x05]>>5==7){ //clk off
       lcd_on=false;
     }
+    if(io_version == IO_V1){
+      //be comaptible with io_v1
+      lcd_on = true;
+    }
   }
   if (console_on){
     draw_console();
