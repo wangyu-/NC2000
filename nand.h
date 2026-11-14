@@ -1,6 +1,6 @@
 #include "comm.h"
 
-extern char nand_magic[11];
+extern char * nand_magic;
 
 uint8_t read_nand();
 void nand_write(uint8_t);
