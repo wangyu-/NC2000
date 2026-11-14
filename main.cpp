@@ -62,7 +62,7 @@ void init_resource() {
   
 }
 
-long long get_current_time_milliseconds() {
+long long get_real_time_ms() {
     struct timespec spec;
     if (clock_gettime(CLOCK_REALTIME, &spec) == -1) {
         // Handle error, e.g., print an error message and exit
@@ -102,7 +102,7 @@ void main_loop() {
     if(sync_on_resume && enable_auto_time_sync)
     {
       last_time_rtc = current_time_rtc;
-      current_time_rtc = get_current_time_milliseconds();
+      current_time_rtc = get_real_time_ms();
       if(last_time_rtc && last_time_rtc > current_time_rtc) {
         if(debug_level>=1) printf("oops, time goes back, last=%llu current=%llu, delta=%llu\n",last_time_rtc,current_time_rtc, current_time_rtc - last_time_rtc);
       }
