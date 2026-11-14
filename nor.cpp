@@ -130,7 +130,7 @@ bool read_nor(uint16_t addr, uint8_t &value){
         if(debug_level>=1) printf("FIXME, got NOR_CMD::SW_ID !!!!!!!! addr=%04x\n",addr);
         //assert(false);
         if(addr==0x8000) {
-            if(pc1000mode){
+            if(pc1000mode||nc3000mode){
                 value= 0xBF; //from wayback
             }else if(nc2000mode||nc1020mode){
                 value= 0xC7;// from datasheet but not sure if it's exactly same database
@@ -250,12 +250,12 @@ void write_nor0(uint16_t addr,uint8_t value){
         if (fp_type == NOR_CMD::BYTE_PROGRAM) {
             memmap[addr>>13][addr&0x1fff] &= value;
             fp_step = 4;
-            if(pc1000mode) reset_nor_status();
+            if(pc1000mode||nc3000mode) reset_nor_status();
             return;
         } else if (fp_type == NOR_CMD::INFO_BYTE_PROGRAM) {
             nor_info_block[addr & 0xFF] &= value;
             fp_step = 4;
-            if(pc1000mode) reset_nor_status();
+            if(pc1000mode||nc3000mode) reset_nor_status();
             return;
         } else if (fp_type == NOR_CMD::BLOCK_OR_MASS_ERASE || fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) {
             if (addr_is_0x5555 && value == 0xAA) {
@@ -284,7 +284,7 @@ void write_nor0(uint16_t addr,uint8_t value){
                 memset(nor_info_block, 0xFF, 0x100);
             }
             fp_step = 6;
-            if(pc1000mode) reset_nor_status();
+            if(pc1000mode||nc3000mode) reset_nor_status();
             return;
         }
         else if (fp_type == BLOCK_OR_MASS_ERASE) {
@@ -298,7 +298,7 @@ void write_nor0(uint16_t addr,uint8_t value){
                     memset(&memmap[addr>>13][addr&0x1000],0xff,0x1000);
                 }else assert(false);
                 fp_step = 6;
-                if(pc1000mode) reset_nor_status();
+                if(pc1000mode||nc3000mode) reset_nor_status();
                 return;
             }
         } else if (fp_type == INFO_OR_BMASS_ERASE) {
@@ -306,7 +306,7 @@ void write_nor0(uint16_t addr,uint8_t value){
                 printf("[nor] wanna erase infoblock size 256 B\n");
                 memset(nor_info_block, 0xFF, 0x100);
                 fp_step = 6;
-                if(pc1000mode) reset_nor_status();
+                if(pc1000mode||nc3000mode) reset_nor_status();
                 return;
             }
         }
