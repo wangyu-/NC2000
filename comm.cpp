@@ -187,7 +187,7 @@ void init_parameters(){
     //static_multipler=1; //tmp fix for speed and crash
 
     // cpu cycles per second (cpu freq).
-    CYCLES_SECOND = 3686400*(pc1000mode) + 5120*1000*(nc1020mode||nc2000mode)+10240*1000*nc3000mode;
+    CYCLES_SECOND = 3686400*(pc1000mode||nc1020mode) + 4915200*(nc2000mode) + 4915200*2*nc3000mode;
     CYCLES_SECOND *= oc_factor;
     CYCLES_MS = CYCLES_SECOND / 1000;
     printf("cycles per second is %d\n",CYCLES_SECOND);
