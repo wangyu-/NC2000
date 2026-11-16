@@ -30,8 +30,6 @@ const int INT_TIME_BASE = 8;
 
 unsigned char &inner_interrupt_control=nc2k_states.inner_interrupt_control;
 
-unsigned int &speed_scaledown=nc2k_states.speed_scaledown;
-
 static uint8_t * rtc_reg=nc2k_states.ext_reg;
 static uint8_t * ext_reg=nc2k_states.ext_reg;
 
@@ -383,56 +381,36 @@ int io_v2_read(int address) {
             return ioReg[address];
     }
 }
-void write_0x05_cks_helper(int address,int value){
-    assert(address==0x05);
+int cks_to_speed_scaledown(int cks){
+    int ret=0;
     if(nc2000mode||nc1020mode||pc1000mode){
-        uint8_t cks=value>>5;
-        uint8_t cps=value&0x07;
-        lcdon=(value>>3)&1;
-        if(debug_level>=3) printf("Write05ClockCtrl %02x cks=%d cps=%d lcdon=%d\n",value,cks,cps,lcdon);
-        if (cks!=ram_io[0x05]>>5){
-            switch(cks){
-                case 0: speed_scaledown=8;break;
-                case 1: speed_scaledown=4;break;
-                case 2: speed_scaledown=2;break;
-                case 3: speed_scaledown=1;break;
-                case 4: speed_scaledown=64;break;
-                case 5: speed_scaledown=32;break;
-                case 6: speed_scaledown=16;break;
-                case 7: printf("clk off\n");speed_scaledown=int_inf;break; 
-                default:assert(false);
-            }
-            /*if(nc1020mode && cks==7){ //if accidentally closed during get, at least save what has already been got
-                extern deque<char> queue_for_write;
-                bool dummy_io_for_write(uint16_t addr, uint8_t value);
-                if(queue_for_write.size()){
-                    dummy_io_for_write(0x3fff,  0);
-                }
-            }*/
-            if(enable_debug_cks) printf("<cks=%d scaledown=%d>\n",cks,speed_scaledown);
+        switch(cks){
+            case 0: ret=8; break;
+            case 1: ret=4; break;
+            case 2: ret=2; break;
+            case 3: ret=1; break;
+            case 4: ret=64; break;
+            case 5: ret=32; break;
+            case 6: ret=16; break;
+            case 7: ret=int_inf; break; 
+            default:assert(false);
         }
+    }else if(nc3000mode){ //the definition is not same as spdc1024
+        switch(cks){
+            case 0: ret=32; break;
+            case 1: ret=4; break;
+            case 2: ret=2; break;
+            case 3: ret=1; break;
+            case 4: ret=512; break;
+            case 5: ret=256; break;
+            case 6: ret=64; break;
+            case 7: ret=int_inf; break;
+            default: assert(false);
+        }
+    }else{
+        assert(false); //unsupported mode
     }
-    if(nc3000mode){
-        uint8_t cks=value>>5;
-        if(debug_level>=2) {
-            printf("cks set to %d\n",cks);
-        }
-        if (cks!=ram_io[0x05]>>5){
-            //the defintion is not same as spdc1024
-            switch(cks){
-                case 0: speed_scaledown=32;break;
-                case 1: speed_scaledown=4;break;
-                case 2: speed_scaledown=2;break;
-                case 3: speed_scaledown=1;break;
-                case 4: speed_scaledown=512;break;
-                case 5: speed_scaledown=256;break;
-                case 6: speed_scaledown=64;break;
-                case 7: printf("clk off\n");speed_scaledown=int_inf;break;
-                default:assert(false);
-            }
-            //printf("<cks=%d scaledown=%d>\n",cks,speed_scaledown);
-        }
-    }
+    return ret;
 }
 
 //only for experiment, no effect unless enabled 'patch_table_experiment'
@@ -534,7 +512,15 @@ void io_v2_write(int address, int value) {
             return;
         }
         if(address==0x05){
-            write_0x05_cks_helper(address,value);
+            uint8_t cks=value>>5;
+            uint8_t cps=value&0x07;
+            lcdon=(value>>3)&1;
+            if(debug_level>=3) printf("Write05ClockCtrl %02x cks=%d cps=%d lcdon=%d\n",value,cks,cps,lcdon);
+            if (cks!=ram_io[0x05]>>5){
+                if(enable_debug_cks) {
+                    printf("<cks=%d scaledown=%d>\n",cks,cks_to_speed_scaledown(cks));
+                }
+            }
             return Write05ClockCtrl(address, value);
         }
         if(address==0x06){

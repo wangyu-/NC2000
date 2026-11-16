@@ -274,7 +274,7 @@ void cpu_run3(){
 		if(!need_wait||(cpu->P()&4)==0)
 		{
 			if(cmd=="file_manager"||cmd=="put"||cmd=="get"){
-				speed_scaledown=1;
+				ram_io[0x05]=(ram_io[0x05]&0x1f)|(3<<5); //set cks to highest
 				if(debug_level>=1) printf("set cks to highest\n");
 			}
 			string msg=get_message();
@@ -350,6 +350,7 @@ void cpu_run3(){
 	else if(enable_emulate_cks){
 		//TODO FIX ME
 		//todo study datasheet of how speed affect timers
+		int speed_scaledown=cks_to_speed_scaledown(ram_io[0x05]>>5);;
 		expect_cycles/=speed_scaledown;
 		CycleDelta=cpu->execute(expect_cycles);
 		last_cycles=cycles;

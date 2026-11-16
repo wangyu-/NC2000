@@ -114,7 +114,7 @@ struct nc2k_states_t{
 	int tmaValue;
 	int tmaReload;
 	unsigned char inner_interrupt_control;
-	unsigned int speed_scaledown;
+	unsigned int speed_scaledown; //not used any more
 	uint8_t cps;
 	uint8_t lcdon;
 	bool dsp_0xd0;
@@ -232,9 +232,6 @@ below are all legacy fields, only used in old cpu_loop or io
 		//from wayback, not not really needed
 		//lcdbuffaddr=0x09C0;
 		//lcdbuffaddrmask=0x0FFF;
-
-		void write_0x05_cks_helper(int address,int value);
-		write_0x05_cks_helper(0x05, ram_io[0x05]>>5);
 
 		if(nc1020mode){
 			ram_io[0x0b]=0x01;//if without it on nc1020, on/off need to be press twice to power off

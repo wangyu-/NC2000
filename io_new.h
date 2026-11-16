@@ -1,7 +1,5 @@
 #pragma once
 
-extern unsigned int & speed_scaledown;
-
 int io_v2_read(int address);
 void io_v2_write(int address, int value);
 
@@ -12,3 +10,5 @@ bool timeBaseEnable();
 
 void nc2k_warm_reset();
 void nc2k_cold_reset();
+
+int cks_to_speed_scaledown(int cks);

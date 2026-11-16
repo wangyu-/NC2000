@@ -91,7 +91,6 @@ void LoadNC2k(){
 	//reset_cpu_states();
 	init_cpu_new();
 
-	void nc2k_cold_reset();
 	nc2k_cold_reset();
 
 	if(enable_load_state){
@@ -202,10 +201,15 @@ void save_flash(string file){
 void nc2k_reset_comm(){
 	uint8_t* ioReg=nc2k_states.ram_io;
 
+	//according to datasheet, warm reset will set both 0x2 and 0x3 to zero
+	// but it will make on/off key trigger cold reset
+	// so either on/off key doesn't really count as the "warm reset" on datasheet,
+	// or datasheet is not same version as the hardware
+	//so for simplicity we only set clk to default, ignoring other registers
+	// it seems to be working well
 	const int simple_warm_reset=true;
   if(simple_warm_reset){
-	void write_0x05_cks_helper(int address,int value);
-	write_0x05_cks_helper(0x05, ram_io[0x05]>>5); //reset cks and speed scaledown
+	ram_io[0x05] &= 0x1f;
   } /*else {
     //0x00
     ioReg[0x00]=0;
@@ -249,7 +253,7 @@ void nc2k_reset_comm(){
     ioReg[0x14]=0;
 
     //0x19
-    ioReg[0x19]=0xef;
+    ioReg[0x19]=0xef; // should be &= ?
 
     //0x1a
     ioReg[0x1a]=0;
@@ -274,9 +278,8 @@ void nc2k_warm_reset(){
 void nc2k_cold_reset(){
     clear_cmds();
 
-    nc2k_reset_comm();
-
     nc2k_states.reset();
+    nc2k_reset_comm();
     super_switch();
     cpu->reset();//must be called after super_switch is done
 }
