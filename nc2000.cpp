@@ -96,7 +96,6 @@ void LoadNC2k(){
 	}
 
 	//reset_cpu_states();
-	initalize_illegal_op_tables();
 	init_cpu_new();
 
 	if(nc2000mode||nc3000mode){

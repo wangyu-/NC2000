@@ -4,6 +4,9 @@
 #include <cstdio>
 #include <mem.h>
 #include <cpu.h>
+extern "C" {
+#include "ansi/w65c02.h"
+}
 
 #define  INVALID1        1
 #define  INVALID2        2
