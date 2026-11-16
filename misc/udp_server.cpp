@@ -48,7 +48,7 @@ void read_loop(std::string msg)
 		if(recvlen>0) {
 			assert(recvlen<sizeof(buf));
 			buf[recvlen]=0;
-		} 
+		} else {continue;}
 		string str=buf;
 		while(!str.empty() &&(str.back()=='\n'||str.back()=='\r'||str.back()==' ')){
 			str.pop_back();

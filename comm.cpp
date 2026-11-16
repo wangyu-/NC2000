@@ -263,7 +263,7 @@ void read_file(string name,vector<char> &v){
     int fsize = ftell(f);
     fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
     v.resize(fsize);
-    fread(&v[0], fsize, 1, f);
+    if(fsize > 0) fread(&v[0], fsize, 1, f);
     fclose(f);
 }
 
@@ -276,7 +276,7 @@ int read_file_noexit(string name,vector<char> &v){
     int fsize = ftell(f);
     fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
     v.resize(fsize);
-    fread(&v[0], fsize, 1, f);
+    if(fsize > 0) fread(&v[0], fsize, 1, f);
     fclose(f);
     return 0;
 }

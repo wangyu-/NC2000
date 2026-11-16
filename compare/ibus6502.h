@@ -6,6 +6,7 @@ class IBus6502 {
 public:
 	virtual int read(int address)=0;
     virtual void write(int address, int value)=0;
+	virtual ~IBus6502() = default;
 };
 
 struct BusWrapper:IBus6502{

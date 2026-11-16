@@ -118,7 +118,8 @@ void MyLCDView::loadStripeTexture(const char * texpath, SDL_Renderer* render)
         }
     }
     SDL_UpdateTexture(fLCDTexture, NULL, buffer, width * 4);
-
+    free(buffer);
+    SDL_FreeSurface(surface);
     /*Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);

@@ -87,7 +87,11 @@ void write_nand0_file(string file){
     if(!nc2000mode &&!nc3000mode) return;
     if(file.empty()) file=nc2k_rom.nand0Path;
     else file+=".nand0";
-     FILE *f = fopen(file.c_str(), "wb");
+    FILE *f = fopen(file.c_str(), "wb");
+    if(!f) {
+        printf("failed to open file [%s] for writing!\n", file.c_str());
+        exit(-1);
+    }
     fwrite(&nand[0][0], 64*528 , 1 , f);
     fclose(f);
 }
@@ -97,6 +101,10 @@ void write_nand_file(string file){
     if(file.empty()) file=nc2k_rom.nandFlashPath;
     else file+=".nand";
     FILE *f = fopen(file.c_str(), "wb");
+    if(!f) {
+        printf("failed to open file [%s] for writing!\n", file.c_str());
+        exit(-1);
+    }
     assert(num_nand_pages*528<= sizeof(nand));
     fwrite(&nand[0][0]+ 64*528, num_nand_pages*528- 64*528 , 1 , f);
     fclose(f);

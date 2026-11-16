@@ -90,7 +90,7 @@ void main_loop() {
   u64_t start_tick = SDL_GetTicks64();
   u64_t expected_tick = 0;
 
-  u64_t last_key_pressed_tick = 0;
+  u64_t last_key_pressed_tick = start_tick;
 
 
   u64_t last_time_rtc=0;
@@ -131,7 +131,6 @@ void main_loop() {
     }
 
     SDL_Event event;
-    map<signed int, bool> mp;
     bool key_pressed= false;
     
     while (SDL_PollEvent(&event)) {
@@ -140,26 +139,21 @@ void main_loop() {
       } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
         key_pressed = true;
         bool key_down = (event.type == SDL_KEYDOWN);
-        //try to consolidate multiple key shoot into one
-        //not sure if necessary. But it's helpful for debug
-        mp[event.key.keysym.sym]= key_down;
-        for(auto it=mp.begin();it!=mp.end();it++){
-          if(it->first==SDLK_LSHIFT || it->first==SDLK_RSHIFT){
-            shift_down=it->second;
-            continue;
-          }
-          if(it->first==SDLK_LCTRL || it->first==SDLK_RCTRL){
-            ctrl_down=it->second;
-            continue;
-          }
-          bool console_on_saved=console_on;
-          handle_console(it->first, it->second);// handles 1. console toggle 2. console itself
-          if(console_on_saved){
-            continue;
-          }
-          if(use_legacy_key_io) handle_key(it->first, it->second);
-          else handle_key_wayback(it->first,it->second);
+        if(event.key.keysym.sym==SDLK_LSHIFT || event.key.keysym.sym==SDLK_RSHIFT){
+          shift_down=key_down;
+          continue;
         }
+        if(event.key.keysym.sym==SDLK_LCTRL || event.key.keysym.sym==SDLK_RCTRL){
+          ctrl_down=key_down;
+          continue;
+        }
+        bool console_on_saved=console_on;
+        handle_console(event.key.keysym.sym, key_down);// handles 1. console toggle 2. console itself
+        if(console_on_saved){
+          continue;
+        }
+        if(use_legacy_key_io) handle_key(event.key.keysym.sym, key_down);
+        else handle_key_wayback(event.key.keysym.sym,key_down);
       } else if (event.type == SDL_TEXTINPUT) {
         input_text(event.text.text);
       }

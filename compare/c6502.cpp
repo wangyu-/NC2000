@@ -141,7 +141,7 @@ void C6502::XXX_xx(int code) {
         assert(illegal_op_cycle[code]!=0);
 
         PC += illegal_op_byte[code]-1;
-        clk += illegal_op_cycle[code];
+        clk += illegal_op_cycle[code]*12;
         printf("skipped %d extra bytes\n", illegal_op_byte[code]-1);
     }
     else{

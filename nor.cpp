@@ -87,9 +87,13 @@ void LoadNor(){
 void SaveNor(string file)
 {
     if(file.empty()) { file = nc2k_rom.norFlashPath;}
-    else file+=+".nor";
+    else file+=".nor";
 	uint8_t* temp_buff = (uint8_t*)malloc(NOR_SIZE);
 	FILE* fp = fopen(file.c_str(), "wb");
+    if(!fp) {
+        printf("failed to open file [%s] for writing!\n", file.c_str());
+        exit(-1);
+    }
     if(nor_write_format== PHYSICAL_ORDER){
 	    ProcessBinaryLinear(temp_buff, nor_buff, NOR_SIZE);
     }

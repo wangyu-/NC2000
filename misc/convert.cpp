@@ -39,6 +39,11 @@ int bin_dec(string name,string outname)
 	jm_len=fgetc(fpin);
 	if(jm_len==EOF){
 		printf("file %s is empty\n",name.c_str());
+		fclose(fpin);
+		return -1;
+	} else if(jm_len <= 0) {
+		printf("file %s has invalid jm_len %d\n", name.c_str(), jm_len);
+		fclose(fpin);
 		return -1;
 	}
 	for (i=0;i<jm_len;i++)

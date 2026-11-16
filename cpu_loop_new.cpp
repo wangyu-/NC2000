@@ -263,11 +263,16 @@ void cpu_run3(){
 	char *peeked_msg=peek_message();
 	if(peeked_msg){
 		bool need_wait=false;
-		string cmd=split_s(string(peeked_msg), " ")[0];
+		auto cmds=split_s(string(peeked_msg), " ");
+		if(cmds.empty()){
+			get_message();
+			return;
+		}
+		string cmd=cmds[0];
 		string translate_cmd_alias(string name);
 		cmd=translate_cmd_alias(cmd);
 		//printf("cmd is %s\n",cmd.c_str());
-		if(cmd=="file_manager"||cmd=="put"||cmd=="get"||cmd=="create_dir"||cmd=="create_dir_hex"){
+		if(cmd=="file_manager"||cmd=="put"||cmd=="get"||cmd=="create_folder"||cmd=="create_folder_hex"){
 			need_wait=true;
 			//printf("need wait!!\n");
 		}

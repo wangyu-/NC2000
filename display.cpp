@@ -125,7 +125,7 @@ void Render(u64_t tick) {
   p = (decltype(p)) lcd_effect_buffer;
 
   bool is_grey_mode= (get_lcd_segment_size() == SCREEN_WIDTH*2);
-  if(!is_grey_mode){
+  if(console_on||!is_grey_mode){
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8; ++i) {
       for (int j = 0; j < 8; ++j) {
         bool pixel = (lcd_buf[i] & (1 << (7 - j))) != 0;

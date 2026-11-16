@@ -280,7 +280,7 @@ bool timeBaseEnable() {
 
 int io_v2_read(int address) {
     if(nc2000mode&&log_all_dsp_io&& address>=0x30 && address<=0x33){
-        printf("""[io_v2_read] address=%02x\n",address);
+        printf("[io_v2_read] address=%02x\n",address);
     }
     if(nc1020mode||nc2000mode||nc3000mode||pc1000mode){
         if(address==0x04) return Read04StopTimer0(address);

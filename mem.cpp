@@ -195,7 +195,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 			}
 		}
 
-		if(nc2000mode||nc3000mode){
+		if(nc2000mode){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
 

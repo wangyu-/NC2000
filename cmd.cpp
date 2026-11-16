@@ -72,7 +72,7 @@ string get_message(){
     if(!udp_msgs.empty()){
         res= udp_msgs.front();
         udp_msgs.pop_front();
-        udp_msgs.clear();
+        udp_msgs.clear();//for now clear all, don't allow cmd queuing
     }
 	g_mutex.unlock();
     return res;
@@ -343,7 +343,7 @@ void handle_cmd(string str){
 		return;
 	}
 	if(cmds[0]=="dump"){
-		if(cmds.size()<2){
+		if(cmds.size()<3){
 			printf("dump: not enough argument\n");
 			return;
 		}
@@ -357,6 +357,7 @@ void handle_cmd(string str){
 	}
 
 	if(cmds[0]=="edit"){
+		if(cmds.size() < 2) { printf("not enough argument\n"); return; }
 		uint32_t start=stoi(cmds[1],0,16);
 		for(uint32_t i=2;i<cmds.size();i++){
 			Peek16(start++)=stoi(cmds[i],0,16);;
@@ -461,7 +462,9 @@ void handle_cmd(string str){
 	if(cmds[0]=="speed"){
 			if(cmds.size()==1) speed_multiplier=1;
 			else{
-				sscanf(cmds[1].c_str(),"%lf",&speed_multiplier);
+				double tmp=1;
+				sscanf(cmds[1].c_str(),"%lf",&tmp);
+				if(tmp>0) speed_multiplier=tmp;
 			}
 			printf("change speed to %f\n",speed_multiplier);
 			return;
@@ -480,6 +483,7 @@ void handle_cmd(string str){
 		}
 		else{
 			fast_forward_limit= stod(cmds[1]);
+			if(fast_forward_limit < 0) fast_forward_limit = 0;
 		}
 		printf("set fast forward limit to %f\n",fast_forward_limit);
 		return;
