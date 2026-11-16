@@ -258,7 +258,7 @@ void write_nor0(uint16_t addr,uint8_t value){
             return;
         } else if (fp_type == NOR_CMD::INFO_BYTE_PROGRAM) {
             nor_info_block[addr & 0xFF] &= value;
-            RATE_LIMIT_LOG(3000,5,"WARN: info byte program at addr=0x%04x, value=0x%02x\n", addr, value);
+            RATE_LIMIT_LOG(3000,5,"WARN: info byte program at addr=0x%04x, value=0x%02x", addr, value);
             fp_step = 4;
             if(pc1000mode||nc3000mode) reset_nor_status();
             return;
