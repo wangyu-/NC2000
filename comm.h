@@ -282,6 +282,7 @@ extern bool reload_pending;
 
 extern bool spin_wait;
 
+//warning: adjust the size will break save compatibility
 const int MAX_NAND_ADDR_SIZE = 4+10;
 const int MAX_NAND_DATA_SIZE = 528+100;
 /*

@@ -254,6 +254,7 @@ void write_nor0(uint16_t addr,uint8_t value){
             return;
         } else if (fp_type == NOR_CMD::INFO_BYTE_PROGRAM) {
             nor_info_block[addr & 0xFF] &= value;
+            RATE_LIMIT_LOG(3000,5,"WARN: info byte program at addr=0x%04x, value=0x%02x\n", addr, value);
             fp_step = 4;
             if(pc1000mode||nc3000mode) reset_nor_status();
             return;
@@ -278,16 +279,16 @@ void write_nor0(uint16_t addr,uint8_t value){
         	for (uint32_t i=0; i<num_nor_pages; i++) {
                 memset(nor_banks[i], 0xFF, 0x8000);
             }
-            if (fp_type == 5) {
+            if (fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) {
                 //if it's BMASS erase info block in addition erase info block
-                printf("[nor] wanna erase infoblock size 256\n");
+                printf("[nor] WARN: wanna erase infoblock size 256 (BMASS)\n");
                 memset(nor_info_block, 0xFF, 0x100);
             }
             fp_step = 6;
             if(pc1000mode||nc3000mode) reset_nor_status();
             return;
         }
-        else if (fp_type == BLOCK_OR_MASS_ERASE) {
+        else if (fp_type == NOR_CMD::BLOCK_OR_MASS_ERASE) {
             if (value == 0x30) {
                 if(nc2000mode||nc1020mode){
                     printf("[nor] wanna erase size 2048, addr=0x%04x, bs=0x%02x\n",addr, ram_io[0x00]);
@@ -301,9 +302,9 @@ void write_nor0(uint16_t addr,uint8_t value){
                 if(pc1000mode||nc3000mode) reset_nor_status();
                 return;
             }
-        } else if (fp_type == INFO_OR_BMASS_ERASE) {
+        } else if (fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) {
             if (value == 0x30) {
-                printf("[nor] wanna erase infoblock size 256 B\n");
+                printf("[nor] WARN: wanna erase infoblock size 256\n");
                 memset(nor_info_block, 0xFF, 0x100);
                 fp_step = 6;
                 if(pc1000mode||nc3000mode) reset_nor_status();
