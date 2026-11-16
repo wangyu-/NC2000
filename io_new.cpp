@@ -248,7 +248,7 @@ bool setTimerA() {
         tmaValue += (256 >> temp);
         if (tmaValue >= 0x10000) {
             tmaValue = tmaReload;
-            if(debug_level>=1) printf("timer A interrupt triggered");
+            if(debug_level>=2) printf("timer A interrupt triggered\n");
             if ((inner_interrupt_control & 1) != 0){
                 ioReg[io01_int_status] |= 1;
                 return true;

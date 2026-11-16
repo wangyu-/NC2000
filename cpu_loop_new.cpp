@@ -61,14 +61,14 @@ void init_cpu_new(){
 	
 }
 
-bool trigger_every_x_cycle(int x){
+int trigger_every_x_cycle(int x){
 	uint32_t trigger_cycles= x;
-	return (cycles/trigger_cycles > last_cycles/trigger_cycles);
+	return cycles/trigger_cycles - last_cycles/trigger_cycles;
 }
 
-bool trigger_every_x_ms(int x){
+int trigger_every_x_ms(int x){
 	uint32_t trigger_cycles=  CYCLES_SECOND*x/1000;
-	return (cycles/trigger_cycles > last_cycles/trigger_cycles);
+	return cycles/trigger_cycles - last_cycles/trigger_cycles;
 }
 
 int trigger_x_times_per_s(int x){
@@ -416,33 +416,43 @@ void cpu_run3(){
 				cpu->set_irq_pending();
 		}
 	}
-	if(nc2000mode||nc3000mode||nc1020mode){
+	if(nc2000mode||nc3000mode||nc1020mode||pc1000mode_normal()){
 		//timebase is trigged by address line of lcd, 
 		//the trigger rule is complex, it depends on TBC cps and cpf.
 		//for simplicty just use fixed value
 
-		//nc2000 use TBC=0c, pc1000 use TBC=0a
-		//in theory the value should be not same as pc1000's.  someone say tc808's is 13x
-		//this affect tetris speed,
-		if(trigger_x_times_per_s(185)){//14.7456/3*1000000/13/(2^11) ~= 184.6??
-			if (timeBaseEnable()) {
-				setIrqTimeBase();
-				cpu->set_irq_pending();
+		//timebase affect's game music speed
+
+		//nc2000 and nc3000 use TBC=0c, pc1000 and nc1020 use TBC=0a
+		if(nc1020mode||pc1000mode_normal()) {
+			// tbc=0x0a, so L8 triggers TBI interrupt, it happens every time L8 flips from 0 to 1
+			// from 09c0 to 0x0fff, L8 flips 0->1 three times.
+			// since cps=011, cp=p/4, cp=3686400/4=921600    (every bit triggers a cp) 
+			// lp=cp/160=921600/160=5760     (a row contains 160 bits)
+			// fp=5760/80=72   (agree with document value)
+			// freq_tbi=72*3=216     (compared with physical wqx game music, sounds correct)
+			if(trigger_x_times_per_s(216)){
+				if (timeBaseEnable()) {
+					setIrqTimeBase();
+					cpu->set_irq_pending();
+				}
+			}
+		}
+
+		if(nc2000mode||nc3000mode) {
+			// for nc2000 only:
+			// tbc=0x0c, so L10 triggers TBI interrupt, it happens every time L10 flips from 0 to 1
+			// from 0x1830 to 0x1fff, L10 flips 0->1 only 1 time.  but 1 sounds too slow, 2 sounds correct. (compared with physical wqx game music)
+			// freq_tbi=fp*2=73.8*2=147.6
+			if(trigger_every_x_cycle(CYCLES_SECOND*10/1476)){
+				if (timeBaseEnable()) {
+					setIrqTimeBase();
+					cpu->set_irq_pending();
+				}
 			}
 		}
 	}
-	if(pc1000mode_normal()){
-		if(trigger_x_times_per_s(250)){
-			if (timeBaseEnable()) {
-				if(enable_dyn_debug_next_n) printf("time to timebase, timebase is enabled!!!!\n");
-				setIrqTimeBase();
-				cpu->set_irq_pending();
-			}
-			else{
-				if(enable_dyn_debug_next_n) printf("time to timebase!!!! but it's not enabled!!!!\n");
-			}
-		}
-	}
+
 	if(pc1000mode_emux()){
 		if(trigger_x_times_per_s(250)){
 			if (bus_pc1000->timeBaseEnable()) {
