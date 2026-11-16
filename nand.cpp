@@ -107,25 +107,7 @@ void write_nand_file(string file){
     fclose(f);
 }
 
-#define NLOG_R(fmt, ...) \
-    do { \
-        const uint32_t interval_ms = 3000; \
-        static uint64_t last_log_ms = 0; \
-        static uint64_t total_count = 0; \
-        static uint64_t suppressed_count = 0; \
-        uint64_t now = SDL_GetTicks64(); \
-        total_count++; \
-        if (total_count <= 5 || (now - last_log_ms >= (uint64_t)(interval_ms)) ) { \
-            printf(fmt "  #%llu", \
-                   ##__VA_ARGS__, total_count); \
-            if(suppressed_count>0) printf(" (suppressed %llu)\n", suppressed_count); \
-            else printf("\n"); \
-            last_log_ms = now; \
-            suppressed_count = 0; \
-        } else { \
-            suppressed_count++; \
-        } \
-    } while (0)
+#define NLOG_R(fmt, ...) RATE_LIMIT_LOG(3000, 5, fmt, ##__VA_ARGS__);
 
 enum NAND_POINTER_LATCH{
     AREA1=0,

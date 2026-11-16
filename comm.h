@@ -286,6 +286,25 @@ common functions
 ===================
 */
 
+#define RATE_LIMIT_LOG(interval_ms, first_n, fmt, ...) \
+    do { \
+        static uint64_t last_log_ms = 0; \
+        static uint64_t total_count = 0; \
+        static uint64_t suppressed_count = 0; \
+        uint64_t now = SDL_GetTicks64(); \
+        total_count++; \
+        if (total_count <= first_n || (now - last_log_ms >= (uint64_t)(interval_ms)) ) { \
+            printf(fmt "  #%llu", \
+                   ##__VA_ARGS__, total_count); \
+            if(suppressed_count>0) printf(" (suppressed %llu)\n", suppressed_count); \
+            else printf("\n"); \
+            last_log_ms = now; \
+            suppressed_count = 0; \
+        } else { \
+            suppressed_count++; \
+        } \
+    } while (0)
+
 void ProcessBinaryRev(uint8_t* dest, uint8_t* src, uint32_t size);
 void ProcessBinaryLinear(uint8_t* dest, uint8_t* src, uint32_t size);
 
