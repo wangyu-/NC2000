@@ -80,7 +80,7 @@ int CPUInterface::execute(int max_cycles){
     if(g_nmi){
         g_nmi = false;
         cycle+=CpuExecuteNMI();
-		mI = true;     //todo: is this needed?
+		mI = true;     //note: original wayback doesn't set mI unless MERGEGGVSIM
     }
 
     do{

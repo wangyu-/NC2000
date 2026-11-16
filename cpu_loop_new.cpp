@@ -376,7 +376,7 @@ void cpu_run3(){
 		//todo: better emulation
 		if(int trigger_cnt=trigger_x_times_per_s(576*50)){
 			for(int i=0;i<trigger_cnt;i++){
-				if(/*nc1020mode||nc2000mode||nc3000mode||*/pc1000mode_normal()) {
+				if(pc1000mode_normal()) {
 					//timerA/B are usually for record and play
 					//looks like nobody use timerA on nc1020/nc2000
 					if(setTimerA()){
@@ -425,6 +425,7 @@ void cpu_run3(){
 
 		//nc2000 and nc3000 use TBC=0c, pc1000 and nc1020 use TBC=0a
 		if(nc1020mode||pc1000mode_normal()) {
+			// for nc1020:
 			// tbc=0x0a, so L8 triggers TBI interrupt, it happens every time L8 flips from 0 to 1
 			// from 09c0 to 0x0fff, L8 flips 0->1 three times.
 			// since cps=011, cp=p/4, cp=3686400/4=921600    (every bit triggers a cp) 

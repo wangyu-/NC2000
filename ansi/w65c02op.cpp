@@ -1483,7 +1483,7 @@ DWORD CpuExecuteNMI(void) {
     DWORD cycle = 0;
     // FIXME: GET Latest GGV Simulator
     // NC3000 have same behavior
-    if (true || g_nmi) {
+    if (true || g_nmi) {                      //change: give the control to caller
         //printf("NMI!!!\n");
         // Mark the NMI as services
         //g_nmi = FALSE;
@@ -1511,7 +1511,7 @@ DWORD CpuExecuteNMI(void) {
 
 DWORD CpuExecuteIRQ(void) {
     DWORD cycle = 0;
-    if ( true|| (g_irq && !mI)) {
+    if ( true|| (g_irq && !mI)) {            //change: give the control to caller
         //printf("irq!!\n");
         TRACE_CPU1("Update() IRQ taken at PC=%04x", mPC);
         // IRQ signal clearance is handled by CMikie::Update() as this
