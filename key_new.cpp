@@ -433,11 +433,7 @@ pair<int,int> map_key_wayback(int32_t sym){
 
 void SetKeyWayback(int code_y,int code_x, bool down_or_up){
   if(pc1000mode){
-    //todo not really works
-    if(code_x==0 && code_y==0 && down_or_up){
-      void warm_reset_if_clkoff();
-      warm_reset_if_clkoff();
-    }
+    //todo: hotkey wake up
   }
   if(nc3000mode){
       if(code_x==0 && code_y==4 && down_or_up){
@@ -471,7 +467,7 @@ void handle_key_wayback(signed int sym, bool key_down){
           printf("event <%d,%d; %llu>\n", sym,key_down,(u64_t)SDL_GetTicks64()%1000);
         }*/
         auto value=map_key_wayback(sym);
-        if(nc1020mode && sym==SDLK_F12 ){
+        if((nc1020mode||pc1000mode) && sym==SDLK_F12 ){
           //nc1020's on/off is not on the 8x8 keyboard scanning matrix, it is an independent pin
           uint8_t* ram_io=nc2k_states.ram_io;
           if(key_down){
