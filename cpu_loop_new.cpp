@@ -202,15 +202,6 @@ void warm_reset_if_clkoff(){
 		printf("warm reset!!\n");
 	}
 }
-void cold_reset(){
-	nc2k_cold_reset();
-	//memset(ram_io,0,0x40);
-	cpu->reset();
-}
-void warm_reset(){
-	nc2k_warm_reset();
-	cpu->reset();
-}
 void debug_pc(){
 	uint8_t & Peek16Debug(uint16_t addr);
 	if(debug_level>=9){
@@ -268,7 +259,6 @@ void cpu_run3(){
 		do_warm_reset=0;
 		//prepare_soft_reset(); //shouldn't call here
 		nc2k_warm_reset();
-		cpu->reset();
 	}
 	char *peeked_msg=peek_message();
 	if(peeked_msg){

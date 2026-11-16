@@ -22,3 +22,6 @@ void delete_state(string file_name);
 void load_state();
 
 int get_lcd_segment_size();
+
+void nc2k_cold_reset();
+void nc2k_warm_reset();

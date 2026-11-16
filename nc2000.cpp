@@ -70,8 +70,10 @@ void load_state(){
 void LoadNC2k(){
 	nc2k_states.init(); //fix re-run issue on emscripten version
 	clear_cmds();
-	clear_nand_status();
-	clear_iv();
+	
+	//not needed any more as they are part of state now
+	//clear_nand_status();
+	//clear_iv();
 
 	init_keyitems();
 
@@ -91,12 +93,12 @@ void LoadNC2k(){
 
 	init_mem();
 
+	//reset_cpu_states();
+	init_cpu_new();
+
 	if(nc1020mode){
 		ram_io[0x0b]=0x01;
 	}
-
-	//reset_cpu_states();
-	init_cpu_new();
 
 	if(nc2000mode||nc3000mode){
 		//nc3000c-lee has it but seems like no need?
@@ -120,8 +122,7 @@ void LoadNC2k(){
 	if(enable_load_state&&reset_after_load_state){
 		void set_warm_reset_flag();
 		set_warm_reset_flag();
-		void warm_reset();
-		warm_reset();
+		nc2k_warm_reset();
 	}
 }
 
@@ -209,8 +210,7 @@ void save_flash(string file){
 	printf("flash saved to file!!\n");
 }
 
-void nc2k_warm_reset(){
-
+void nc2k_reset_comm(){
 	uint8_t* ioReg=nc2k_states.ram_io;
 
 	const int simple_warm_reset=true;
@@ -278,15 +278,21 @@ void nc2k_warm_reset(){
     super_switch();
 }
 
+void nc2k_warm_reset(){
+    nc2k_reset_comm();
+    cpu->reset();//must be called after super_switch is done
+}
+
 void nc2k_cold_reset(){
     clear_cmds();
     clear_nand_status();
     clear_iv();//if this is put into warm_reset, alarm wakeup will not work correcly
 
-    nc2k_warm_reset();
+    nc2k_reset_comm();
 
     //memset(ram_io,0,sizeof(nc2k_states.ram_io));
     //memset(ext_reg, 0, sizeof(nc2k_states.ext_reg));
     nc2k_states.reset();
     super_switch();
+    cpu->reset();//must be called after super_switch is done
 }

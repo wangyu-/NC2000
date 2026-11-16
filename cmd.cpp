@@ -255,13 +255,11 @@ void handle_cmd(string str){
 	}
 	if(cmds[0]=="warm_reset"){
 		set_warm_reset_flag();
-		void warm_reset();
-		warm_reset();
+		nc2k_warm_reset();
 		return;
 	}
 	if(cmds[0]=="cold_reset"){
-		void cold_reset();
-		cold_reset();
+		nc2k_cold_reset();
 		return;
 	}
 	if(cmds[0]=="exit"){

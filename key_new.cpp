@@ -6,6 +6,7 @@
 #include "console.h"
 #include "state.h"
 #include "NekoDriverIO.h"
+#include "nc2000.h"
 using namespace std;
 extern BusPC1000 *bus_pc1000;
 extern nc2k_states_t nc2k_states;
@@ -462,8 +463,7 @@ void handle_key_wayback(signed int sym, bool key_down){
         }
         if(sym==SDLK_F12 && shift_down&& ctrl_down){ // shift+ctrl+F12 triggers reset button
             if(key_down==1){
-              void cold_reset();
-              cold_reset();
+              nc2k_cold_reset();
             }
             return;
         }

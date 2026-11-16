@@ -212,7 +212,7 @@ below are all legacy fields, only used in old cpu_loop or io
 		memset(this,0,sizeof(nc2k_states_t));
 		reset();
 	}
-	void reset(){
+	void reset(){ //called as part of cold_reset
 		memset(ram_io,0,sizeof(ram_io));
 		memset(ext_reg+8, 0, sizeof(ext_reg)-8);// clear non-rtc regs
 		memset(&RESET_STATE_BEGIN,0,(size_t)(&RESET_STATE_END - &RESET_STATE_BEGIN));
