@@ -9,9 +9,6 @@ extern nc2k_states_t nc2k_states;
 static uint8_t* ram_buff = nc2k_states.ram;
 static uint8_t* ram_io = nc2k_states.ram_io;
 
-const int MAX_NAND_ADDR_SIZE = 4+10;
-const int MAX_NAND_DATA_SIZE = 528+100;
-
 static char nand[65536*2][528];
 char * nand_magic= &nand[0][0]+0x210;
 
@@ -122,11 +119,11 @@ enum NAND_CMD_LATCH{
     READ_ID=0x90
 };
 
-static deque<uint8_t> nand_addr;
-static deque<uint8_t> nand_data;
-static uint32_t nand_read_offset=0;
-static NAND_POINTER_LATCH nand_pointer_latch = AREA1;
-static NAND_CMD_LATCH nand_cmd_latch = READ1_2;
+static auto& nand_addr = nc2k_states.nand_addr;
+static auto& nand_data = nc2k_states.nand_data;
+static uint32_t& nand_read_offset = nc2k_states.nand_read_offset;
+static uint32_t& nand_pointer_latch = nc2k_states.nand_pointer_latch;
+static uint32_t& nand_cmd_latch = nc2k_states.nand_cmd_latch;
 void clear_nand_status(){
     nand_addr.clear();
     nand_data.clear();
@@ -450,19 +447,19 @@ void nand_write(uint8_t value){
     }
 
     if(ALE){
-        nand_addr.push_back(value);
-        if(nand_addr.size() >MAX_NAND_ADDR_SIZE){
+        if(nand_addr.size() <MAX_NAND_ADDR_SIZE){
+            nand_addr.push_back(value);
+        }else{
             NLOG_R("[nand] oops, too many nand_addr %d", (int)nand_addr.size());
-            nand_addr.pop_back();
         }
         goto out;
     }
 
     assert(!ALE&&!CLE);
-    nand_data.push_back(value);
-    if(nand_data.size() >MAX_NAND_DATA_SIZE){
+    if(nand_data.size() <MAX_NAND_DATA_SIZE){
+        nand_data.push_back(value);
+    }else{
         NLOG_R("[nand] oops, too many nand_data %d", (int)nand_data.size());
-        nand_data.pop_back();
     }
     goto out;
 

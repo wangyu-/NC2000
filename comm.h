@@ -281,6 +281,9 @@ extern bool patch_table_experiment;
 extern bool reload_pending;
 
 extern bool spin_wait;
+
+const int MAX_NAND_ADDR_SIZE = 4+10;
+const int MAX_NAND_DATA_SIZE = 528+100;
 /*
 ===================
 common functions

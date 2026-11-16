@@ -2,6 +2,28 @@
 #include "comm.h"
 #include <cstdint>
 
+
+//a POD vector that can be safely reset as zeros
+template<size_t N>
+struct PODVec {
+	uint32_t len;
+	uint8_t buf[N];
+
+	size_t size() const { return len; }
+	bool empty() const { return len == 0; }
+	void clear() { len = 0; }
+	uint8_t* data() { return buf; }
+	uint8_t& operator[](size_t i) { return buf[i]; }
+	void push_back(uint8_t val) {
+		assert(len < N);
+		buf[len++] = val;
+	}
+	void pop_back() {
+		assert(len >0);
+		len--;
+	}
+};
+
 /*struct cpu_states_t {
 	uint16_t reg_pc;
 	uint8_t reg_a;
@@ -135,6 +157,14 @@ struct nc2k_states_t{
 	uint8_t r0c_general_status;
 
 	uint32_t iv_set;
+
+	//nand states
+	uint32_t nand_pointer_latch;
+	uint32_t nand_cmd_latch;
+	uint32_t nand_read_offset;
+	PODVec<MAX_NAND_ADDR_SIZE> nand_addr;
+	PODVec<MAX_NAND_DATA_SIZE> nand_data;
+	//nand states end
 
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 

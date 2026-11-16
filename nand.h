@@ -1,3 +1,4 @@
+#pragma once
 #include "comm.h"
 
 extern char * nand_magic;
