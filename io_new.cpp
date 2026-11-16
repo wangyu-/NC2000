@@ -517,6 +517,7 @@ void io_v2_write(int address, int value) {
             lcdon=(value>>3)&1;
             if(debug_level>=3) printf("Write05ClockCtrl %02x cks=%d cps=%d lcdon=%d\n",value,cks,cps,lcdon);
             if (cks!=ram_io[0x05]>>5){
+                if(cks==0x7) printf("clk off\n");
                 if(enable_debug_cks) {
                     printf("<cks=%d scaledown=%d>\n",cks,cks_to_speed_scaledown(cks));
                 }
