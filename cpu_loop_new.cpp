@@ -519,7 +519,10 @@ void cpu_run3(){
 		uint8_t iv=peek_iv();
 		if(iv!=IV_NONE){
 			cpu->set_irq_pending();
-			warm_reset_if_clkoff();
+			//if(iv==IV_ALARM) warm_reset_if_clkoff();
+			if(nc2k_states.iv_set&(1<<IV_ALARM)){
+				warm_reset_if_clkoff();
+			}
 		}
 	}
 

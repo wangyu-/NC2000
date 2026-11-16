@@ -113,7 +113,9 @@ int CPUInterface::execute(int max_cycles){
 }
 
 void CPUInterface::set_nmi_pending() {
-	if(is_clk_off()) {
+	//on pc1000mode the nmi is triggered by RTC and it can wake up clk (not 100% confirmed)
+	//references "Real Time Clock value" "RTC wake up system"
+	if(pc1000mode && is_clk_off()) {
 		if(debug_level>=1) RATE_LIMIT_LOG(5000,1,"woke by nmi");
 		nc2k_states.woke_by_interrupt=true;
 		set_clk_on();
@@ -136,11 +138,6 @@ void CPUInterface::irq_now() {
 
 }
 void CPUInterface::set_irq_pending() {
-	if(!I() && is_clk_off()) {
-		if(debug_level>=1) RATE_LIMIT_LOG(5*1000,1,"woke by irq");
-		nc2k_states.woke_by_interrupt=true;
-		set_clk_on();
-	}
 	if(enable_dyn_debug_next_n) printf("set_irq_pending!!!\n");
 	if(version==CPU_EMUX) {
 		cpu_impl_emux->irqPending = true;
