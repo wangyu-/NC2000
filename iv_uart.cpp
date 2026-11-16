@@ -20,31 +20,37 @@ static uint8_t * ext_reg=nc2k_states.ext_reg;
 
 static uint8_t &bk=nc2k_states.bk;
 
-set<uint8_t> iv_set;
+uint32_t &iv_set=nc2k_states.iv_set;
 uint8_t &RCR0=ext_reg[0x0a];
 uint8_t &RCR1=ext_reg[0x0b];
 
 void clear_iv(){
-    iv_set.clear();
+    iv_set = 0;
 }
 void put_iv(uint8_t value){
     assert(value!=IV_NONE);
-    iv_set.insert(value);
+    iv_set |= (1<<value);
 }
 void del_iv(uint8_t value){
     assert(value!=IV_NONE);
-    iv_set.erase(value);
+    iv_set &= ~(1<<value);
 }
 uint8_t peek_iv(){
-    if(iv_set.empty()) return IV_NONE;
-    return *iv_set.begin();
+    uint32_t impl_mask = (1<<IV_IMPL_MAX)-1;
+    if((iv_set&impl_mask)==0) return IV_NONE; //fast path: no interrupt pending
+    for(int i=0;i<IV_IMPL_MAX;i++){
+        if(iv_set & (1<<i)) return i;
+    }
+    return IV_NONE;
 }
+
+/*
 uint8_t get_iv(){
     if(iv_set.empty()) return IV_NONE;
     uint8_t value=*iv_set.begin();
     //iv_set.erase(iv_set.begin()); //interrupt vectors are not self clear?
     return value;
-}
+}*/
 
 uint8_t read_rcr0(){
     return RCR0;
@@ -471,7 +477,7 @@ uint8_t &IER=nc2k_states.IER;
 //uint8_t BK_ONLY;
 uint8_t read_3d_inner(){
     if(bk==0) {
-        return get_iv()<<3|(IVR&0x04)|bk;
+        return peek_iv()<<3|(IVR&0x04)|bk;
     }
     else if(bk==1){
         return FCR|bk;

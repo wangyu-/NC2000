@@ -13,15 +13,19 @@ const int RCR1_SAMPLE= 0x04;
 const int RCR1_ALARM= 0x02;
 const int RCR1_2HZ=   0x01;
 
-const int IV_2HZ = 0x00;
-const int IV_SAMPLE= 0x01;
-const int IV_ALARM= 0x02;
-const int IV_NONE= 0x1f;
+enum IV_t{
+    IV_2HZ = 0x00,
+    IV_SAMPLE = 0x01,
+    IV_ALARM = 0x02,
+    IV_IMPL_MAX,
+    IV_NONE = 0x1f
+};
+
 void clear_iv();
 void put_iv(uint8_t value);
 void del_iv(uint8_t value);
 uint8_t peek_iv();
-uint8_t get_iv();
+//uint8_t get_iv();
 
 uint8_t read_rcr0();
 void write_rcr0(uint8_t value);

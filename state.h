@@ -134,6 +134,8 @@ struct nc2k_states_t{
 
 	uint8_t r0c_general_status;
 
+	uint32_t iv_set;
+
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
 	uint8_t SAVE_STATE_END; // =========END of SAVE STATE=========
