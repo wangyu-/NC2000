@@ -61,6 +61,11 @@ void init_cpu_new(){
 	
 }
 
+bool trigger_every_x_cycle(int x){
+	uint32_t trigger_cycles= x;
+	return (cycles/trigger_cycles > last_cycles/trigger_cycles);
+}
+
 bool trigger_every_x_ms(int x){
 	uint32_t trigger_cycles=  CYCLES_SECOND*x/1000;
 	return (cycles/trigger_cycles > last_cycles/trigger_cycles);
@@ -494,14 +499,6 @@ void cpu_run3(){
 				}
 			}
 
-			if(nc1020mode){ //a hack to make nc1020 physical dumped nor work. todo:fixme
-				if(trigger256_cnt%2==1){
-						ram_io[0x0c]|=0x01;
-				}
-				else{
-						ram_io[0x0c]&=0xfe;
-				}
-			}
 		}//end of for(int i=0;i<trigger256;i++)
 
 		uint32_t sample_hz=get_sample_hz();
@@ -519,6 +516,25 @@ void cpu_run3(){
 			warm_reset_if_clkoff();
 		}
 	}
+
+	if(nc1020mode||nc2000mode){
+		// without FP nc1020 physical dump won't work (include nc1020 and nc1020tw)
+		// pc2000hd.doc says "Lcd Common data FP (72HZ)" , nc2000hd.doc says "P34: Lcd Common data FP (73.8HZ)"
+		// todo: make this part of better lcd driver implementation
+		int trigger_cycles= 0;
+		if(nc1020mode) trigger_cycles= CYCLES_SECOND/72;
+		else if(nc2000mode) trigger_cycles= CYCLES_SECOND*10/738;
+		else assert(false);
+
+		int FP_tigger=trigger_every_x_cycle(trigger_cycles);
+		auto &r0c = nc2k_states.r0c_general_status;
+		if(r0c&0x01){ //FP
+			r0c&=0xfe;
+		}else{
+			r0c|=0x01;
+		}
+	}
+
 	if(pc1000mode_normal() && trigger_x_times_per_s(2)){
 		if (nmiEnable()){
 			cpu->set_nmi_pending();

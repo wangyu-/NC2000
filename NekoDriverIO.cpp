@@ -994,3 +994,7 @@ bool KeepTimer01( unsigned int cpuTick )
     }
     return needirq;
 }
+
+BYTE __iocallconv Read0CGeneralStatus( BYTE read ) {  //added
+    return nc2k_states.r0c_general_status;
+}

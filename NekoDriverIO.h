@@ -97,6 +97,7 @@ BYTE __iocallconv Read06StopTimer1 (BYTE read); // $06
 BYTE __iocallconv ReadPort0 (BYTE read); // $08
 BYTE __iocallconv ReadPort1 (BYTE read); // $09
 BYTE __iocallconv Read18Port4 (BYTE read); // $09
+BYTE __iocallconv Read0CGeneralStatus (BYTE read); // 0x0C  //added
 BYTE __iocallconv Read1EPort6 (BYTE read); // 0x1E //added for nc3000
 
 BYTE __iocallconv Read00BankSwitch (BYTE read); // $00
