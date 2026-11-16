@@ -208,15 +208,21 @@ below are all legacy fields, only used in old cpu_loop or io
 	int gDeadlockCounter; //only used in leacy cpu loop
 
 	nc2k_states_t(){
-		init();
+		zero_init();
 	}
-	void init(){
+	void zero_init(){
 		memset(this,0,sizeof(nc2k_states_t));
 	}
 	void reset(){ //called as part of cold_reset
 		memset(ram_io,0,sizeof(ram_io));
 		memset(ext_reg+8, 0, sizeof(ext_reg)-8);// clear non-rtc regs
 		memset(&RESET_STATE_BEGIN,0,(size_t)(&RESET_STATE_END - &RESET_STATE_BEGIN));
+
+		if(nc3000mode){
+			//without this reset doesn't work correctly sometimes
+			//not sure if this is real hardware behavior on 3k
+			memset(ram,0,sizeof(ram));
+		}
 
 		//=================================================================
 		//a few fields that missed by RESET_STATE_BEGIN and RESET_STATE_END

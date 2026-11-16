@@ -70,7 +70,7 @@ void load_state(){
 }
 
 void LoadNC2k(){
-	nc2k_states.init(); //fix re-run issue on emscripten version
+	nc2k_states.zero_init();
 	
 	init_keyitems();
 
