@@ -130,9 +130,9 @@ void xILLEGAL(void)
     //char addr[1024];
     //sprintf(addr,"C65C02::Update() - Illegal opcode (%02x) at PC=$%04x.",mOpcode,mPC);
     //gError->Warning(addr);
-    uint8_t & Peek16Debug(uint16_t addr);
+    uint8_t & Peek16(uint16_t addr);
     if(debug_level>=1 || enable_dyn_debug || enable_dyn_debug_next_n>0) {
-        printf("illegal opcode %02x at pc=$%04x, bs=%02x roabbs=%02x vol=%02x, but not know how to handle\n",mOpcode,mPC-1, Peek16Debug(0), Peek16Debug(0xa), Peek16Debug(0xd));
+        printf("illegal opcode %02x at pc=$%04x, bs=%02x roabbs=%02x vol=%02x, but not know how to handle\n",mOpcode,mPC-1, Peek16(0), Peek16(0xa), Peek16(0xd));
     }
 }
 

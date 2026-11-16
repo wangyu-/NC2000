@@ -164,15 +164,14 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 		}
 
 		if(enable_debug_pc||enable_dyn_debug){
-			uint8_t & Peek16Debug(uint16_t addr);
 			unsigned char buf[10];
 			auto &reg_pc=cpu->PC;
-			buf[0]=Peek16Debug(reg_pc);
-			buf[1]=Peek16Debug(reg_pc+1);
-			buf[2]=Peek16Debug(reg_pc+2);
+			buf[0]=Peek16(reg_pc);
+			buf[1]=Peek16(reg_pc+1);
+			buf[2]=Peek16(reg_pc+2);
 			buf[3]=0;
 			printf("tick=%lld ",tick /*, reg_pc*/);
-			printf("%02x %02x %02x %02x; ",Peek16Debug(reg_pc), Peek16Debug(reg_pc+1),Peek16Debug(reg_pc+2),Peek16Debug(reg_pc+3));
+			printf("%02x %02x %02x %02x; ",Peek16(reg_pc), Peek16(reg_pc+1),Peek16(reg_pc+2),Peek16(reg_pc+3));
 			printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],mA,mX,mY,mSP,PS(),disassemble_next(buf,reg_pc).c_str());
 			printf("\n");
 
@@ -204,7 +203,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 				zpioregs[io02_timer0_val] |= 0x1; // [io01+1] Timer0 bit1 = 1
 				gThreadFlags &= 0xFF7F;      // remove 0x80 | 0x10
 				//mPC = *(unsigned short*)&pmemmap[mapE000][0x1FFC];
-				mPC = Peek16(0xFFFC);
+				mPC = PeekW(0xFFFC);
 			}
 		} else {
 			needirq = KeepTimer01(CpuTicks);
@@ -287,14 +286,13 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 	}
 
 	if(enable_debug_pc||enable_dyn_debug){
-		uint8_t & Peek16Debug(uint16_t addr);
 		unsigned char buf[10];
-		buf[0]=Peek16Debug(cpu->PC);
-		buf[1]=Peek16Debug(cpu->PC+1);
-		buf[2]=Peek16Debug(cpu->PC+2);
+		buf[0]=Peek16(cpu->PC);
+		buf[1]=Peek16(cpu->PC+1);
+		buf[2]=Peek16(cpu->PC+2);
 		buf[3]=0;
 		printf("tick=%lld ",tick /*, reg_pc*/);
-		printf("%02x %02x %02x %02x; ",Peek16Debug(cpu->PC), Peek16Debug(cpu->PC+1),Peek16Debug(cpu->PC+2),Peek16Debug(cpu->PC+3));
+		printf("%02x %02x %02x %02x; ",Peek16(cpu->PC), Peek16(cpu->PC+1),Peek16(cpu->PC+2),Peek16(cpu->PC+3));
 		printf("bs=%02x roa_bbs=%02x ramb=%02x zp=%02x reg=%02x,%02x,%02x,%02x,%03o  pc=%s",ram_io[0x00], ram_io[0x0a], ram_io[0x0d], ram_io[0x0f],cpu->A,cpu->X,cpu->Y,cpu->SP,cpu->P(),disassemble_next(buf,cpu->PC).c_str());
 		printf("\n");
 
@@ -324,7 +322,7 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 			zpioregs[io02_timer0_val] |= 0x1; // [io01+1] Timer0 bit1 = 1
 			gThreadFlags &= 0xFF7F;      // remove 0x80 | 0x10
 			//mPC = *(unsigned short*)&pmemmap[mapE000][0x1FFC];
-			mPC = Peek16(0xFFFC);
+			mPC = PeekW(0xFFFC);
 		}
 	} else {
 		needirq = KeepTimer01(CpuTicks);

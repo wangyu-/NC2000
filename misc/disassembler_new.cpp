@@ -331,8 +331,7 @@ char logbuff [102400 * 50]; // 5M buffer. no need initialize
 #define BYTE uint8_t
 
 uint8_t GetByte(uint16_t addr){
-    uint8_t & Peek16Debug(uint16_t addr);
-    return Peek16Debug(addr);
+    return Peek16(addr);
 }
 
 uint16_t GetWord(uint16_t addr){

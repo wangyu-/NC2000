@@ -21,27 +21,8 @@ void init_mem(){
 	super_switch(); //will segfault if commented out, since some legacy code is access the memmap
 }
 
-/*
-inline uint8_t & Peek8(uint8_t addr) {
-	return ram_buff[addr];
-}*/
+//this is a simplified version of memory access without side effected (e.g. io, nor)
 uint8_t & Peek16(uint16_t addr) {
-	auto ptr= &memmap[addr >> 13][addr & 0x1FFF];
-	if(nc1020tw_mode && debug_level>=2){
-		/*if(ptr>=&nor_buff[0] && ptr<&nor_buff[0]+32){
-			printf("access problem addr %04x, value=%02x, offset=%04x\n",addr,*ptr,int(ptr-&nor_buff[0]));
-			//printf("peek16 from nor %04x\n",addr);
-		}*/
-		if(ptr>=&nor_buff[16384]+6 && ptr<&nor_buff[16384]+12){
-			printf("access problem addr %04x, value=%02x, offset=%04x\n",addr,*ptr,int(ptr-&nor_buff[0]));
-			//printf("peek16 from nor %04x\n",addr);
-		}
-	}
-	return memmap[addr >> 13][addr & 0x1FFF];
-}
-
-//note: io read can cause side effect, so cannot use real io read
-uint8_t & Peek16Debug(uint16_t addr) {
 	if(addr<0x40){
 		return ram_io[addr];
 	}else if(addr<0x80){
@@ -93,7 +74,7 @@ uint8_t Load(uint16_t addr) {
 			memmap[0][0x45F] = wake_up_key;
 		}
 	}*/
-	return Peek16(addr);
+	return memmap[addr >> 13][addr & 0x1FFF];
 }
 void Store(uint16_t addr, uint8_t value) {
 	{
@@ -129,7 +110,7 @@ void Store(uint16_t addr, uint8_t value) {
 	}
 
 	if (addr < 0x4000) {
-		Peek16(addr) = value;
+		memmap[addr >> 13][addr & 0x1FFF] = value;
 		return;
 	}
 	uint8_t* page = memmap[addr >> 13];

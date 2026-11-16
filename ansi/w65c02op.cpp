@@ -84,9 +84,9 @@ DWORD CpuExecuteOP(void)
     if(enable_illegal_op_fix && illegal_op_byte[mOpcode]) {
         assert(illegal_op_cycle[mOpcode]!=0);
 
-        uint8_t & Peek16Debug(uint16_t addr);
+        uint8_t & Peek16(uint16_t addr);
         if(debug_level>=1 || enable_dyn_debug || enable_dyn_debug_next_n>0) {
-            printf("illegal opcode %02x at pc=$%04x, bs=%02x roabbs=%02x vol=%02x, skipped %d extra bytes\n",mOpcode,mPC-1, Peek16Debug(0), Peek16Debug(0xa), Peek16Debug(0xd), illegal_op_byte[mOpcode]-1);
+            printf("illegal opcode %02x at pc=$%04x, bs=%02x roabbs=%02x vol=%02x, skipped %d extra bytes\n",mOpcode,mPC-1, Peek16(0), Peek16(0xa), Peek16(0xd), illegal_op_byte[mOpcode]-1);
         }
 
         mPC += illegal_op_byte[mOpcode]-1;

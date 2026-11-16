@@ -134,7 +134,6 @@ int C6502::readAddress(int address) {
 }
 
 void C6502::XXX_xx(int code) {
-    //uint8_t & Peek16Debug(uint16_t addr);
     printf("illegal instruction %x at %x bs=%02x roabbs=%02x vol=%02x\n",code,PC-1,bus->read(0),bus->read(0xa),bus->read(0xd));
 
     if(illegal_op_byte[code]) {
