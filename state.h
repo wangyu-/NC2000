@@ -158,13 +158,13 @@ struct nc2k_states_t{
 
 	uint32_t iv_set;
 
-	//nand states
-	uint32_t nand_pointer_latch;
-	uint32_t nand_cmd_latch;
-	uint32_t nand_read_offset;
-	PODVec<MAX_NAND_ADDR_SIZE> nand_addr;
-	PODVec<MAX_NAND_DATA_SIZE> nand_data;
-	//nand states end
+	struct nand_state_t{
+		uint32_t nand_pointer_latch;
+		uint32_t nand_cmd_latch;
+		uint32_t nand_read_offset;
+		PODVec<MAX_NAND_ADDR_SIZE> nand_addr;
+		PODVec<MAX_NAND_DATA_SIZE> nand_data;
+	} nand_state;
 
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
@@ -210,14 +210,39 @@ below are all legacy fields, only used in old cpu_loop or io
 	}
 	void init(){
 		memset(this,0,sizeof(nc2k_states_t));
-		reset();
 	}
 	void reset(){ //called as part of cold_reset
 		memset(ram_io,0,sizeof(ram_io));
 		memset(ext_reg+8, 0, sizeof(ext_reg)-8);// clear non-rtc regs
 		memset(&RESET_STATE_BEGIN,0,(size_t)(&RESET_STATE_END - &RESET_STATE_BEGIN));
-		lcdbuffaddr=0x09C0;
-		lcdbuffaddrmask=0x0FFF;
-		speed_scaledown=1;
+
+		//=================================================================
+		//a few fields that missed by RESET_STATE_BEGIN and RESET_STATE_END
+		//=================================================================
+		iv_set=0; //if this is put into warm_reset, alarm wakeup will not work correctly
+		memset(&nand_state,0,sizeof(nand_state));
+		w1e_port6_OL=0;
+		r1e_port6_ID=0;
+		r0c_general_status=0;
+
+		//================================================================
+		//a few fields that is in RESET_STATE_BEGIN but not zero initalize
+		//================================================================
+
+		//from wayback, not not really needed
+		//lcdbuffaddr=0x09C0;
+		//lcdbuffaddrmask=0x0FFF;
+
+		void write_0x05_cks_helper(int address,int value);
+		write_0x05_cks_helper(0x05, ram_io[0x05]>>5);
+
+		if(nc1020mode){
+			ram_io[0x0b]=0x01;//if without it on nc1020, on/off need to be press twice to power off
+		}
+
+		if(nc2000mode||nc3000mode){
+			//nc3000c-lee has it but seems like no need?
+			//ram_io[0x18]=0x20;
+		}
 	}
 };

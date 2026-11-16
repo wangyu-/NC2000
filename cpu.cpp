@@ -14,7 +14,7 @@ CPUInterface::CPUInterface():A(mA), X(mX), Y(mY), SP(mSP), PC(mPC) {
 	init();
 	printf("using handypsp cpu\n");
 	version = CPU_HANDYPSP;
-	CpuInitialize();
+	//CpuInitialize();
 };
 
 CPUInterface::CPUInterface(C6502 *cpu) :A(cpu->A), X(cpu->X), Y(cpu->Y), SP(cpu->SP), PC(cpu->PC) {
@@ -22,7 +22,7 @@ CPUInterface::CPUInterface(C6502 *cpu) :A(cpu->A), X(cpu->X), Y(cpu->Y), SP(cpu-
 	printf("using emux cpu\n");
 	version = CPU_EMUX;
 	cpu_impl_emux = cpu;
-	cpu->reset();
+	//cpu->reset();
 };
 
 void CPUInterface::init(){

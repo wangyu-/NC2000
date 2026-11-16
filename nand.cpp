@@ -119,11 +119,12 @@ enum NAND_CMD_LATCH{
     READ_ID=0x90
 };
 
-static auto& nand_addr = nc2k_states.nand_addr;
-static auto& nand_data = nc2k_states.nand_data;
-static uint32_t& nand_read_offset = nc2k_states.nand_read_offset;
-static uint32_t& nand_pointer_latch = nc2k_states.nand_pointer_latch;
-static uint32_t& nand_cmd_latch = nc2k_states.nand_cmd_latch;
+static auto& nand_addr = nc2k_states.nand_state.nand_addr;
+static auto& nand_data = nc2k_states.nand_state.nand_data;
+static uint32_t& nand_read_offset = nc2k_states.nand_state.nand_read_offset;
+static uint32_t& nand_pointer_latch = nc2k_states.nand_state.nand_pointer_latch;
+static uint32_t& nand_cmd_latch = nc2k_states.nand_state.nand_cmd_latch;
+
 void clear_nand_status(){
     nand_addr.clear();
     nand_data.clear();

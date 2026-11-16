@@ -69,18 +69,13 @@ void load_state(){
 
 void LoadNC2k(){
 	nc2k_states.init(); //fix re-run issue on emscripten version
-	clear_cmds();
 	
-	//not needed any more as they are part of state now
-	//clear_nand_status();
-	//clear_iv();
-
 	init_keyitems();
 
 	init_io(); //for old io implemet only
-	
+
 	void CreateHotlinkMapping();
-	CreateHotlinkMapping();
+	CreateHotlinkMapping();//for old io implemet only
 
 	init_nor();
 	if(pc1000mode||nc1020mode) {
@@ -96,14 +91,8 @@ void LoadNC2k(){
 	//reset_cpu_states();
 	init_cpu_new();
 
-	if(nc1020mode){
-		ram_io[0x0b]=0x01;
-	}
-
-	if(nc2000mode||nc3000mode){
-		//nc3000c-lee has it but seems like no need?
-		//ram_io[0x18]=0x20;
-	}
+	void nc2k_cold_reset();
+	nc2k_cold_reset();
 
 	if(enable_load_state){
 		load_state();
@@ -215,9 +204,9 @@ void nc2k_reset_comm(){
 
 	const int simple_warm_reset=true;
   if(simple_warm_reset){
-	ioReg[0x05] &=0x1f;  //reset cks
-	nc2k_states.speed_scaledown=1;
-  } else {
+	void write_0x05_cks_helper(int address,int value);
+	write_0x05_cks_helper(0x05, ram_io[0x05]>>5); //reset cks and speed scaledown
+  } /*else {
     //0x00
     ioReg[0x00]=0;
 
@@ -273,25 +262,20 @@ void nc2k_reset_comm(){
 
     //0x1e
     ioReg[0x1e]=0;
-  }
-
-    super_switch();
+  }*/
 }
 
 void nc2k_warm_reset(){
     nc2k_reset_comm();
+    super_switch();
     cpu->reset();//must be called after super_switch is done
 }
 
 void nc2k_cold_reset(){
     clear_cmds();
-    clear_nand_status();
-    clear_iv();//if this is put into warm_reset, alarm wakeup will not work correcly
 
     nc2k_reset_comm();
 
-    //memset(ram_io,0,sizeof(nc2k_states.ram_io));
-    //memset(ext_reg, 0, sizeof(nc2k_states.ext_reg));
     nc2k_states.reset();
     super_switch();
     cpu->reset();//must be called after super_switch is done
