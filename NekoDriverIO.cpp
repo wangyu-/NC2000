@@ -165,6 +165,9 @@ void __iocallconv Write06LCDStartAddr( BYTE write, BYTE value ) // 06
     unsigned short t = (value << 4);
     lcdbuffaddr &= ~0x0FF0; // 去掉中间8bit
     lcdbuffaddr |= t;
+    if(debug_level>=1){
+        printf("LC0 to LC7 set to %x\n",value);
+    }
     ////printf("ggv wanna change lcdbuf address to 0x%04x in io06\n", lcdbuffaddr & lcdbuffaddrmask);
     zpioregs[io06_lcd_config] = value;
     //lcdbuffaddr = t;
@@ -180,6 +183,9 @@ void __iocallconv Write0CTimer01Control( BYTE write, BYTE value ) // 0C
     //t = t | (zpioregs[io06_lcd_config] << 4); // lc4~lc11
     lcdbuffaddr &= ~0x3000;
     lcdbuffaddr |= t;
+    if(debug_level>=1){
+        printf("LC8 LC9 set to %x\n", (value & 0x3));
+    }
     ////printf("ggv wanna change lcdbuf address to 0x%04x in io0C\n", lcdbuffaddr & lcdbuffaddrmask);
     //qDebug("ggv also wanna change timer settings to 0x%02x.", (value & 0xC));
     w0c_b67_TMODESL = value >> 6;
@@ -739,6 +745,9 @@ void __iocallconv Write0BPort3LCDStartAddr( BYTE write, BYTE value )
 {
     // 控制LCD地址有效位数
     unsigned short b6b5 = (value & 0x60) >> 5;
+    if(debug_level>=1){
+        printf("LCDX0 LCDX1 set to %02x\n", b6b5);
+    }
     cpf=(value>>2)&7;
     lcden=(value>>1)&1;
     if(debug_level>=2) printf("Write0BPort3LCDStartAddr %02x b6b5=%02x cpf=%02x lcden=%02x\n",value,b6b5,cpf,lcden);

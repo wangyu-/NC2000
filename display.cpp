@@ -68,9 +68,8 @@ void Render(u64_t tick) {
     draw_console();
   }else if(!lcd_on) {
     memset(lcd_buf, 0, sizeof(lcd_buf));
-  }
-  else if (!CopyLcdBuffer(lcd_buf)) {
-    std::cout << "Failed to copy buffer renderer." << std::endl;
+  }else{
+    CopyLcdBuffer(lcd_buf,sizeof(lcd_buf));
   }
   
   SDL_Texture *texture;
@@ -126,7 +125,8 @@ void Render(u64_t tick) {
   unsigned char (*p)[SCREEN_WIDTH*total_size][4] ;
   p = (decltype(p)) lcd_effect_buffer;
 
-  if(!is_grey_mode()){
+  bool is_grey_mode= (get_lcd_segment_size() == SCREEN_WIDTH*2);
+  if(!is_grey_mode){
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8; ++i) {
       for (int j = 0; j < 8; ++j) {
         bool pixel = (lcd_buf[i] & (1 << (7 - j))) != 0;
@@ -165,7 +165,7 @@ void Render(u64_t tick) {
 
       }
     }
-  }else{
+  }else {
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT/8 *2; ++i) {
       for (int j = 0; j < 4; ++j) {
         uint8_t value=(lcd_buf[i]>>(6-j*2)) &0x03;

@@ -558,6 +558,13 @@ void io_v2_write(int address, int value) {
             return Write0CTimer01Control(address,value);
         }
         if(address==0x0d){
+            if(debug_level>=1){
+                uint8_t lcd_seg_new = value>>3;
+                uint8_t lcd_seg_old = ioReg[0x0d]>>3;
+                if(lcd_seg_old != lcd_seg_new){
+                    printf("LCD segment conf changed from %02x to %02x\n", lcd_seg_old, lcd_seg_new);
+                }
+            }
             ioReg[0x0d] = value;
             super_switch();
             return;

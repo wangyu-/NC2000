@@ -11,7 +11,7 @@ emulator api
 //void Reset();
 void SetKey(uint8_t, bool);
 void RunTimeSlice(uint32_t);
-bool CopyLcdBuffer(uint8_t*);
+bool CopyLcdBuffer(uint8_t*,int);
 void LoadNC2k();
 void SaveNC2kIfNeed();
 
@@ -21,4 +21,4 @@ void save_state(string file_name);
 void delete_state(string file_name);
 void load_state();
 
-bool is_grey_mode();
+int get_lcd_segment_size();
