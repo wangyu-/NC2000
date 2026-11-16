@@ -125,8 +125,8 @@ void SaveNC2kIfNeed(){
     }
 }
 
-//static unsigned short &lcdbuffaddr = nc2k_states.lcdbuffaddr;
-//static unsigned short &lcdbuffaddrmask = nc2k_states.lcdbuffaddrmask;
+static unsigned short &lcdbuffaddr = nc2k_states.lcdbuffaddr;
+static unsigned short &lcdbuffaddrmask = nc2k_states.lcdbuffaddrmask;
 int get_lcd_segment_size(){
 	uint8_t lcd_seg_conf = nc2k_states.ram_io[0x0d]>>3;
 	if(lcd_seg_conf ==0x00) return 512;
@@ -142,7 +142,7 @@ int get_lcd_end_addr(){
 	return lcd_end;
 }
 
-bool CopyLcdBuffer(uint8_t* buffer, int max_len){
+bool CopyLcdBuffer(uint8_t* buffer){
 	//int lcd_addr = lcdbuffaddr&lcdbuffaddrmask;
 
 	int lcd_segment_size = get_lcd_segment_size();
@@ -150,19 +150,30 @@ bool CopyLcdBuffer(uint8_t* buffer, int max_len){
 		RATE_LIMIT_LOG(3000,5,"lcd driver not properly initialized, lcd_segment_size=%d", lcd_segment_size);
 		return false;
 	}
-
-	int len = lcd_segment_size* (SCREEN_HEIGHT/8);
-	assert(len <= max_len);
-
-	int lcd_end = get_lcd_end_addr();
-	int lcd_start = lcd_end+1 -len;
-
-	if(lcd_start < 0){
-		RATE_LIMIT_LOG(3000,5,"lcd driver not properly initialized, lcd_start=%d<0, lcd_segment_size=%d, lcd_end=%d", lcd_start, lcd_segment_size, lcd_end);
-		return false;
+	int buffer_size=0;
+	if(lcd_segment_size ==160){
+		buffer_size = 160 * (SCREEN_HEIGHT/8);
+	}else{
+		buffer_size = 320 * (SCREEN_HEIGHT/8);
 	}
 
-	memcpy(buffer, ram_buff + lcd_start, len);
+	int lcd_start = lcdbuffaddr&lcdbuffaddrmask;
+
+	if (lcd_start <=0x300) {
+		lcd_start = 0x300;
+	}
+
+	int lcd_end_open = get_lcd_end_addr()+1;
+
+	if(lcd_start <= lcd_end_open - buffer_size){
+		lcd_start = lcd_end_open - buffer_size;
+	}
+
+	int real_len = lcd_end_open - lcd_start;
+	if (real_len < buffer_size) {
+		memset(buffer, 0, buffer_size - real_len);
+	}
+	memcpy(buffer + buffer_size - real_len, ram_buff + lcd_start, real_len);
 	return true;
 }
 

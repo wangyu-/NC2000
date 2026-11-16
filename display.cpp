@@ -69,7 +69,7 @@ void Render(u64_t tick) {
   }else if(!lcd_on) {
     memset(lcd_buf, 0, sizeof(lcd_buf));
   }else{
-    CopyLcdBuffer(lcd_buf,sizeof(lcd_buf));
+    CopyLcdBuffer(lcd_buf);
   }
   
   SDL_Texture *texture;
