@@ -215,6 +215,9 @@ below are all legacy fields, only used in old cpu_loop or io
 	}
 	void reset(){ //called as part of cold_reset
 		memset(ram_io,0,sizeof(ram_io));
+
+		//it's confirmed nc1020's reset button doesn't clear rtc and ram,
+		// nc2000 should be same
 		memset(ext_reg+8, 0, sizeof(ext_reg)-8);// clear non-rtc regs
 		memset(&RESET_STATE_BEGIN,0,(size_t)(&RESET_STATE_END - &RESET_STATE_BEGIN));
 
