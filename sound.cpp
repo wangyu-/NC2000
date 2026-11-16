@@ -1,7 +1,6 @@
 #include "comm.h"
 #include "dsp/dsp.h"
 #include "state.h"
-#include <SDL2/SDL.h>
 
 extern nc2k_states_t nc2k_states;
 

@@ -1,5 +1,3 @@
-
-#include <SDL.h>
 #include "comm.h"
 #include "state.h"
 #include <cassert>

@@ -8,8 +8,6 @@
 #include "rom.h"
 #include "nor.h"
 #include "nand.h"
-#include <SDL2/SDL.h>
-#include <SDL_timer.h>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include "comm.h"
 #include <SDL_keyboard.h>
 #include <SDL_keycode.h>

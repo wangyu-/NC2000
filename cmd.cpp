@@ -19,7 +19,6 @@ extern "C" {
 #include "nc2000.h"
 #include "nor.h"
 #include "settings.h"
-#include <SDL2/SDL.h>
 #include "misc/convert.h"
 extern nc2k_states_t nc2k_states;
 extern CPUInterface *cpu;

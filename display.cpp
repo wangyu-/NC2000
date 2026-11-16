@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include "comm.h"
 #include "compare/c6502.h"
 #include "nc2000.h"

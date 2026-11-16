@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include "comm.h"
 #include "nc2000.h"
 #include <SDL_events.h>

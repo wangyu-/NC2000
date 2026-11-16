@@ -16,6 +16,7 @@
 #include <deque>
 #include <vector>
 #include <mutex>
+#include <SDL.h>
 using std::string;
 using std::deque;
 using std::fstream;
