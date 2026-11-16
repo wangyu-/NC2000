@@ -67,6 +67,9 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
     }else{
         io_write[0x08] = Write08Port0; // keyboard related
 	    io_write[0x09] = Write09Port1; // keyboard related
+        if(nc3000mode){
+            io_write[0x1e] = Write1EPort6;
+        }
     }
 
     io_write[0x0A] = Write0A;///////don't use Write0AROABBS here

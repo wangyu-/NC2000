@@ -1493,6 +1493,10 @@ DWORD CpuExecuteNMI(void) {
         //mProcessingInterrupt++;
 
         // Push processor status
+        //original wayback:
+        // issue 1: mSP might be come negative
+        // issue 2: B flag not clearly
+        /*
         CPU_POKE(0x0100 + mSP, mPC >> 8); // don't use ++ in poke or will inc/dec 4 times
         mSP--;
         CPU_POKE(0x0100 + mSP, mPC & 0x00ff);
@@ -1502,6 +1506,17 @@ DWORD CpuExecuteNMI(void) {
 #endif
         CPU_POKE(0x0100 + mSP, PS());
         mSP--;
+        */
+        //new:
+        // make it consistent with CpuExecuteIRQ
+        PUSH(mPC >> 8);
+        PUSH(mPC & 0xff);
+#ifdef MERGEGGVSIM
+        mI = TRUE; // FIXME: MERGE
+        PUSH(PS());
+#else
+        PUSH(PS() & 0xef);      // Clear B flag on stack
+#endif
 
         // Pick up the new PC
         mPC = CPU_PEEKW(NMI_VECTOR);

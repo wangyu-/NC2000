@@ -30,7 +30,7 @@ void save_state(string file_name){
 	else file_name+=".state";
 	FILE* file = fopen(file_name.c_str(), "wb");
 	if (file == NULL) {
-		printf("states file %s open failed, skip saving!\n", nc2k_rom.statesPath.c_str());
+		printf("states file %s open failed, skip saving!\n", file_name.c_str());
 		return;
 	}
 	fwrite(&nc2k_states.SAVE_STATE_BEGIN, 1, &nc2k_states.SAVE_STATE_END-&nc2k_states.SAVE_STATE_BEGIN, file);

@@ -177,7 +177,7 @@ READ:
    STA $08f7
    LDA #$0   ; read 1 byte (high value 0)
    STA $08f8  
-   STA $09f9
+   STA $08f9
    INT $0516  ; read
    LDA $08f7   ; actual read byte here
    BEQ PREEND  ;
@@ -190,7 +190,7 @@ READ:
 PREEND:
    LDA #$0
    STA $3FFF  ;indicate dummy close
-   INT $0516  ;close file
+   INT $0517  ;close file
 END:
    INT $C001
 ;END: INT $0528  ;open file manager
