@@ -1005,5 +1005,7 @@ bool KeepTimer01( unsigned int cpuTick )
 }
 
 BYTE __iocallconv Read0CGeneralStatus( BYTE read ) {  //added
-    return nc2k_states.r0c_general_status;
+    unsigned char old_value = nc2k_states.r0c_general_status;
+    nc2k_states.r0c_general_status &= 0xFE; // clear FP bit before returning
+    return old_value;
 }

@@ -535,13 +535,11 @@ void cpu_run3(){
 		if(nc1020mode) trigger_cycles= CYCLES_SECOND/72;
 		else if(nc2000mode) trigger_cycles= CYCLES_SECOND*10/738;
 		else assert(false);
-
+		
 		int FP_tigger=trigger_every_x_cycle(trigger_cycles);
 		auto &r0c = nc2k_states.r0c_general_status;
-		if(r0c&0x01){ //FP
-			r0c&=0xfe;
-		}else{
-			r0c|=0x01;
+		if(FP_tigger){
+			r0c|=0x01;  //this value is latched, read will clear it
 		}
 	}
 
