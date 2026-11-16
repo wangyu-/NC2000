@@ -4,6 +4,7 @@
 #include "console.h"
 #include "display.h"
 #include "lcdstripe/lcdpainter.h"
+#include "cpu_loop.h"
 
 uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
@@ -55,7 +56,7 @@ void Render(u64_t tick) {
     uint8_t* ram_io=nc2k_states.ram_io;
     if(nc2000mode) lcd_on = (lcden && lcdon);
     if(nc1020mode) lcd_on = lcdon;
-    if(ram_io[0x05]>>5==7){ //clk off
+    if(is_clk_off()){ //clk off
       lcd_on=false;
     }
     if(io_version == IO_V1){

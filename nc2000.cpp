@@ -19,6 +19,8 @@
 #include "cmd.h"
 #include "key_new.h"
 #include <algorithm>
+#include "cpu_loop.h"
+
 extern WqxRom nc2k_rom;
 
 nc2k_states_t nc2k_states;

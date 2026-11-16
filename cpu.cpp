@@ -4,6 +4,9 @@ extern "C" {
 }
 #include "comm.h"
 #include "cpu.h"
+#include "cpu_loop.h"
+#include "ram.h"
+#include "mem.h"
 
 CPUInterface *cpu;
 
@@ -53,7 +56,7 @@ int CPUInterface::emux_exec_helper(int max_cycles) {
 		cpu_impl_emux->doNMI();
 	}
 	do{	
-		if (irqPending && (P() & 4) == 0) {
+		if (irqPending && !I()) {
 			irqPending = false;
 			cpu_impl_emux->doIRQ();
 		}
@@ -110,6 +113,11 @@ int CPUInterface::execute(int max_cycles){
 }
 
 void CPUInterface::set_nmi_pending() {
+	if(is_clk_off()) {
+		if(debug_level>=1) RATE_LIMIT_LOG(5000,1,"woke by nmi");
+		nc2k_states.woke_by_interrupt=true;
+		set_clk_on();
+	}
 	if(version==CPU_EMUX) return cpu_impl_emux->NMI();
 
 	g_nmi = true;
@@ -128,6 +136,11 @@ void CPUInterface::irq_now() {
 
 }
 void CPUInterface::set_irq_pending() {
+	if(!I() && is_clk_off()) {
+		if(debug_level>=1) RATE_LIMIT_LOG(5*1000,1,"woke by irq");
+		nc2k_states.woke_by_interrupt=true;
+		set_clk_on();
+	}
 	if(enable_dyn_debug_next_n) printf("set_irq_pending!!!\n");
 	if(version==CPU_EMUX) {
 		cpu_impl_emux->irqPending = true;
@@ -140,6 +153,11 @@ int CPUInterface::P() {
 	if(version==CPU_EMUX) return cpu_impl_emux->P;
 
 	return PS();
+}
+
+bool CPUInterface::I() {
+	if(version==CPU_EMUX) return cpu_impl_emux->P & 0x04;
+	return mI;
 }
 
 void initalize_illegal_op_tables(){

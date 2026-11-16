@@ -3,13 +3,6 @@
 #include "compare/c6502.h"
 #include "comm.h"
 
-void cpu_run();
-void cpu_run2();
-void cpu_run3();
-
-//void init_cpu();
-void init_cpu_new();
-
 extern unsigned char illegal_op_byte[256];
 extern unsigned char illegal_op_cycle[256];
 
@@ -36,6 +29,8 @@ public:
     void set_nmi_pending();
 	void irq_now();//only used for old code
     int P();
+
+    bool I();
 
     void set_irq_pending();
 
