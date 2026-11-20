@@ -166,6 +166,9 @@ struct nc2k_states_t{
 		PODVec<MAX_NAND_DATA_SIZE> nand_data;
 	} nand_state;
 
+	u64_t p_cycles;
+	u64_t last_p_cycles;
+
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
 	uint8_t SAVE_STATE_END; // =========END of SAVE STATE=========
