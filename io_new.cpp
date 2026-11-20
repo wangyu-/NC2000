@@ -507,7 +507,7 @@ void io_v2_write(int address, int value) {
     if(nc1020mode||nc2000mode||nc3000mode||pc1000mode){
         if(address==0x04){
             Write04GeneralCtrl(address,value);
-            if(debug_level>=2) printf("Write04GeneralCtrl %02x TBC=%02x\n",value,value&0xf);
+            if(debug_level>=1) printf("Write04GeneralCtrl %02x TBC=%02x\n",value,value&0xf);
             //Write09Port1(0x09, ram_io[0x09]);//reapply after PTYPE changed??
             return;
         }
@@ -515,7 +515,7 @@ void io_v2_write(int address, int value) {
             uint8_t cks=value>>5;
             uint8_t cps=value&0x07;
             lcdon=(value>>3)&1;
-            if(debug_level>=3) printf("Write05ClockCtrl %02x cks=%d cps=%d lcdon=%d\n",value,cks,cps,lcdon);
+            if(debug_level>=1) printf("Write05ClockCtrl %02x cks=%d cps=%d lcdon=%d\n",value,cks,cps,lcdon);
             if (cks!=ram_io[0x05]>>5){
                 if(cks==0x7) {
                     if(nc2k_states.woke_by_interrupt==false) {

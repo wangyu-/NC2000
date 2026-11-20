@@ -353,6 +353,7 @@ void cpu_run3(){
 		}
 	}
 
+{
 	uint32_t expect_cycles=cpu_batch;
 	uint32_t CycleDelta;
 	if(is_clk_off()){
@@ -379,6 +380,8 @@ void cpu_run3(){
 		p_cycles+=CycleDelta;
 		cycles+=CycleDelta;
 	}
+}
+
 
 	if(pc1000mode){
 		//magic number to fit pc1000emux's timer0,timer1 and timerA code
@@ -414,12 +417,9 @@ void cpu_run3(){
 
 	if(nc1020mode||nc2000mode||nc3000mode||(pc1000mode_normal())) {
 		bool KeepTimer01( unsigned int cpuTick);
-		int delta= CycleDelta;
-		if(nc1020mode||nc2000mode){
-			long long scaled_last_p_cycles = last_p_cycles*timer01_speed_fix;
-			long long scaled_p_cycles = p_cycles*timer01_speed_fix;
-			delta= scaled_p_cycles - scaled_last_p_cycles;
-		}
+		long long scaled_last_p_cycles = last_p_cycles*timer01_speed_fix;
+		long long scaled_p_cycles = p_cycles*timer01_speed_fix;
+		int delta= scaled_p_cycles - scaled_last_p_cycles;
 		if(KeepTimer01(delta)){
 				if(enable_dyn_debug_next_n) printf("time to timer01!!!!\n");
 				cpu->set_irq_pending();
