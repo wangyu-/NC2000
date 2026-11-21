@@ -245,7 +245,7 @@ below are all legacy fields, only used in old cpu_loop or io
 
 		//from wayback, not not really needed
 		//lcdbuffaddr=0x09C0;
-		//lcdbuffaddrmask=0x0FFF;
+		lcdbuffaddrmask=0x3FFF; // matches LCDX=00 (ram_io[0x0b]==0) on cold reset
 
 		if(nc1020mode){
 			ram_io[0x0b]=0x01;//if without it on nc1020, on/off need to be press twice to power off

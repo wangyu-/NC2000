@@ -334,7 +334,9 @@
     PUSH(mPC&0xff);\
     PUSH(PS()|0x10);\
     \
-    mD=FALSE;\
+    if(false) {/*文曲星真机进入interrupt不会自动clear D*/\
+        mD=FALSE;\
+    }\
     mI=TRUE;\
     \
     mPC=CPU_PEEKW(IRQ_VECTOR);\

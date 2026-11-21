@@ -213,6 +213,16 @@ void save_flash(string file){
 void nc2k_reset_comm(){
 	uint8_t* ioReg=nc2k_states.ram_io;
 
+	//value confirmed to be reset according to 1016 datasheet
+	// (assume RESCPUB is warm reset and PRESZP (RESB) is cold reset)
+	ioReg[0x00] = 0;                          // B0-B7 (bank switch)
+	nc2k_states.inner_interrupt_control &= ~0x10; // $01 b4 NMIOFF
+	ioReg[0x05] &= 0x1f;                      // CKS2-0 -> 000 (OSC/8)
+	ioReg[0x0a] &= 0x70;                      // ROA (b7) and BBS0-3 (b0-3)
+	ioReg[0x0d] &= 0xf8;                      // SAVE (b2) and VSL0-1 (b0-1)
+	ioReg[0x0f] &= 0xf8;                      // ZB0-2 (b0-2)
+
+#if false //below is according to spdc1024 datasheet, which doesn't work well
 	//according to datasheet, warm reset will set both 0x2 and 0x3 to zero
 	// but it will make on/off key trigger cold reset
 	// so either on/off key doesn't really count as the "warm reset" on datasheet,
@@ -279,6 +289,7 @@ void nc2k_reset_comm(){
     //0x1e
     ioReg[0x1e]=0;
   }*/
+#endif
 }
 
 void nc2k_warm_reset(){

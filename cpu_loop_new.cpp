@@ -89,8 +89,7 @@ bool is_clk_off(){
 }
 void set_clk_on(){
 	uint8_t value=ram_io[0x05];
-	value&= 0x1f;
-	value|=0x3<<5;
+	value&= 0x1f; // CKS2-0 -> 000 (OSC/8), matches RESCPUB
 	Store(0x05,value);
 }
 void warm_reset_if_clkoff(){
