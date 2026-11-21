@@ -609,6 +609,7 @@ void io_v2_write(int address, int value) {
                 }
             }
             ioReg[0x3f]=value;
+            if(index==0x04) return; // TR_ms is read-only
             if(index<=7){
                 //drop invalid value
                 if((signed char)rtc_reg[0x0b]<0) return;

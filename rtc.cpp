@@ -57,16 +57,21 @@ bool chk_ar()
 }
 
 void bumpRTC(){
-	rtc_reg[TR_s]++;
-	if (rtc_reg[TR_s] == 60) {
+	rtc_reg[TR_s] = (rtc_reg[TR_s] & 0x3f) + 1;
+	if (rtc_reg[TR_s] >= 60) {
       rtc_reg[TR_s] = 0;
-      rtc_reg[TR_m] = rtc_reg[TR_m] + 1;
-      if (rtc_reg[TR_m] == 60) {
+      rtc_reg[TR_m] = (rtc_reg[TR_m] & 0x3f) + 1;
+      if (rtc_reg[TR_m] >= 60) {
         rtc_reg[TR_m] = 0;
-        rtc_reg[TR_h] = rtc_reg[TR_h] + 1;
-        if (rtc_reg[TR_h] == 24) {
-          rtc_reg[TR_h] = 0;
-          rtc_reg[TR_d] = rtc_reg[TR_d] + 1;
+        uint8_t hour = (rtc_reg[TR_h] & 0x1f) + 1;
+        if (hour >= 24) {
+          hour = 0;
+          uint16_t day = (((rtc_reg[TR_h] >> 6) & 0x03) << 8) | rtc_reg[TR_d];
+          day = (day + 1) & 0x3ff;
+          rtc_reg[TR_d] = day & 0xff;
+          rtc_reg[TR_h] = ((day >> 8) << 6) | (rtc_reg[TR_h] & 0x20) | hour;
+        } else {
+          rtc_reg[TR_h] = (rtc_reg[TR_h] & 0xe0) | hour;
         }
       }
     }
@@ -91,7 +96,7 @@ void sync_time_2000(){
 		Store(0x3fb, local_time->tm_mon);
 		Store(0x3fc, local_time->tm_mday-1);
 		//Store(0x3fd, local_time->tm_wday);
-		rtc_reg[2]=local_time->tm_hour;
+		rtc_reg[2]=(rtc_reg[2]&0xc0)|(local_time->tm_hour&0x1f);
 		rtc_reg[1]=local_time->tm_min;
 		rtc_reg[0]=local_time->tm_sec;
 }
@@ -106,7 +111,7 @@ void sync_time_1020(){
 	Store(0x473, local_time->tm_mon);
 	Store(0x474, local_time->tm_mday-1);
 	//Store(0x3fd, local_time->tm_wday);
-	rtc_reg[2]=local_time->tm_hour;
+	rtc_reg[2]=(rtc_reg[2]&0xc0)|(local_time->tm_hour&0x1f);
 	rtc_reg[1]=local_time->tm_min;
 	rtc_reg[0]=local_time->tm_sec;
 }

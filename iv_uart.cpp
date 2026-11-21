@@ -427,7 +427,7 @@ uint8_t read_3c_inner(){
         }
         return MCR;
     } else if(bk==1){
-        return MSR;
+        return MSR & 0xee; // bits 4 and 0 always read back as 0
     } else if(bk==2){
         return TMR;
     } else if(bk==3){
@@ -451,7 +451,7 @@ void write_3c(uint8_t value){
     if(bk==0){
         MCR=value;
     } else if(bk==1){
-        MSR=value;
+        // MSR is read-only
     } else if(bk==2){
         if((TMR^value)&0x20){
             if(uart_log_level>=1) printf("uart enable/disable change\n");
@@ -522,14 +522,13 @@ void write_3d(uint8_t value){
             if(uart_log_level>=1) printf("TFRST\n");
             //TODO TFRST
         }
-        if(value & 0x80){
-            if(uart_log_level>=1) printf("BKRT\n");
+        if(value & 0x08){
+            if(uart_log_level>=1) printf("BRKT\n");
         }
         if(value & 0xc0){
             if(uart_log_level>=1) printf("FIFO trigger not zero !!! value= %x\n",value>>6);
         }
-        // 3 is zero when read back
-        // 45 should be zero when read back as well??
+        // bit 2 is zero when read back; bits 4,5 (RFRST/TFRST) are self-clear
         FCR=value&0xc8;
     }
     else if(bk==2){
