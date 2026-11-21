@@ -248,12 +248,9 @@ below are all legacy fields, only used in old cpu_loop or io
 		lcdbuffaddrmask=0x3FFF; // matches LCDX=00 (ram_io[0x0b]==0) on cold reset
 
 		if(nc1020mode){
-			ram_io[0x0b]=0x01;//if without it on nc1020, on/off need to be press twice to power off
-		}
-
-		if(nc2000mode||nc3000mode){
-			//nc3000c-lee has it but seems like no need?
-			//ram_io[0x18]=0x20;
+			//this is on/off of nc1020, pull high by default
+			// if without it on nc1020, on/off need to be press twice to power off
+			ram_io[0x0b]=0x01;
 		}
 	}
 };

@@ -101,7 +101,7 @@ int CPUInterface::execute(int max_cycles){
 		if(g_wai) {cycle=max_cycles;if(cycle<=0) cycle=dummy_cycles;break;}
 		bool old_mi=mI;
 		cycle += CpuExecuteOP();
-		if(old_mi==true && mI==false) {//mI flipped from true to false
+		if(old_mi==true && mI==false && mOpcode != 0x40) { // CLI(0x58)/PLP(0x28) delay 1 op; RTI(0x40) takes effect immediately
 			mi_clear_delay=mi_clear_delay_value;
 		}
     }while(cycle<=max_cycles);

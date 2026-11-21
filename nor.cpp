@@ -137,7 +137,7 @@ bool read_nor(uint16_t addr, uint8_t &value){
             if(pc1000mode||nc3000mode){
                 value= 0xBF; //from wayback
             }else if(nc2000mode||nc1020mode){
-                value= 0xC7;// from datasheet but not sure if it's exactly same database
+                value= 0xC7;// from datasheet but not sure if it's exactly same datasheet
             }else assert(false);
             return true;
         }else if (addr==0x8001){
