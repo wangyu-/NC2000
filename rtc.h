@@ -19,4 +19,4 @@ bool chk_ar();
 void sync_time_1020();
 void sync_time_2000();
 
-void sync_time_cold_start();
+void sync_time_if_factory_value();

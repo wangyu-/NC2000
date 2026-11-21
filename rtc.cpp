@@ -111,25 +111,26 @@ void sync_time_1020(){
 	rtc_reg[0]=local_time->tm_sec;
 }
 
-void sync_time_cold_start(){
+// sync time if the rtc value stays at the factory default
+void sync_time_if_factory_value(){
 	if(nc2000mode){
 		bool is_nc2600_rom(void);
 		if(is_nc2600_rom()){
 			if(!time_adjusted && Peek16(0x3fa)==0x7a &&rtc_reg[0]==1){
 				time_adjusted=1;
-				if(enable_auto_time_sync) sync_time_2000();
+				sync_time_2000();
 			}
 		}else{
 			if(!time_adjusted && Peek16(0x3fa)==0x79 &&rtc_reg[0]==1){
 				time_adjusted=1;
-				if(enable_auto_time_sync) sync_time_2000();
+				sync_time_2000();
 			}
 		}
 	}
 	if(nc3000mode){
 		if(!time_adjusted && Peek16(0x3fa)==0x7b &&rtc_reg[0]==1){
 			time_adjusted=1;
-			if(enable_auto_time_sync) sync_time_2000();
+			sync_time_2000();
 		}	
 	}
 	if(nc1020mode){
@@ -140,15 +141,11 @@ void sync_time_cold_start(){
 			if(!time_adjusted && Peek16(0x472)==0x79 /*&&rtc_reg[0]==1*/){
 				time_adjusted=1;
 				time_adjusted_cycle=cycles;
-				if(enable_auto_time_sync) {
-					sync_time_1020();
-				}
+				sync_time_1020();
 			}
 			else if(!time_adjusted_phase2 &&time_adjusted && cycles - time_adjusted_cycle > CYCLES_SECOND/100){
 				time_adjusted_phase2=1;
-				if(enable_auto_time_sync) {
-					sync_time_1020();
-				}
+				sync_time_1020();
 			}
 		}
 	}

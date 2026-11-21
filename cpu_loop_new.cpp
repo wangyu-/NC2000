@@ -188,7 +188,9 @@ void cpu_run3(){
 		return;
 	}
 
-	sync_time_cold_start();
+	if(enable_auto_time_sync) {
+		sync_time_if_factory_value();
+	}
 	//tick++;
 
 	if(debug_level >=9){  //not for emulation, just trying to log some peridic debug info
