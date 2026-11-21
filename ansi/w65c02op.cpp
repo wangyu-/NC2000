@@ -258,7 +258,7 @@ DWORD CpuExecuteOP(void)
         xORA();
         break;
     case 0x1E:
-        cycle = (1 + (6));
+        cycle = 6;
         xABSOLUTE_X();
         xASL();
         break;
@@ -428,7 +428,7 @@ DWORD CpuExecuteOP(void)
         xAND();
         break;
     case 0x3E:
-        cycle = (1 + (6));
+        cycle = 6;
         xABSOLUTE_X();
         xROL();
         break;
@@ -615,7 +615,7 @@ DWORD CpuExecuteOP(void)
         xEOR();
         break;
     case 0x5E:
-        cycle = (1 + (6));
+        cycle = 6;
         xABSOLUTE_X();
         xLSR();
         break;
@@ -690,7 +690,7 @@ DWORD CpuExecuteOP(void)
         xILLEGAL();
         break;
     case 0x6C:
-        cycle = 5;
+        cycle = 6;
         xINDIRECT_ABSOLUTE();
         xJMP();
         break;
@@ -785,7 +785,7 @@ DWORD CpuExecuteOP(void)
         xADC();
         break;
     case 0x7E:
-        cycle = (1 + (6));
+        cycle = 6;
         xABSOLUTE_X();
         xROR();
         break;
@@ -931,7 +931,7 @@ DWORD CpuExecuteOP(void)
         break;
     case 0x99:
         cycle = (1 + (4));
-        xABSOLUTE_Y();
+        xABSOLUTE_Y_FIXED();
         xSTA();
         break;
     case 0x9A:
@@ -951,7 +951,7 @@ DWORD CpuExecuteOP(void)
         break;
     case 0x9D:
         cycle = (1 + (4));
-        xABSOLUTE_X();
+        xABSOLUTE_X_FIXED();
         xSTA();
         break;
     case 0x9E:
@@ -1296,7 +1296,7 @@ DWORD CpuExecuteOP(void)
         break;
     case 0xDE:
         cycle = (1 + (6));
-        xABSOLUTE_X();
+        xABSOLUTE_X_FIXED();
         xDEC();
         break;
     case 0xDF:
@@ -1466,7 +1466,7 @@ DWORD CpuExecuteOP(void)
         break;
     case 0xFE:
         cycle = (1 + (6));
-        xABSOLUTE_X();
+        xABSOLUTE_X_FIXED();
         xINC();
         break;
     case 0xFF:

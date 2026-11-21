@@ -56,6 +56,8 @@
 #define xZEROPAGE_Y()           {mOperand=CPU_PEEK(mPC)+mY;mPC++;mOperand&=0xff;}
 #define xABSOLUTE_X()           {mOperand=CPU_PEEKW(mPC);mPC+=2;cycle+=(mOperand>>8!=(mOperand+mX)>>8);mOperand+=mX;mOperand&=0xffff;}
 #define xABSOLUTE_Y()           {mOperand=CPU_PEEKW(mPC);mPC+=2;cycle+=(mOperand>>8!=(mOperand+mY)>>8);mOperand+=mY;mOperand&=0xffff;}
+#define xABSOLUTE_X_FIXED()     {mOperand=CPU_PEEKW(mPC);mPC+=2;mOperand+=mX;mOperand&=0xffff;}
+#define xABSOLUTE_Y_FIXED()     {mOperand=CPU_PEEKW(mPC);mPC+=2;mOperand+=mY;mOperand&=0xffff;}
 #define xINDIRECT_ABSOLUTE_X()  {mOperand=CPU_PEEKW(mPC);mPC+=2;mOperand+=mX;mOperand&=0xffff;mOperand=CPU_PEEKW(mOperand);}
 #define xRELATIVE()             {mOperand=CPU_PEEK(mPC);mPC++;mOperand=(mPC+mOperand)&0xffff;}
 #define xINDIRECT_X()           {mOperand=CPU_PEEK(mPC);mPC++;mOperand+=mX;mOperand&=0x00ff;mOperand=CPU_PEEKW_ZP(mOperand);}
