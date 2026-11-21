@@ -19,6 +19,10 @@
 extern nc2k_states_t nc2k_states;
 static u64_t& cycles = nc2k_states.cycles;
 static u64_t& last_cycles = nc2k_states.last_cycles;
+
+static u64_t& p_cycles = nc2k_states.p_cycles;
+static u64_t& last_p_cycles = nc2k_states.last_p_cycles;
+
 static uint8_t * rtc_reg=nc2k_states.ext_reg;
 static uint8_t * ext_reg=nc2k_states.ext_reg;
 //static uint8_t& interr_flag = nc2k_states.interr_flag;
@@ -74,6 +78,11 @@ int trigger_every_x_ms(int x){
 int trigger_x_times_per_s(int x){
 	uint32_t trigger_cycles=CYCLES_SECOND/x;
 	return cycles/trigger_cycles - last_cycles/trigger_cycles;
+}
+
+int trigger_every_x_p_cycle(int x){
+	uint32_t trigger_cycles= x;
+	return p_cycles/trigger_cycles - last_p_cycles/trigger_cycles;
 }
 
 void setTime1000emux() {
@@ -344,27 +353,22 @@ void cpu_run3(){
 		}
 	}
 
-	uint32_t expect_cycles=cpu_batch;
-	uint32_t CycleDelta;
 	if(is_clk_off()){
-		CycleDelta=expect_cycles;
 		last_cycles=cycles;
-		cycles+=CycleDelta;
-	}
-	else if(enable_emulate_cks){
-		//TODO FIX ME
-		//todo study datasheet of how speed affect timers
-		int speed_scaledown=cks_to_speed_scaledown(ram_io[0x05]>>5);;
-		expect_cycles/=speed_scaledown;
-		CycleDelta=cpu->execute(expect_cycles);
+		last_p_cycles=p_cycles;//this cannot be omitted
+		cycles+=cpu_batch;
+		//p cycles don't change at all
+	}else{
+		int speed_scaledown=1;
+		if(enable_emulate_cks) speed_scaledown=cks_to_speed_scaledown(ram_io[0x05]>>5);
+		int expect_cycles=cpu_batch/speed_scaledown;
+		int delta=cpu->execute(expect_cycles);
 		last_cycles=cycles;
-		cycles+=CycleDelta*speed_scaledown;
+		last_p_cycles=p_cycles;
+		p_cycles+=delta;//todo: change more events to p_cycle based
+		cycles+=delta*speed_scaledown;
 	}
-	else{
-		CycleDelta=cpu->execute(expect_cycles);
-		last_cycles=cycles;
-		cycles+=CycleDelta;
-	}
+
 
 	if(pc1000mode){
 		//magic number to fit pc1000emux's timer0,timer1 and timerA code
@@ -400,13 +404,14 @@ void cpu_run3(){
 
 	if(nc1020mode||nc2000mode||nc3000mode||(pc1000mode_normal())) {
 		bool KeepTimer01( unsigned int cpuTick);
-		int delta= CycleDelta;
-		if(nc1020mode||nc2000mode){
-			long long scaled_last_cycles = last_cycles*timer01_speed_fix;
-			long long scaled_cycles = cycles*timer01_speed_fix;
-			delta= scaled_cycles - scaled_last_cycles;
+		long long scaled_last_p_cycles = last_p_cycles;
+		long long scaled_p_cycles = p_cycles;
+		if(timer01_speed_fix!=1){
+			scaled_last_p_cycles *= timer01_speed_fix;
+			scaled_p_cycles *= timer01_speed_fix;
 		}
-		if(KeepTimer01(delta)){
+		int delta= scaled_p_cycles - scaled_last_p_cycles;
+		if(KeepTimer01(delta)){ //note: during clk off timer01 is auto shut down because p_cycle doesn't move, no special handling needed
 				if(enable_dyn_debug_next_n) printf("time to timer01!!!!\n");
 				cpu->set_irq_pending();
 		}
@@ -427,7 +432,7 @@ void cpu_run3(){
 			// lp=cp/160=921600/160=5760     (a row contains 160 bits)
 			// fp=5760/80=72   (agree with document value)
 			// freq_tbi=72*3=216     (compared with physical wqx game music, sounds correct)
-			if(trigger_x_times_per_s(216)){
+			if(trigger_every_x_cycle(CYCLES_SECOND/216)){  //if use trigger_every_x_p_cycle(), key is too laggy
 				if (timeBaseEnable()) {
 					setIrqTimeBase();
 					cpu->set_irq_pending();
@@ -468,6 +473,7 @@ void cpu_run3(){
 		// in some extreme cases, rtc might trigger faster than cpu execution
 		// e.g. when speed_scaledown=512 and CYCLES_SECOND is underclocked to a low value
 		// but practically, trigger256 should be either 0 or 1
+		// update: this is no longer a concern in new implementation with p_cycles, but kept for robustness
 		for(int i=0;i<trigger256;i++)
 		{
 			rtc_reg[TR_ms]++;
