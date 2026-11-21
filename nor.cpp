@@ -25,7 +25,7 @@ uint8_t nor_info_block0[0x100]={
 
 //0xbd,0xf0,0xd4,0xb6,0xbc,0xfb,
 };
-uint8_t nor_info_block[0x100];
+uint8_t nor_info_block[0x200];
 enum NOR_CMD{
     NONE=0,
     SW_ID=1,
@@ -40,6 +40,7 @@ enum NOR_CMD{
 };
 
 void InitNorInfoBlock(){
+    memset(nor_info_block, 0xff, sizeof(nor_info_block));
     memcpy(nor_info_block, nor_info_block0, sizeof(nor_info_block0));
     if(nc1020mode){
         nor_info_block[8]=0xfc;
@@ -127,7 +128,7 @@ bool read_nor(uint16_t addr, uint8_t &value){
 
     if(fp_type==NOR_CMD::INFO_READ && fp_step ==3){
         //printf("read info_block fp_type=%d fp_step=%d addr=%04x\n",fp_type,fp_step,addr);
-        value=nor_info_block[addr%0x100];
+        value=nor_info_block[addr & 0x1ff];
         return true;
     }
     if(fp_type == NOR_CMD::SW_ID && fp_step==3){
@@ -154,8 +155,8 @@ bool read_nor(uint16_t addr, uint8_t &value){
         if(debug_level>=1) printf("got NOR_CMD::POLL_STATUS, addr=%04x\n",addr);
         return true;
     }
-    if (((fp_type == NOR_CMD::BYTE_PROGRAM && fp_step == 4) ||
-		(fp_type == NOR_CMD::BLOCK_OR_MASS_ERASE && fp_step == 6))) {
+    if (((fp_type == NOR_CMD::BYTE_PROGRAM || fp_type == NOR_CMD::INFO_BYTE_PROGRAM) && fp_step == 4) ||
+		((fp_type == NOR_CMD::BLOCK_OR_MASS_ERASE || fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) && fp_step == 6)) {
 		//fp_step = 0; //this doesn't respect datasheet??
         value=0x88;
 		return true;
@@ -257,7 +258,7 @@ void write_nor0(uint16_t addr,uint8_t value){
             if(pc1000mode||nc3000mode) reset_nor_status();
             return;
         } else if (fp_type == NOR_CMD::INFO_BYTE_PROGRAM) {
-            nor_info_block[addr & 0xFF] &= value;
+            nor_info_block[addr & 0x1ff] &= value;
             RATE_LIMIT_LOG(3000,5,"WARN: info byte program at addr=0x%04x, value=0x%02x", addr, value);
             fp_step = 4;
             if(pc1000mode||nc3000mode) reset_nor_status();
@@ -285,8 +286,8 @@ void write_nor0(uint16_t addr,uint8_t value){
             }
             if (fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) {
                 //if it's BMASS erase info block in addition erase info block
-                printf("[nor] WARN: wanna erase infoblock size 256 (BMASS)\n");
-                memset(nor_info_block, 0xFF, 0x100);
+                printf("[nor] WARN: wanna erase infoblock size 512 (BMASS)\n");
+                memset(nor_info_block, 0xFF, sizeof(nor_info_block));
             }
             fp_step = 6;
             if(pc1000mode||nc3000mode) reset_nor_status();
@@ -308,8 +309,8 @@ void write_nor0(uint16_t addr,uint8_t value){
             }
         } else if (fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) {
             if (value == 0x30) {
-                printf("[nor] WARN: wanna erase infoblock size 256\n");
-                memset(nor_info_block, 0xFF, 0x100);
+                printf("[nor] WARN: wanna erase infoblock size 512\n");
+                memset(nor_info_block, 0xFF, sizeof(nor_info_block));
                 fp_step = 6;
                 if(pc1000mode||nc3000mode) reset_nor_status();
                 return;
