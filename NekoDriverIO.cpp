@@ -856,9 +856,12 @@ BYTE __iocallconv Read18Port4( BYTE )
         qDebug("CLK%c: O%dI%d, DATA%c: O%dI%d", hotlinkios->w07_b5_DIR45?'O':'I', hotlinkios->w18_b5_P45OL,hotlinkios->r18_b5_P45ID,  hotlinkios->w07_b6_DIR46?'O':'I',  hotlinkios->w18_b6_P46OL,hotlinkios->r18_b6_P46ID);
     }
 #endif
-    if(nc1020mode||nc2000mode||nc3000mode){
-        //nc3000c-lee has it, without this nc2000 UI is very slow
+    if(nc2000mode){
+        //this is R/B of nand on nc2000, without it the UI is very slow
         return zpioregs[io18_port4_data]|0x20;
+    }
+    if(nc3000mode){
+        return zpioregs[io18_port4_data]|0x01;
     }
     return zpioregs[io18_port4_data];
 }
