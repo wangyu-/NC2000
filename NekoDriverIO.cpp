@@ -478,10 +478,12 @@ void UpdateKeypadRegisters()
         printf("[key_debug] port1control=%02x, port0control=%02x\n", port1control, port0control);
     }
     unsigned char port1controlbit = 1; // aka, y control bit
-    unsigned char tmpdest0 = 0, tmpdest1 = 0;
+    //unsigned char tmpdest0 = 0, tmpdest1 = 0;      //original wayback only 1 tmpdest0 for driven high
+    unsigned char tmpdest0_hi = 0, tmpdest0_lo = 0, tmpdest1 = 0;// tmpdest0_hi: driven high (for default pull-low pins); tmpdest0_lo: driven low (for default pull-high pins)
+    unsigned char port0_pullup = 0;
     if(use_pull_high_emulation){
         if(nc1020mode||nc2000mode){//handle port0 pull high
-                tmpdest0 = (~ext_reg[0x24])&0xf;
+            port0_pullup = (~ext_reg[0x24]) & 0x0f;
         }
     }
     unsigned short tmpp30tv = 0;
@@ -542,13 +544,10 @@ void UpdateKeypadRegisters()
                     // port1y-> port0x, and x is receive
                     if (keypadmatrix[y][x]==1 ) {
                         if((port1data & port1controlbit) != 0){
-                            tmpdest0 |= xbit;
-                        }else if(use_pull_high_emulation){//needed by the pull high case
-                            if(nc1020mode||nc2000mode){
-                                if(xbit &0x0f && (ext_reg[0x24] & xbit) ==0){//in theory this if is not needed
-                                    tmpdest0 &= ~xbit;
-                                }
-                            }
+                            //tmpdest0 |= xbit;        //original wayback only 1 tmpdest0 for driven high
+                            tmpdest0_hi |= xbit;       //new code for driven high
+                        }else{
+                            tmpdest0_lo |= xbit;       //new code for driven low
                         }
                     }
                 } else {
@@ -585,6 +584,8 @@ void UpdateKeypadRegisters()
         }
         port1controlbit = port1controlbit << 1;
     }
+    // Pull-up pins default to 1 (pulled low by 0); pull-down pins default to 0 (pulled high by 1)
+    unsigned char tmpdest0 = (port0_pullup & ~tmpdest0_lo) | (~port0_pullup & tmpdest0_hi); //new code for pull high
 #if false //original wayback
     port1data = r09_port1_ID;
     port0data = r08_port0_ID;
