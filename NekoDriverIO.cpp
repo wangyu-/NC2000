@@ -15,6 +15,7 @@ extern "C" {
 #include <stdlib.h>
 #include <stdint.h>
 #include "state.h"
+#include "mem.h"
 
 #define qDebug(...)
 
@@ -59,9 +60,8 @@ BYTE &r08_port0_ID = nc2k_states.r08_port0_ID;  // input data
 
 BYTE &w09_port1_OL = nc2k_states.w09_port1_OL;
 BYTE &r09_port1_ID = nc2k_states.r09_port1_ID;
-static uint8_t * ram_io=nc2k_states.ram_io;
-// Temp
-static unsigned char *zpioregs=ram_io;
+
+static unsigned char *zpioregs = nc2k_states.ram_io;
 
 //timer01_u* rw023_timer01val = (timer01_u*)&zpioregs[io02_timer0_val];
 
@@ -824,8 +824,8 @@ void __iocallconv Write18Port4( BYTE write, BYTE value )
         qDebug("W CLK%c: O%dI%d, DATA%c: O%dI%d", hotlinkios->w07_b5_DIR45?'O':'I', hotlinkios->w18_b5_P45OL,hotlinkios->r18_b5_P45ID,  hotlinkios->w07_b6_DIR46?'O':'I',  hotlinkios->w18_b6_P46OL,hotlinkios->r18_b6_P46ID);
     }
 
-    int a=value &0x80;
-    if (a==0) a=-1;
+    int a = value >> 7;
+    if (a == 0) a = -1;
     void beeper_on_io_write(int);
     beeper_on_io_write(a);
 
@@ -834,6 +834,9 @@ void __iocallconv Write18Port4( BYTE write, BYTE value )
 
 BYTE __iocallconv Read18Port4( BYTE )
 {
+#if false
+    // hotlink logic from wayback/NekoDriverIO (unused here; mutates zpioregs[0x18] bits 5/6
+    // using hotlinkios which is outside nc2k_states and can corrupt NAND CLE/CEB after load-state)
     // Data
     if (hotlinkios->w19_b6_P46T == 0) {
         if (hotlinkios->w07_b6_DIR46) {
@@ -852,8 +855,9 @@ BYTE __iocallconv Read18Port4( BYTE )
         //qDebug("CLK%c:%d, DATA%c:%d", hotlinkios->w07_b5_DIR45?'O':'I', (zpioregs[io18_port4_data] & 0x20) != 0,  hotlinkios->w07_b6_DIR46?'O':'I', (zpioregs[io18_port4_data] & 0x40) != 0);
         qDebug("CLK%c: O%dI%d, DATA%c: O%dI%d", hotlinkios->w07_b5_DIR45?'O':'I', hotlinkios->w18_b5_P45OL,hotlinkios->r18_b5_P45ID,  hotlinkios->w07_b6_DIR46?'O':'I',  hotlinkios->w18_b6_P46OL,hotlinkios->r18_b6_P46ID);
     }
+#endif
     if(nc1020mode||nc2000mode||nc3000mode){
-        //nc3000c-lee has it but seems like no need?
+        //nc3000c-lee has it, without this nc2000 UI is very slow
         return zpioregs[io18_port4_data]|0x20;
     }
     return zpioregs[io18_port4_data];
@@ -1044,6 +1048,21 @@ bool KeepTimer01( unsigned int cpuTick )
 
 BYTE __iocallconv Read0CGeneralStatus( BYTE read ) {  //added
     unsigned char old_value = nc2k_states.r0c_general_status;
+
     nc2k_states.r0c_general_status &= 0xFE; // clear FP bit before returning
+    if (nc2k_states.inner_interrupt_control & 0x10) old_value |= 0x04;  //NMIOFF, no code really use it
     return old_value;
+}
+
+void __iocallconv Write0FZPBankPort0Dir( BYTE write, BYTE value )
+{
+    ram_io[write] = value;
+	super_switch();
+
+    //wayback
+    rw0f_b4_DIR00 = (value & 0x10) != 0;
+    rw0f_b5_DIR01 = (value & 0x20) != 0;
+    rw0f_b6_DIR023 = (value & 0x40) != 0;
+    rw0f_b7_DIR047 = (value & 0x80) != 0;
+    UpdateKeypadRegisters();
 }

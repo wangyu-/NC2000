@@ -440,7 +440,7 @@ void io_v2_write(int address, int value) {
         printf("[io_v2_write] address=%02x value=%02x\n",address,value);
     }
     if(address==0x1a){
-        if(debug_level>=1 ){
+        if(debug_level>=1 && (value &0x80)){
             printf("[io_v2_write] 0x1a value=%02x\n",value);
             printf("[io_v2_write] oops!!!!!! 0x1a value&80  is true\n");
         }
@@ -564,7 +564,7 @@ void io_v2_write(int address, int value) {
             return;
         }
         if(address==0x0f){
-            return Write0F(address,value);
+            return Write0FZPBankPort0Dir(address,value);
         }
         if(address==0x15){
             return Write15Dir1(address, value);
@@ -609,7 +609,7 @@ void io_v2_write(int address, int value) {
                 }
             }
             ioReg[0x3f]=value;
-            if(index<7){
+            if(index<=7){
                 //drop invalid value
                 if((signed char)rtc_reg[0x0b]<0) return;
             }            

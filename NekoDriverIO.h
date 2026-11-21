@@ -110,6 +110,7 @@ void __iocallconv Write05ClockCtrl(BYTE write, BYTE value); // $05
 void __iocallconv Write06LCDStartAddr (BYTE write, BYTE value); // $06
 void __iocallconv Write0BLCDStartAddrPort3(BYTE write, BYTE value); // $0B
 void __iocallconv Write0CTimer01Control (BYTE write, BYTE value); // $0C
+void __iocallconv Write0FZPBankPort0Dir( BYTE write, BYTE value );  // $0F    //added
 void __iocallconv Write08Port0 (BYTE write, BYTE value); // $08
 void __iocallconv Write09Port1 (BYTE write, BYTE value); // $09
 void __iocallconv Write0BPort3LCDStartAddr (BYTE write, BYTE value); // $0B
