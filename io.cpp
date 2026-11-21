@@ -335,6 +335,7 @@ void IO_API Write0F(uint8_t addr, uint8_t value){
     rw0f_b5_DIR01 = (value & 0x20) != 0;
     rw0f_b6_DIR023 = (value & 0x40) != 0;
     rw0f_b7_DIR047 = (value & 0x80) != 0;
+    UpdateKeypadRegisters();
 }
 
 void IO_API Write20(uint8_t addr, uint8_t value){

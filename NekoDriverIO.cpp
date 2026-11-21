@@ -585,6 +585,7 @@ void UpdateKeypadRegisters()
         }
         port1controlbit = port1controlbit << 1;
     }
+#if false //original wayback
     port1data = r09_port1_ID;
     port0data = r08_port0_ID;
     // 将port1里面对应于"输入"的都清掉. (此处不是因为下拉电阻, 而是配合tmpdest1里面省掉的传导为0的操作?)
@@ -616,6 +617,21 @@ void UpdateKeypadRegisters()
     }
     port0data |= tmpdest0;
     port1data |= tmpdest1;
+#else // new code
+    unsigned char port0mask = (port0control >> 4) & 0x3; // bit4->DIR00 bit5->DIR01
+    if (port0control & 0x40) {
+        // bit6->DIR02,DIR03
+        port0mask |= 0x0C; // 00001100
+    }
+    if (port0control & 0x80u) {
+        // bit7->DIR04,05,06,07
+        port0mask |= 0xF0u; // 11110000
+    }
+    // Output bits reflect output latches directly; input bits reflect pull-up/pull-down + matrix
+    port0data = (w08_port0_OL & port0mask) | (tmpdest0 & ~port0mask);
+    port1data = (w09_port1_OL & port1control) | (tmpdest1 & ~port1control);
+#endif
+
     if (r09_port1_ID != port1data || r08_port0_ID != port0data) {
         qDebug("old [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, r09_port1_ID, r08_port0_ID);
         qDebug("new [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, port1data, port0data);
@@ -692,7 +708,7 @@ void __iocallconv Write08Port0( BYTE write, BYTE value )
 {
     //qDebug("ggv wanna write keypad port0, [%04x] (%02x) -> %02x", write, mem[write], value);
     w08_port0_OL = value; // set output latches first
-
+#if false  //original wayback no longer needed, covered inside UpdateKeypadRegisters()
     BYTE passmask = 0, passdata = 0;
     // distribute to input data
     if (rw0f_b4_DIR00) {
@@ -712,6 +728,7 @@ void __iocallconv Write08Port0( BYTE write, BYTE value )
         passdata |= value & 0xF0;
     }
     r08_port0_ID = (r08_port0_ID & ~passmask) | passdata;
+#endif
     UpdateKeypadRegisters();
     (void)write;
 }
@@ -720,6 +737,7 @@ void __iocallconv Write09Port1( BYTE write, BYTE value )
 {
     //qDebug("ggv wanna write keypad port1, [%04x] (%02x) -> %02x", write, mem[write], value);
     w09_port1_OL = value; // latches
+#if false  //original wayback no longer needed, covered inside UpdateKeypadRegisters()
     // TODO: apply these pass-though algorithm after PTYPE changed in Write04General control?
     if (w04_b46_PTYPE == 0 || w04_b46_PTYPE == 5) {
         BYTE passmask = 0, passdata = 0;
@@ -732,6 +750,7 @@ void __iocallconv Write09Port1( BYTE write, BYTE value )
 
         r09_port1_ID = (r09_port1_ID & ~passmask) | passdata;
         }
+#endif
     // Reset by OBE change from 1 to 0
     zpioregs[io01_int_status] &= ~0x40; // b6: OBF
 
