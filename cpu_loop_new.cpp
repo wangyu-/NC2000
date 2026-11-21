@@ -232,10 +232,7 @@ void cpu_run3(){
 				if(pc1000mode_normal()) {
 					//timerA/B are usually for record and play
 					//looks like nobody use timerA on nc1020/nc2000
-					if(setTimerA()){
-						//note: in orignally pc1000emux, it doesn't set irq pending here
-						cpu->set_irq_pending();
-					}
+					setTimerA();
 				}
 				if(pc1000mode_emux()) {
 					bus_pc1000->setTimer();
@@ -256,7 +253,7 @@ void cpu_run3(){
 		}
 	}
 
-	if(nc1020mode||nc2000mode||nc3000mode||(pc1000mode_normal())) {
+	if(!clk_off && (nc1020mode||nc2000mode||nc3000mode||(pc1000mode_normal()))) {
 		bool KeepTimer01( unsigned int cpuTick);
 		long long scaled_last_p_cycles = last_p_cycles;
 		long long scaled_p_cycles = p_cycles;
@@ -265,12 +262,10 @@ void cpu_run3(){
 			scaled_p_cycles *= timer01_speed_fix;
 		}
 		int delta= scaled_p_cycles - scaled_last_p_cycles;
-		if(KeepTimer01(delta)){ //note: during clk off timer01 is auto shut down because p_cycle doesn't move, no special handling needed
+		if(KeepTimer01(delta)){ //note: during clk off timer01 is auto shut down because p_cycle doesn't move, so if !clk_off is not really needed
 				if(enable_dyn_debug_next_n) printf("time to timer01!!!!\n");
-				cpu->set_irq_pending();
 		}
-	}
-	if(!clk_off && (nc2000mode||nc3000mode||nc1020mode||pc1000mode_normal())){
+
 		//timebase is trigged by address line of lcd, 
 		//the trigger rule is complex, it depends on TBC cps and cpf.
 		//for simplicty just use fixed value
@@ -289,7 +284,6 @@ void cpu_run3(){
 			if(trigger_every_x_cycle(CYCLES_SECOND/216)){  //if use trigger_every_x_p_cycle(), key is too laggy
 				if (timeBaseEnable()) {
 					setIrqTimeBase();
-					cpu->set_irq_pending();
 				}
 			}
 		}
@@ -302,9 +296,13 @@ void cpu_run3(){
 			if(trigger_every_x_cycle(CYCLES_SECOND*10/1476)){
 				if (timeBaseEnable()) {
 					setIrqTimeBase();
-					cpu->set_irq_pending();
 				}
 			}
+		}
+		
+		//keep IRQ pending while $01 b5..b0 has unacknowledged bits
+		if(ram_io[0x01] & 0x3f){
+			cpu->set_irq_pending();
 		}
 	}
 
