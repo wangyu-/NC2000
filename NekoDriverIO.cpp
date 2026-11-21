@@ -921,7 +921,13 @@ bool KeepTimer01( unsigned int cpuTick )
     if (timer0run) {
         timer0ticks += cpuTick;
         qDebug("timer0ticks: %d", timer0ticks);
-        int mul0 = 1 + (w0c_b67_TMODESL == 1?w0c_b45_TM0S:w0c_b345_TMS);
+        int mul0 = 1 + (w0c_b67_TMODESL == 1 ? w0c_b45_TM0S * 2 : w0c_b345_TMS);
+        if (false){ 
+            // original wayback factor: 1,2,3,4, looks like it's a similar mistake as timer1
+            // manually says 1 2 4 6 , datasheet says 1 3 5 7.
+            // use 1 3 5 7 here
+            int mul0 = 1 + (w0c_b67_TMODESL == 1?w0c_b45_TM0S:w0c_b345_TMS);
+        }
         int inc0, inc1;
         inc0 = timer0ticks >> mul0;
         if (inc0) {
@@ -940,7 +946,19 @@ bool KeepTimer01( unsigned int cpuTick )
                     needirq = true;
                 }
             }
-            zpioregs[io02_timer0_val] = w0c_b67_TMODESL==1?newt:newt + zpioregs[io03_timer1_val]; // as reload value
+            if (overflow && w0c_b67_TMODESL == 0) {
+                int reload = zpioregs[io03_timer1_val];
+                zpioregs[io02_timer0_val] = reload + (newt - 256) % (256 - reload); // as reload value
+            } else {
+                zpioregs[io02_timer0_val] = newt;
+            }
+            if(false){
+                //original wayback:
+                // issue1: zpioregs[io02_timer0_val] = newt + zpioregs[io03_timer1_val], if zpioregs[io03_timer1_val] is not zero, 
+                //   this add will continuously increase timer0 even if cpuTick is 0
+                // issue2: if cpuTick is large overflow might happen multiple times, but the code only add it 1 time
+                zpioregs[io02_timer0_val] = w0c_b67_TMODESL==1?newt:newt + zpioregs[io03_timer1_val]; // as reload value
+            }
         }
         // 16bit
         if (w0c_b67_TMODESL == 2) {
