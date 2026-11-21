@@ -20,6 +20,7 @@
 #include "key_new.h"
 #include <algorithm>
 #include "cpu_loop.h"
+#include "rtc.h"
 
 extern WqxRom nc2k_rom;
 
@@ -98,11 +99,9 @@ void LoadNC2k(){
 	if(enable_load_state){
 		load_state();
 		if(nc2000mode||nc3000mode){
-			void sync_time_2000();
 			if(enable_auto_time_sync) sync_time_2000();
 		}
 		if(nc1020mode){
-			void sync_time_1020();
 			if(enable_auto_time_sync) sync_time_1020();
 		}
 	}

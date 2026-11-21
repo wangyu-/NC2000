@@ -13,6 +13,7 @@
 #include "display.h"
 #include "console.h"
 #include "lcdstripe/lcdpainter.h"
+#include "rtc.h"
 
 using namespace std;
 
@@ -109,12 +110,11 @@ void main_loop() {
         if(debug_level>=1) printf("detected time jump last=%llu current=%llu, delta=%llu\n",last_time_rtc,current_time_rtc,current_time_rtc-last_time_rtc);
         //there is timejump in between, likely because of system sleep and recover
         if(nc2000mode||nc3000mode){
-            void sync_time_2000();
             sync_time_2000();
         }
         if(nc1020mode){
-            void sync_time_1020();
-            sync_time_1020();}
+            sync_time_1020();
+        }
       }
     }
 
@@ -179,12 +179,10 @@ void main_loop() {
         if(enable_auto_time_sync&&sync_on_resume){
           if(nc2000mode||nc3000mode){
             printf("sync time on power save resume\n");
-            void sync_time_2000();
             sync_time_2000();
           }
           if(nc1020mode){
             printf("sync time on power save resume\n");
-            void sync_time_1020();
             sync_time_1020();
           }
         }
