@@ -205,7 +205,10 @@ void cpu_run3(){
 		}
 	}
 
-	if(is_clk_off()){
+	//right now cks is handled at cpu_batch granularity
+	//todo: it can be improved to instruction granularity
+	bool clk_off = is_clk_off();
+	if(clk_off){
 		last_cycles=cycles;
 		last_p_cycles=p_cycles;//this cannot be omitted
 		cycles+=cpu_batch;
@@ -222,7 +225,7 @@ void cpu_run3(){
 	}
 
 
-	if(pc1000mode){
+	if(!clk_off && pc1000mode){
 		//magic number to fit pc1000emux's timer0,timer1 and timerA code
 		//todo: better emulation
 		if(int trigger_cnt=trigger_x_times_per_s(576*50)){
@@ -268,7 +271,7 @@ void cpu_run3(){
 				cpu->set_irq_pending();
 		}
 	}
-	if(nc2000mode||nc3000mode||nc1020mode||pc1000mode_normal()){
+	if(!clk_off && (nc2000mode||nc3000mode||nc1020mode||pc1000mode_normal())){
 		//timebase is trigged by address line of lcd, 
 		//the trigger rule is complex, it depends on TBC cps and cpf.
 		//for simplicty just use fixed value
@@ -306,7 +309,7 @@ void cpu_run3(){
 		}
 	}
 
-	if(pc1000mode_emux()){
+	if(!clk_off && pc1000mode_emux()){
 		if(trigger_x_times_per_s(250)){
 			if (bus_pc1000->timeBaseEnable()) {
 				//timebase中断为4ms一次，主要用于键盘扫描
@@ -316,7 +319,7 @@ void cpu_run3(){
 		}
 	}
 
-	if(nc1020mode||nc2000mode||nc3000mode){
+	if(nc1020mode||nc2000mode||nc3000mode){//kept running after clock off
 		int n=256;
 		if(rtc_speed!=1.0) {
 			n=int(256*rtc_speed);
@@ -384,7 +387,7 @@ void cpu_run3(){
 		}
 	}
 
-	if(nc1020mode||nc2000mode){
+	if(!clk_off && (nc1020mode||nc2000mode)){
 		// without FP nc1020 physical dump won't work (include nc1020 and nc1020tw)
 		// pc2000hd.doc says "Lcd Common data FP (72HZ)" , nc2000hd.doc says "P34: Lcd Common data FP (73.8HZ)"
 		// todo: make this part of better lcd driver implementation
@@ -400,12 +403,12 @@ void cpu_run3(){
 		}
 	}
 
-	if(pc1000mode_normal() && trigger_x_times_per_s(2)){
+	if(pc1000mode_normal() && trigger_x_times_per_s(2)){//kept running after clock off
 		if (nmiEnable()){
 			cpu->set_nmi_pending();
 		}
 	}
-	if(pc1000mode_emux() && trigger_x_times_per_s(2)){
+	if(pc1000mode_emux() && trigger_x_times_per_s(2)){//kept running after clock off
 		setTime1000emux();
 		if (bus_pc1000->nmiEnable()){
 			cpu->set_nmi_pending();
