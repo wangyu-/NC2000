@@ -293,6 +293,7 @@ void cpu_run3(){
 			// tbc=0x0c, so L10 triggers TBI interrupt, it happens every time L10 flips from 0 to 1
 			// from 0x1830 to 0x1fff, L10 flips 0->1 only 1 time.  but 1 sounds too slow, 2 sounds correct. (compared with physical wqx game music)
 			// freq_tbi=fp*2=73.8*2=147.6
+			// update: spdc1024 changed the cp source from P to OSC, there is probably some undocumented behavior
 			if(trigger_every_x_cycle(CYCLES_SECOND*10/1476)){
 				if (timeBaseEnable()) {
 					setIrqTimeBase();
