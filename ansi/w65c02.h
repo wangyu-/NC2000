@@ -158,6 +158,10 @@ inline uint16_t CPU_PEEKW(uint16_t addr){
     return  (CPU_PEEK((addr)) + (CPU_PEEK((addr + 1)) << 8));
 }
 
+inline uint16_t CPU_PEEKW_ZP(uint8_t addr){
+    return  (CPU_PEEK(addr) + (CPU_PEEK((uint8_t)(addr + 1)) << 8));
+}
+
 inline void CPU_POKE(uint16_t addr, uint8_t a)   
 { 
   void       CStore(uint16_t addr, uint8_t value);
