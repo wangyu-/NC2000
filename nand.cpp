@@ -438,7 +438,7 @@ void nand_write(uint8_t value){
             char *p=&nand[0][0];
             printf("[nand] erase, offset=0x%x (%u)\n",offset, offset);
 
-            nand_write_assert(offset +32*528 <= sizeof(nand));
+            nand_write_assert(offset +32*528 <= num_nand_pages*528);
             memset(p+offset,0xff,32*528);
 
             clear_nand_status();
