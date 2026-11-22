@@ -473,6 +473,7 @@ void UpdateKeypadRegisters()
     // 设port0/port1都有下拉电阻, 并且输入没有锁存. 也即如果设置为输入, 没有导电橡胶从别的线路拉高时候, 自动会变0
     // 计算可以用2种方法, 1, 循环matrix, 对每个节点求传导. 2循环
     unsigned char port1control = w15_port1_DIR107;
+    unsigned char port1_gpio_mask = (w04_b46_PTYPE == 0) ? 0xFF : ((w04_b46_PTYPE == 5) ? 0xF0 : 0x00); // new code, w04_b46_PTYPE logic moved inside
     unsigned char port0control = rw0f_b4_DIR00 << 4 | rw0f_b5_DIR01 << 5 | rw0f_b6_DIR023 << 6 | rw0f_b7_DIR047 << 7;// // b4~b7
     if(enable_key_debug_once){
         printf("[key_debug] port1control=%02x, port0control=%02x\n", port1control, port0control);
@@ -502,6 +503,9 @@ void UpdateKeypadRegisters()
             if (yreceive == false) {
                 qDebug("yreceive:%d", yreceive);
             }
+        } else if(!(port1_gpio_mask & port1controlbit)){ // new code, w04_b46_PTYPE logic moved inside
+            port1controlbit = port1controlbit << 1;
+            continue;
         }
         unsigned char xbit = 1;
         for (int x = 0; x < 8; x++) {
@@ -528,11 +532,13 @@ void UpdateKeypadRegisters()
                 // Special P30 "row"
                 if (x == 0) {
                     // P10
-                    xsend = port1control & 1;
+                    //xsend = port1control & 1; //original wayback
+                    xsend = (port1control & port1_gpio_mask) & 1;  //new code
                 }
                 if (x == 1) {
                     // P11
-                    xsend = port1control & 2;
+                    //xsend = port1control & 2; //original wayback
+                    xsend = (port1control & port1_gpio_mask) & 2;  //new code
                 }
                 if (x == 2) {
                     // on/off is GNDxP30, confirmed by CC800 PCB scan, thx Sailor-HB
@@ -629,41 +635,16 @@ void UpdateKeypadRegisters()
         port0mask |= 0xF0u; // 11110000
     }
     // Output bits reflect output latches directly; input bits reflect pull-up/pull-down + matrix
+    // For Port 1 bits in external CPU interface mode (not in port1_gpio_mask), keep r09_port1_ID (input latch) untouched
     port0data = (w08_port0_OL & port0mask) | (tmpdest0 & ~port0mask);
-    port1data = (w09_port1_OL & port1control) | (tmpdest1 & ~port1control);
+    unsigned char port1_data_raw = (w09_port1_OL & port1control) | (tmpdest1 & ~port1control);
+    port1data = (port1_data_raw & port1_gpio_mask) | (r09_port1_ID & ~port1_gpio_mask);
 #endif
 
     if (r09_port1_ID != port1data || r08_port0_ID != port0data) {
         qDebug("old [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, r09_port1_ID, r08_port0_ID);
         qDebug("new [0015]:%02x [0009]:%02x [0008]:%02x", w15_port1_DIR107, port1data, port0data);
     }
-
-  if(!use_pull_high_emulation){ //no longer needed, but kept for compare
-    // this is tmp fix for nc2000 hotkey wakeup
-    // todo: better fix, probably need to handle below:
-    //       when port0[3:0] defined as input, it got "on" function and is pulled high. (it's controled by P0PU)
-    if(nc2000mode||nc1020mode) {
-        if(port1control==0xff&&port0control==0xc0 &&w09_port1_OL==0x00){
-            bool hot_key_pressed=false;
-            // note: port0control==0xc0 ----->rw0f_b4_DIR00 ==0x00 && rw0f_b5_DIR01 ==0x00
-            for(int y=0;y<8;y++){ 
-                if(keypadmatrix[y][1]){  // if any of this row is pressed, the pull high value get cleared
-                    hot_key_pressed=true; 
-                }
-            }
-            if(hot_key_pressed){
-                port0data |=0x03;
-                port0data&=~0x02;
-            }
-        }
-    }
-    if(nc1020mode){ //this is a similiar hack since pull high is not implemented correctly yet
-        //seems like only 1020tw uses this
-        if(port1control==0x00&&port0control==0x00){
-            port0data|= 0x03;
-        }
-    }
-  }
 
     r09_port1_ID = port1data;
     r08_port0_ID = port0data;
@@ -884,6 +865,7 @@ void __iocallconv Write01IntEnable( BYTE write, BYTE value )
 // TODO: combine back in read04, or need update every time w04_bxx_YYY value changed
 void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value)
 {
+    BYTE old_ptype = w04_b46_PTYPE;
     w04_b46_PTYPE = value >> 4 & 7;
     if (w04_b46_PTYPE) {
         qDebug("PTYPE:%d", w04_b46_PTYPE);
@@ -892,6 +874,9 @@ void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value)
     w04_b03_TBC = value & 0xF;
     //printf("write 04 %02x\n",value);
     zpioregs[io04_general_ctrl] = value;
+    if (w04_b46_PTYPE != old_ptype) {
+        UpdateKeypadRegisters();
+    }
     (void)write;
 }
 
