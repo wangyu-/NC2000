@@ -111,8 +111,8 @@ struct nc2k_states_t{
 	int dspRetData;
 	bool dspTrans;
 	bool dspSleep;
-	int tmaValue;
-	int tmaReload;
+	int tmaValue;  // unused, kept for save-state compatibility
+	int tmaReload; // unused, kept for save-state compatibility
 	unsigned char inner_interrupt_control;
 	unsigned int speed_scaledown; //not used any more
 	uint8_t cps;
@@ -168,6 +168,15 @@ struct nc2k_states_t{
 
 	u64_t p_cycles;
 	u64_t last_p_cycles;
+
+	struct timer_ab_state_t{
+		uint16_t tma_val;
+		uint16_t tma_reload;
+		uint64_t tma_acc;
+		uint16_t tmb_val;
+		uint16_t tmb_reload;
+		uint64_t tmb_acc;
+	} timer_ab;
 
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
@@ -235,6 +244,7 @@ below are all legacy fields, only used in old cpu_loop or io
 		//=================================================================
 		iv_set=0; //if this is put into warm_reset, alarm wakeup will not work correctly
 		memset(&nand_state,0,sizeof(nand_state));
+		memset(&timer_ab,0,sizeof(timer_ab));
 		w1e_port6_OL=0;
 		r1e_port6_ID=0;
 		r0c_general_status=0;

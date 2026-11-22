@@ -12,6 +12,7 @@
 #include "iv_uart.h"
 #include "sound.h"
 #include "rtc.h"
+#include "timer_ab.h"
 
 #define qDebug(...)
 
@@ -224,30 +225,22 @@ void cpu_run3(){
 	}
 
 
-	if(!clk_off && pc1000mode){
+	if(!clk_off && pc1000mode_emux()){
 		//magic number to fit pc1000emux's timer0,timer1 and timerA code
-		//todo: better emulation
 		if(int trigger_cnt=trigger_x_times_per_s(576*50)){
 			for(int i=0;i<trigger_cnt;i++){
-				if(pc1000mode_normal()) {
-					//timerA/B are usually for record and play
-					//looks like nobody use timerA on nc1020/nc2000
-					setTimerA();
+				bus_pc1000->setTimer();
+				if (bus_pc1000->setTimer0()) {
+					//timer0用于录放音，蜂鸣器音乐
+					bus_pc1000->setIrqTimer0();
+					//printf("irq1!\n");
+					cpu->irq_now();
 				}
-				if(pc1000mode_emux()) {
-					bus_pc1000->setTimer();
-					if (bus_pc1000->setTimer0()) {
-						//timer0用于录放音，蜂鸣器音乐
-						bus_pc1000->setIrqTimer0();
-						//printf("irq1!\n");
-						cpu->irq_now();
-					}
-					if (bus_pc1000->setTimer1()) {
-						//timer1用于秒表的百分之一秒，每秒200次
-						bus_pc1000->setIrqTimer1();
-						cpu->irq_now();
-						//printf("irq2!\n");
-					}
+				if (bus_pc1000->setTimer1()) {
+					//timer1用于秒表的百分之一秒，每秒200次
+					bus_pc1000->setIrqTimer1();
+					cpu->irq_now();
+					//printf("irq2!\n");
 				}
 			}
 		}
@@ -265,6 +258,8 @@ void cpu_run3(){
 		if(KeepTimer01(delta)){ //note: during clk off timer01 is auto shut down because p_cycle doesn't move, so if !clk_off is not really needed
 				if(enable_dyn_debug_next_n) printf("time to timer01!!!!\n");
 		}
+
+		timer_ab_step(cycles - last_cycles);
 
 		//timebase is trigged by address line of lcd, 
 		//the trigger rule is complex, it depends on TBC cps and cpf.

@@ -12,6 +12,7 @@
 #include "iv_uart.h"
 #include "io_new.h"
 #include "rtc.h"
+#include "timer_ab.h"
 
 extern nc2k_states_t nc2k_states;
 extern Dsp dsp;
@@ -19,13 +20,6 @@ extern Dsp dsp;
 static int &dspRetData=nc2k_states.dspRetData;
 static bool &dspTrans=nc2k_states.dspTrans;
 static bool &dspSleep=nc2k_states.dspSleep;
-
-static int &tmaValue=nc2k_states.tmaValue;
-static int &tmaReload=nc2k_states.tmaReload;
-
-const int IO_TIMERA_VAL_L = 0x10;
-const int IO_TIMERA_VAL_H = 0x11;
-const int IO_TIMERAB_CTRL = 0x14;
 
 const int INT_TIME_BASE = 8;
 
@@ -239,25 +233,6 @@ void dsp33write_cmd_data(int value){
     }
 }
 
-//timerA from pc1000emux
-// 实现的不全，缺TMACT
-bool setTimerA() {
-    int temp = ioReg[IO_TIMERAB_CTRL] >> 4;
-    if (temp != 0) {
-        tmaValue += (256 >> temp);
-        if (tmaValue >= 0x10000) {
-            tmaValue = tmaReload;
-            if(debug_level>=2) printf("timer A interrupt triggered\n");
-            if ((inner_interrupt_control & 1) != 0){
-                ioReg[io01_int_status] |= 1;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-//todo timerB
-
 void setIrqTimeBase() {
     ioReg[io01_int_status] |= INT_TIME_BASE;
 }
@@ -300,6 +275,10 @@ int io_v2_read(int address) {
         if(address==0x09){
             return ReadPort1(address);
         }
+        if(address==0x10) return timer_ab_read_tmal();
+        if(address==0x11) return timer_ab_read_tmah();
+        if(address==0x12) return timer_ab_read_tmbl();
+        if(address==0x13) return timer_ab_read_tmbh();
         if(address==0x18){
             return Read18Port4(address);//not important? seems like hotlink only
         }
@@ -564,6 +543,26 @@ void io_v2_write(int address, int value) {
         if(address==0x0f){
             return Write0FZPBankPort0Dir(address,value);
         }
+        if(address==0x10){
+            timer_ab_write_tmal(value);
+            return;
+        }
+        if(address==0x11){
+            timer_ab_write_tmah(value);
+            return;
+        }
+        if(address==0x12){
+            timer_ab_write_tmbl(value);
+            return;
+        }
+        if(address==0x13){
+            timer_ab_write_tmbh(value);
+            return;
+        }
+        if(address==0x14){
+            timer_ab_write_ctrl(value);
+            return;
+        }
         if(address==0x15){
             return Write15Dir1(address, value);
         }
@@ -571,6 +570,7 @@ void io_v2_write(int address, int value) {
             return Write18Port4(address, value);
         }
         if(address==0x19){
+            timer_ab_on_write_19(value);
             return Write19CkvSelect(address, value);//not important? seems like only hotlink inside
         }
         /*
@@ -641,13 +641,6 @@ void io_v2_write(int address, int value) {
             super_switch();
             /////////////biosBankSwitch();
             /////////////bankSwitch();
-            return;
-        case IO_TIMERA_VAL_L://0x10
-            tmaReload = (tmaReload & 0xff00) | value;
-            return;
-        case IO_TIMERA_VAL_H://0x11
-            tmaReload = (tmaReload & 0xff) | (value << 8);
-            tmaValue = tmaReload;
             return;
         default:
             ioReg[address] = value;
