@@ -62,6 +62,10 @@ void init_cpu_new(){
 		printf("unknown io version %d\n", io_version);
 		assert(false);
 	}
+
+	if(cpu_loop_version==CPU_RUN3&&io_version!=IO_EMUX){
+		cpu->enable_irq_line_mode();
+	}
 	
 }
 
@@ -295,11 +299,6 @@ void cpu_run3(){
 				}
 			}
 		}
-		
-		//keep IRQ pending while $01 b5..b0 has unacknowledged bits
-		if(ram_io[0x01] & 0x3f){
-			cpu->set_irq_pending();
-		}
 	}
 
 	if(!clk_off && pc1000mode_emux()){
@@ -370,13 +369,8 @@ void cpu_run3(){
 			put_iv(IV_SAMPLE);
 		}
 
-		uint8_t iv=peek_iv();
-		if(iv!=IV_NONE){
-			cpu->set_irq_pending();
-			//if(iv==IV_ALARM) warm_reset_if_clkoff();
-			if(nc2k_states.iv_set&(1<<IV_ALARM)){
-				warm_reset_if_clkoff();
-			}
+		if(nc2k_states.iv_set&(1<<IV_ALARM)){
+			warm_reset_if_clkoff();
 		}
 	}
 

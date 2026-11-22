@@ -44,6 +44,15 @@ void CPUInterface::reset(){
 	
 }
 
+bool CPUInterface::irq_pending() {
+	if(irq_line_mode){
+        return (ram_io[0x01] & 0x3f) ||nc2k_states.iv_set;
+	}
+	if(version==CPU_EMUX) return cpu_impl_emux->irqPending;
+	if(version==CPU_HANDYPSP) return g_irq;
+	return false;
+}
+
 int CPUInterface::emux_exec_helper(int max_cycles) {
 	auto &clk=cpu_impl_emux->clk;
 	auto &lineclk=cpu_impl_emux->lineclk;
@@ -56,7 +65,7 @@ int CPUInterface::emux_exec_helper(int max_cycles) {
 		cpu_impl_emux->doNMI();
 	}
 	do{	
-		if (irqPending && !I()) {
+		if (irq_pending() && !I()) {
 			irqPending = false;
 			cpu_impl_emux->doIRQ();
 		}
@@ -89,7 +98,7 @@ int CPUInterface::execute(int max_cycles){
     do{
 		if(mi_clear_delay){
 			mi_clear_delay--;
-		}else if (g_irq && !mI){
+		}else if (irq_pending() && !mI){
 			g_irq = false;
 			if(enable_dyn_debug_next_n||enable_dyn_debug||enable_debug_pc) printf("execute irq!!!!!!!\n");
 			cycle+=CpuExecuteIRQ();
