@@ -19,7 +19,7 @@ static uint8_t& fp_type = nc2k_states.fp_type;
 //0xd0,0x07 ---->2000
 //0xfc,0x03 ---->1020
 //'J' --->简体
-uint8_t nor_info_block0[0x100]={
+uint8_t nor_info_block0[]={
 0xbd,0xf0,0xd4,0xb6,0xbc,0xfb,'N','C',0xd0,0x07,'J',0x01,0x02,0x03,0x04,0x01,0x01,0x01,0x01,
 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 
@@ -41,6 +41,7 @@ enum NOR_CMD{
 
 void InitNorInfoBlock(){
     memset(nor_info_block, 0xff, sizeof(nor_info_block));
+    assert(sizeof(nor_info_block0) <= sizeof(nor_info_block));
     memcpy(nor_info_block, nor_info_block0, sizeof(nor_info_block0));
     if(nc1020mode){
         nor_info_block[8]=0xfc;
@@ -225,6 +226,8 @@ void write_nor0(uint16_t addr,uint8_t value){
         	case 0x88: fp_type = NOR_CMD::INFO_OR_BMASS_ERASE; break;
         	case 0x78: fp_type = NOR_CMD::INFO_READ; break;
             case 0x70: fp_type = NOR_CMD::POLL_STATUS; break;
+            case 0xb0: RATE_LIMIT_LOG(3000,5,"WARN: nor page program received, but it's not implemented"); break;
+            case 0xb8: RATE_LIMIT_LOG(3000,5,"WARN: nor info page program received, but it's not implemented"); break;
             //case 0xb0: fp_type = NOR_CMD::PAGE_PROGRAM; break;
             //case 0xb8: fp_type = NOR_CMD::INFO_PAGE_PROGRAM; break;
             //default: printf("no new fp type\n");
