@@ -16,10 +16,9 @@ static inline uint8_t tmb_hi_mask() {
 }
 
 static inline uint32_t get_osc_mult() {
-    // PC1000/NC1020: PLL/OSC = 7.3728MHz, base CPU clock = 3.6864MHz (OSC / 2)
-    // NC2000:        PLL/OSC = 14.7456MHz, base CPU clock = 4.9152MHz (OSC / 3)
-    // NC3000:        base CPU clock = 9.8304MHz, OSC = 2 * base
-    return nc2000mode ? 3u : 2u;
+    // PC1000 (SPDC1016): OSC = 7.3728MHz, CPU clock in MC bus mode capped at OSC/2 = 3.6864MHz (2x CYCLES_SECOND)
+    // NC1020/NC2000/NC3000 (SPDC1024/1064): SPDC1024 p.64 defines OSC = 3.6864MHz / 4.9152MHz (1x CYCLES_SECOND)
+    return pc1000mode ? 2u : 1u;
 }
 
 // Advance an auto-reloading up-counter in [0, limit) by `ticks`.
@@ -44,9 +43,11 @@ static inline uint64_t step_prescaled(uint64_t &acc, uint64_t osc_ticks, uint8_t
     return ticks;
 }
 
-// Convert `base_cycles` (at CYCLES_SECOND Hz) to 32.768 kHz crystal ticks with exact rational accumulator.
-static inline uint64_t step_xtal32k(uint64_t &acc, uint64_t base_cycles) {
-    acc += base_cycles * 32768ULL;
+// Convert `base_cycles` (at CYCLES_SECOND Hz) to 32.768 kHz / 2^(tmas_low3 - 1) ticks
+// (tmas_low3 in 1..7 => 32768, 16384, 8192, 4096, 2048, 1024, 512 Hz).
+static inline uint64_t step_xtal32k(uint64_t &acc, uint64_t base_cycles, uint8_t tmas_low3) {
+    uint64_t freq = 32768ULL >> (tmas_low3 - 1);
+    acc += base_cycles * freq;
     uint64_t ticks = acc / CYCLES_SECOND;
     acc %= CYCLES_SECOND;
     return ticks;
@@ -144,8 +145,8 @@ void timer_ab_step(uint64_t base_cycles) {
             // Timer mode: internal OSC / 2^TMAS
             ticks = step_prescaled(ab.tma_acc, osc_ticks, tmas);
         } else if ((tmas & 0x08) == 0) {
-            // Counter mode with TMAS3=0: external 32.768 kHz crystal (XXTAL)
-            ticks = step_xtal32k(ab.tma_acc, base_cycles);
+            // Counter mode with TMAS3=0: external 32.768 kHz crystal divided by 2^(TMAS[2:0]-1)
+            ticks = step_xtal32k(ab.tma_acc, base_cycles, tmas & 0x07);
         }
         // Counter mode with TMAS3=1: external P44 (TMACI) pin edges (no external signal connected)
 
