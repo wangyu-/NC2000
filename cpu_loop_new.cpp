@@ -399,6 +399,13 @@ void cpu_run3(){
 	if(pc1000mode_normal() && trigger_x_times_per_s(2)){//kept running after clock off
 		if (nmiEnable()){
 			cpu->set_nmi_pending();
+				//on pc1000mode the nmi is triggered by RTC and it can wake up clk (not 100% confirmed)
+				//references "Real Time Clock value" "RTC wake up system"
+				if(is_clk_off()) {
+					if(debug_level>=1) RATE_LIMIT_LOG(5000,1,"woke by nmi");
+					nc2k_states.woke_by_interrupt=true;
+					set_clk_on();
+				}
 		}
 	}
 	if(pc1000mode_emux() && trigger_x_times_per_s(2)){//kept running after clock off
