@@ -11,6 +11,7 @@
 #include "CC800IOName.h"
 #include "iv_uart.h"
 #include "io_new.h"
+#include "rtc.h"
 
 extern nc2k_states_t nc2k_states;
 extern Dsp dsp;
@@ -610,9 +611,9 @@ void io_v2_write(int address, int value) {
             }
             ioReg[0x3f]=value;
             if(index==0x04) return; // TR_ms is read-only
-            if(index<=7){
-                //drop invalid value
-                if((signed char)rtc_reg[0x0b]<0) return;
+            if(index<AR_h+1){
+                //0b highest bit is WP (write protection)   
+                if(rtc_reg[0x0b]&0x80) return;
             }            
             if(index==0x0a) return write_rcr0(value);
             if(index==0x0b) return write_rcr1(value);
