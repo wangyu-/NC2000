@@ -247,6 +247,10 @@ below are all legacy fields, only used in old cpu_loop or io
 		//lcdbuffaddr=0x09C0;
 		lcdbuffaddrmask=0x3FFF; // matches LCDX=00 (ram_io[0x0b]==0) on cold reset
 
+		// SPDC1024/1064 power-on non-zero defaults
+		TMR = 0x20;             // UARTEN default=1 (SPDC1024 p.22 / SPDC1064 p.18)
+		ext_reg[0x0b] = 0x80;   // RCR1.WP default=1 (SPDC1024 p.28 / SPDC1064 p.22)
+
 		if(nc1020mode){
 			//this is on/off of nc1020, pull high by default
 			// if without it on nc1020, on/off need to be press twice to power off

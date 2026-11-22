@@ -759,9 +759,13 @@ void __iocallconv Write0BPort3LCDStartAddr( BYTE write, BYTE value )
     // LCD   0   0   0   0   0   L10 L9 L8 L7 L6 L5 L4     for LCDX1=1  LCDX0=1 07FF
     lcdbuffaddrmask = 0x3FFF >> b6b5;
     qDebug("ggv wanna change lcdbuf address to 0x%04x in io0B", lcdbuffaddr & lcdbuffaddrmask);
-    // P30 should always input?
-    // TODO: output latch
-    zpioregs[io0B_port3_data] = (value & 0xFE) | (zpioregs[io0B_port3_data] & 1);
+    if (pc1000mode||nc1020mode||nc2000mode){
+        // SPDC1016 (PC1000) & SPDC1024 (NC1020/NC2000): reading $0B bit 0 is P30/ONOFF_i input
+        zpioregs[io0B_port3_data] = (value & 0xFE) | (zpioregs[io0B_port3_data] & 1);
+    } else if (nc3000mode) {
+        // SPDC1064 moved Port 3 to $0E; $0B is pure I/O LCD control (bit 0 = LCDIR1)
+        zpioregs[io0B_port3_data] = value;
+    } else assert(false);
     (void)write;
     }
 

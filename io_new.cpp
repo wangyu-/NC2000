@@ -348,12 +348,9 @@ int io_v2_read(int address) {
         }
         if(address==0x1c){
             int battery_detect_level= ram_io[0x1c]&0x1f;
-            ram_io[0x1c]&=~0x20;
-            if(battery_detect_level>=battery_level_nc3000){
-                ram_io[0x1c]|=0x20;
-            }
+            uint8_t ret = (battery_detect_level>=battery_level_nc3000) ? (ram_io[0x1c]|0x20) : (ram_io[0x1c]&~0x20);
             //if without the 0x80 lava4grey has graphic glitch
-            return ram_io[0x1c]|0x80;
+            return ret|0x80;
         }
         if(address==0x1e){
             return Read1EPort6(address);
