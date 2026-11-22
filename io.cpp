@@ -59,7 +59,7 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
     //io_write[0x05] = Write05; // clk, sleep related
     io_write[0x05] = Write05ClockCtrl;
 	io_write[0x06] = Write06LCDStartAddr; // lcd related ;
-    io_write[0x07] = Write07PortConfig;
+    //io_write[0x07] = Write07PortConfig;
     if(use_legacy_key_io){
         io_write[0x08] = Write08Port0; // keyboard related, looks like no harm to keep???
         ////////io_write[0x08] = Write08; // keyboard related
@@ -79,7 +79,7 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
 	io_write[0x0F] = Write0F;/////// WriteZeroPageBankswitch merged in
     io_write[0x15] = Write15Dir1;
     io_write[0x18] = Write18Port4;
-    io_write[0x19] = Write19CkvSelect;
+    //io_write[0x19] = Write19CkvSelect;
     //io_write[0x20] = Write20;
     io_write[0x20] =Write20JG;
 	io_write[0x23] = Write23;//<----------from nc1020

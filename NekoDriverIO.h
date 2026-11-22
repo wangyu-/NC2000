@@ -115,8 +115,8 @@ void __iocallconv Write08Port0 (BYTE write, BYTE value); // $08
 void __iocallconv Write09Port1 (BYTE write, BYTE value); // $09
 void __iocallconv Write0BPort3LCDStartAddr (BYTE write, BYTE value); // $0B
 void __iocallconv Write15Dir1( BYTE write, BYTE value ); // $15
-void __iocallconv Write19CkvSelect(BYTE write, BYTE value); // $19
-void __iocallconv Write07PortConfig (BYTE write, BYTE value); // $07
+//void __iocallconv Write19CkvSelect(BYTE write, BYTE value); // $19
+//void __iocallconv Write07PortConfig (BYTE write, BYTE value); // $07
 void __iocallconv Write18Port4(BYTE write, BYTE value); // $18
 void __iocallconv Write1EPort6(BYTE write, BYTE value); // $1E //added for nc3000
 

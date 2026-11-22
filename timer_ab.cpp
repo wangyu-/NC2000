@@ -54,28 +54,28 @@ static inline uint64_t step_xtal32k(uint64_t &acc, uint64_t base_cycles, uint8_t
 }
 
 // $10-$13 are read-to-clear per SPDC1016 / SPDC1024 datasheet (clears only the read byte of the live counter).
-uint8_t timer_ab_read_tmal() {
+uint8_t timer_ab_read_10_tmal() {
     auto &ab = nc2k_states.timer_ab;
     uint8_t v = ab.tma_val & 0xFF;
     ab.tma_val &= 0xFF00;
     return v;
 }
 
-uint8_t timer_ab_read_tmah() {
+uint8_t timer_ab_read_11_tmah() {
     auto &ab = nc2k_states.timer_ab;
     uint8_t v = (ab.tma_val >> 8) & 0xFF;
     ab.tma_val &= 0x00FF;
     return v;
 }
 
-uint8_t timer_ab_read_tmbl() {
+uint8_t timer_ab_read_12_tmbl() {
     auto &ab = nc2k_states.timer_ab;
     uint8_t v = ab.tmb_val & 0xFF;
     ab.tmb_val &= 0xFF00;
     return v;
 }
 
-uint8_t timer_ab_read_tmbh() {
+uint8_t timer_ab_read_13_tmbh() {
     auto &ab = nc2k_states.timer_ab;
     uint8_t v = (ab.tmb_val >> 8) & tmb_hi_mask();
     ab.tmb_val &= 0x00FF;
@@ -83,24 +83,24 @@ uint8_t timer_ab_read_tmbh() {
 }
 
 // Low byte updates reload latch; high byte updates reload latch and loads the live counter.
-void timer_ab_write_tmal(uint8_t value) {
+void timer_ab_write_10_tmal(uint8_t value) {
     auto &ab = nc2k_states.timer_ab;
     ab.tma_reload = (uint16_t)((ab.tma_reload & 0xFF00) | value);
 }
 
-void timer_ab_write_tmah(uint8_t value) {
+void timer_ab_write_11_tmah(uint8_t value) {
     auto &ab = nc2k_states.timer_ab;
     ab.tma_reload = (uint16_t)((ab.tma_reload & 0x00FF) | ((uint16_t)value << 8));
     ab.tma_val = ab.tma_reload;
     ab.tma_acc = 0;
 }
 
-void timer_ab_write_tmbl(uint8_t value) {
+void timer_ab_write_12_tmbl(uint8_t value) {
     auto &ab = nc2k_states.timer_ab;
     ab.tmb_reload = (uint16_t)((ab.tmb_reload & 0xFF00) | value);
 }
 
-void timer_ab_write_tmbh(uint8_t value) {
+void timer_ab_write_13_tmbh(uint8_t value) {
     auto &ab = nc2k_states.timer_ab;
     uint8_t hi = value & tmb_hi_mask();
     ab.tmb_reload = (uint16_t)((ab.tmb_reload & 0x00FF) | ((uint16_t)hi << 8));
@@ -108,7 +108,7 @@ void timer_ab_write_tmbh(uint8_t value) {
     ab.tmb_acc = 0;
 }
 
-void timer_ab_write_ctrl(uint8_t value) {
+void timer_ab_write_14_ctrl(uint8_t value) {
     auto &ab = nc2k_states.timer_ab;
     uint8_t prev = nc2k_states.ram_io[0x14];
     if ((value & 0xF0) != (prev & 0xF0)) {
@@ -120,11 +120,12 @@ void timer_ab_write_ctrl(uint8_t value) {
     nc2k_states.ram_io[0x14] = value;
 }
 
-void timer_ab_on_write_19(uint8_t value) {
+void timer_ab_write_19_tmact(uint8_t value) {
     if ((value & 0x10) != (nc2k_states.ram_io[0x19] & 0x10)) {
         // TMACT changed (Timer <-> Counter); reset accumulator to avoid stale clock scale
         nc2k_states.timer_ab.tma_acc = 0;
     }
+    nc2k_states.ram_io[0x19] = value;
 }
 
 void timer_ab_step(uint64_t base_cycles) {

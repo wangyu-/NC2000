@@ -777,6 +777,7 @@ void __iocallconv Write15Dir1( BYTE write, BYTE value )
     (void)write;
     }
 
+/*
 void __iocallconv Write19CkvSelect( BYTE write, BYTE value )
 {
     // 19不读取?!
@@ -785,7 +786,9 @@ void __iocallconv Write19CkvSelect( BYTE write, BYTE value )
     hotlinkios->w19_b5_P45T = (value & 0x20) != 0;
     (void)write;
         }
+*/
 
+/*
 void __iocallconv Write07PortConfig( BYTE write, BYTE value )
 {
     zpioregs[io07_port_config] = value;
@@ -798,16 +801,19 @@ void __iocallconv Write07PortConfig( BYTE write, BYTE value )
 
     (void)write;
         }
+*/
 
 void __iocallconv Write18Port4( BYTE write, BYTE value )
 {
     zpioregs[io18_port4_data] = value;
+/*
     hotlinkios->w18_b6_P46OL = (value & 0x40) != 0;
     hotlinkios->w18_b5_P45OL = (value & 0x20) != 0;
 
     if (hotlinkios->w19_b6_P46T == 0 && hotlinkios->w19_b5_P45T == 0) {
         qDebug("W CLK%c: O%dI%d, DATA%c: O%dI%d", hotlinkios->w07_b5_DIR45?'O':'I', hotlinkios->w18_b5_P45OL,hotlinkios->r18_b5_P45ID,  hotlinkios->w07_b6_DIR46?'O':'I',  hotlinkios->w18_b6_P46OL,hotlinkios->r18_b6_P46ID);
     }
+*/
 
     int a = value >> 7;
     if (a == 0) a = -1;
@@ -884,6 +890,8 @@ void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value)
     (void)write;
 }
 
+
+#if false
 HotlinkBundle* hotlinkios = nullptr;
 
 // For P45,P45
@@ -894,6 +902,7 @@ void CreateHotlinkMapping()
     hotlinkios = (HotlinkBundle*)malloc(sizeof(HotlinkBundle));
     memset(hotlinkios, 0, sizeof(HotlinkBundle));
 }
+#endif
 
 
 

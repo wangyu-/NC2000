@@ -77,9 +77,6 @@ void LoadNC2k(){
 
 	init_io(); //for old io implemet only
 
-	void CreateHotlinkMapping();//wayback will access memory allocated inside
-	CreateHotlinkMapping();
-
 	init_nor();
 	if(pc1000mode||nc1020mode) {
 		init_rom();

@@ -275,10 +275,10 @@ int io_v2_read(int address) {
         if(address==0x09){
             return ReadPort1(address);
         }
-        if(address==0x10) return timer_ab_read_tmal();
-        if(address==0x11) return timer_ab_read_tmah();
-        if(address==0x12) return timer_ab_read_tmbl();
-        if(address==0x13) return timer_ab_read_tmbh();
+        if(address==0x10) return timer_ab_read_10_tmal();
+        if(address==0x11) return timer_ab_read_11_tmah();
+        if(address==0x12) return timer_ab_read_12_tmbl();
+        if(address==0x13) return timer_ab_read_13_tmbh();
         if(address==0x18){
             return Read18Port4(address);//not important? seems like hotlink only
         }
@@ -511,10 +511,6 @@ void io_v2_write(int address, int value) {
         if(address==0x06){
             return Write06LCDStartAddr(address, value);
         }
-        if(address==0x07){
-            if(debug_level>=2)printf("write07PortConfig %02x xt=%02x\n",value,value&0x7);
-            return Write07PortConfig(address,value);//not important? seems like only hotlink inside
-        }
         if(address==0x08){
             return Write08Port0(address, value);
         }
@@ -544,23 +540,23 @@ void io_v2_write(int address, int value) {
             return Write0FZPBankPort0Dir(address,value);
         }
         if(address==0x10){
-            timer_ab_write_tmal(value);
+            timer_ab_write_10_tmal(value);
             return;
         }
         if(address==0x11){
-            timer_ab_write_tmah(value);
+            timer_ab_write_11_tmah(value);
             return;
         }
         if(address==0x12){
-            timer_ab_write_tmbl(value);
+            timer_ab_write_12_tmbl(value);
             return;
         }
         if(address==0x13){
-            timer_ab_write_tmbh(value);
+            timer_ab_write_13_tmbh(value);
             return;
         }
         if(address==0x14){
-            timer_ab_write_ctrl(value);
+            timer_ab_write_14_ctrl(value);
             return;
         }
         if(address==0x15){
@@ -570,8 +566,7 @@ void io_v2_write(int address, int value) {
             return Write18Port4(address, value);
         }
         if(address==0x19){
-            timer_ab_on_write_19(value);
-            return Write19CkvSelect(address, value);//not important? seems like only hotlink inside
+            return timer_ab_write_19_tmact(value);
         }
         /*
         if(address==0x20){
