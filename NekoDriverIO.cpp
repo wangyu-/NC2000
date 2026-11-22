@@ -26,8 +26,8 @@ bool &timer0run = nc2k_states.timer0run;
 bool &timer1run_tmie = nc2k_states.timer1run_tmie;
 
 // WQXSIM
-bool &timer0waveoutstart = nc2k_states.timer0waveoutstart;
-int &prevtimer0value = nc2k_states.prevtimer0value;
+//bool &timer0waveoutstart = nc2k_states.timer0waveoutstart;
+//int &prevtimer0value = nc2k_states.prevtimer0value;
 unsigned short &gThreadFlags = nc2k_states.gThreadFlags;
 //unsigned char* gGeneralCtrlPtr;
 //unsigned short mayGenralnClockCtrlValue;
@@ -38,8 +38,8 @@ bool &rw0f_b4_DIR00 = nc2k_states.rw0f_b4_DIR00;
 bool &rw0f_b5_DIR01 = nc2k_states.rw0f_b5_DIR01;
 bool &rw0f_b6_DIR023 = nc2k_states.rw0f_b6_DIR023; // 02 03
 bool &rw0f_b7_DIR047 = nc2k_states.rw0f_b7_DIR047; // 04 05 06 07
-bool &rw0f_b3_SH = nc2k_states.rw0f_b3_SH;    // Sample & Hold for A/D
-BYTE &rw0f_b02_ZB02 = nc2k_states.rw0f_b02_ZB02; // b0..b2 (RESCPUB)
+//bool &rw0f_b3_SH = nc2k_states.rw0f_b3_SH;    // Sample & Hold for A/D
+//BYTE &rw0f_b02_ZB02 = nc2k_states.rw0f_b02_ZB02; // b0..b2 (RESCPUB)
 
 // (O/P) io_general_ctrl
 bool &w04_b7_EPOL = nc2k_states.w04_b7_EPOL;   // 外部中断 (P40 OR P41 OR P00) 极性
@@ -73,7 +73,7 @@ BYTE &w0c_b345_TMS = nc2k_states.w0c_b345_TMS;       // 其他模式下4个bit�
 int &timer0ticks = nc2k_states.timer0ticks;
 int &timer1ticks = nc2k_states.timer1ticks;
 
-BYTE &w01_int_enable = nc2k_states.w01_int_enable;
+//BYTE &w01_int_enable = nc2k_states.w01_int_enable;
 
 /* NC3000: port 6 drives the other 4 keyboard column lines */
 BYTE &w1e_port6_OL = nc2k_states.w1e_port6_OL;  //added for nc3000
@@ -124,6 +124,7 @@ BYTE __iocallconv Read06StopTimer1( BYTE ) // 06
     return zpioregs[io03_timer1_val];
 }
 
+/*
 bool &lcdoffshift0flag = nc2k_states.lcdoffshift0flag;
 
 // CKS P
@@ -153,6 +154,7 @@ void __iocallconv Write05ClockCtrl( BYTE write, BYTE value )
     zpioregs[io05_clock_ctrl] = value;
     (void)write;
 }
+*/
 
 unsigned short &lcdbuffaddr = nc2k_states.lcdbuffaddr;
 unsigned short &lcdbuffaddrmask = nc2k_states.lcdbuffaddrmask;
@@ -201,6 +203,7 @@ void __iocallconv Write0CTimer01Control( BYTE write, BYTE value ) // 0C
     (void)write;
 }
 
+/*
 void __iocallconv Write20JG( BYTE write, BYTE value )
 {
     // SPDC1016
@@ -216,8 +219,10 @@ void __iocallconv Write20JG( BYTE write, BYTE value )
     }
     (void)write;
 }
+*/
 
 
+/*
 void __iocallconv Write23Unknow( BYTE write, BYTE value )
 {
     // SPDC1023
@@ -284,6 +289,7 @@ void __iocallconv Write23Unknow( BYTE write, BYTE value )
     zpioregs[io23_unknow] = value;
     (void)write;
 }
+*/
 
 // timer的值似乎是浮动的. 也就是02的值再变, 在用start时候也变回写入值? (假设错误, 都变0, 除了TMODE0以外)
 //void __iocallconv Write02Timer0Value( BYTE write, BYTE value )
@@ -857,6 +863,7 @@ BYTE __iocallconv Read18Port4( BYTE )
     return zpioregs[io18_port4_data];
 }
 
+/*
 BYTE __iocallconv Read01IntStatus( BYTE )
 {
     BYTE r = zpioregs[io01_int_status];
@@ -871,6 +878,7 @@ void __iocallconv Write01IntEnable( BYTE write, BYTE value )
     w01_int_enable = value;
     (void)write;
 }
+*/
 
 // TODO: combine back in read04, or need update every time w04_bxx_YYY value changed
 void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value)

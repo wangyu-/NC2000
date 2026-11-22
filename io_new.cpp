@@ -506,7 +506,7 @@ void io_v2_write(int address, int value) {
                     printf("<cks=%d scaledown=%d>\n",cks,cks_to_speed_scaledown(cks));
                 }
             }
-            return Write05ClockCtrl(address, value);
+            //purposely do not return
         }
         if(address==0x06){
             return Write06LCDStartAddr(address, value);

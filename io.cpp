@@ -30,7 +30,6 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
     
     // 0x29 has special handle in readXX
     //io_read[0x00] = Read00BankSwitch;  //Read00BankSwitch is noop
-    io_read[0x01] = Read01IntStatus;
     io_read[0x04] = Read04StopTimer0;
     io_read[0x05] = Read05StartTimer0;
     //io_read[0x06] = Read06; //nothing special
@@ -54,10 +53,9 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
 
     //0x29 30 32 33 has special handle
     io_write[0x00] = Write00;///////don't use Write00BankSwitch here
-    io_write[0x01] = Write01IntEnable;
     io_write[0x04] = Write04GeneralCtrl;
     //io_write[0x05] = Write05; // clk, sleep related
-    io_write[0x05] = Write05ClockCtrl;
+    //io_write[0x05] = Write05ClockCtrl;
 	io_write[0x06] = Write06LCDStartAddr; // lcd related ;
     //io_write[0x07] = Write07PortConfig;
     if(use_legacy_key_io){
@@ -80,8 +78,8 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
     io_write[0x15] = Write15Dir1;
     io_write[0x18] = Write18Port4;
     //io_write[0x19] = Write19CkvSelect;
-    //io_write[0x20] = Write20;
-    io_write[0x20] =Write20JG;
+    io_write[0x20] = Write20;
+    //io_write[0x20] =Write20JG;
 	io_write[0x23] = Write23;//<----------from nc1020
 	io_write[0x3F] = Write3F;//<----------from nc1020
 
@@ -91,6 +89,12 @@ void init_io(){ //legacy io, not suggested to use unless for comparison and debu
 }
 
 uint8_t IO_API ReadXX(uint8_t addr){
+    if(addr==0x01){
+        uint8_t r = ram_io[addr];
+        ram_io[addr]&= ~0x3F;
+        return r;
+    }
+
     if(nc3000mode){
         if(addr==0x39) {
             return read_nand();
@@ -112,7 +116,6 @@ uint8_t IO_API ReadXX(uint8_t addr){
 	return ram_io[addr];
 }
 
-
 uint8_t IO_API Read06(uint8_t addr){
 	return ram_io[addr];
 }
@@ -130,6 +133,9 @@ uint8_t IO_API Read3F(uint8_t addr){
 }
 
 void IO_API WriteXX(uint8_t addr, uint8_t value){
+    if(addr==0x01){
+        return;
+    }
 
     if(nc3000mode){
         if(addr==0x39) {

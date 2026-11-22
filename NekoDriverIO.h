@@ -13,8 +13,8 @@ extern bool &rw0f_b4_DIR00;
 extern bool &rw0f_b5_DIR01;
 extern bool &rw0f_b6_DIR023; // 02 03
 extern bool &rw0f_b7_DIR047; // 04 05 06 07
-extern bool &rw0f_b3_SH;    // Sample & Hold for A/D
-extern BYTE &rw0f_b02_ZB02; // b0..b2 (RESCPUB)
+//extern bool &rw0f_b3_SH;    // Sample & Hold for A/D
+//extern BYTE &rw0f_b02_ZB02; // b0..b2 (RESCPUB)
 
 // (O/P) io_general_ctrl
 extern bool &w04_b7_EPOL;   // 外部中断 (P40 OR P41 OR P00) 极性
@@ -37,6 +37,7 @@ extern BYTE &w09_port1_OL;
 extern BYTE &r09_port1_ID;
 
 // TODO: endian on non x86/arm target
+/*
 union timer01_u {
     unsigned short timer01;
     struct {
@@ -44,6 +45,7 @@ union timer01_u {
         unsigned char timer1;
     };
 };
+*/
 
 //extern timer01_u* rw023_timer01val;
 
@@ -56,6 +58,7 @@ extern BYTE &w0c_b345_TMS;       // 其他模式下4个bit只有3个用上
 //extern BYTE rw19_b6_P46T;
 //extern BYTE rw19_b6_P45T;
 
+#if false
 struct HotlinkBundle
 {
     bool w19_b6_P46T;  // 0: P46 io, 1:TMAO
@@ -71,6 +74,7 @@ struct HotlinkBundle
 };
 
 extern HotlinkBundle* hotlinkios;
+#endif
 
 // Temp
 //////extern unsigned char* zpioregs[0x40];
@@ -80,15 +84,15 @@ extern HotlinkBundle* hotlinkios;
 #define _ADD_TM1I_BIT() zpioregs[io01_int_status] |= 0x20
 
 // io01_int_status use zpioregs.
-extern BYTE &w01_int_enable;
+//extern BYTE &w01_int_enable;
 
 extern int &timer0ticks;
 extern int &timer1ticks;
 
 extern unsigned /*char*/ keypadmatrix[8][8];
 
-BYTE __iocallconv NullRead (BYTE read);
-void __iocallconv NullWrite (BYTE write, BYTE value);
+//BYTE __iocallconv NullRead (BYTE read);
+//void __iocallconv NullWrite (BYTE write, BYTE value);
 
 BYTE __iocallconv Read04StopTimer0 (BYTE read); // $04
 BYTE __iocallconv Read05StartTimer0 (BYTE read); // $05
@@ -100,15 +104,15 @@ BYTE __iocallconv Read18Port4 (BYTE read); // $09
 BYTE __iocallconv Read0CGeneralStatus (BYTE read); // 0x0C  //added
 BYTE __iocallconv Read1EPort6 (BYTE read); // 0x1E //added for nc3000
 
-BYTE __iocallconv Read00BankSwitch (BYTE read); // $00
-void __iocallconv Write00BankSwitch (BYTE write, BYTE value); // $00
-BYTE __iocallconv Read01IntStatus (BYTE read); // $01
-void __iocallconv Write01IntEnable (BYTE write, BYTE value); // $01
+//BYTE __iocallconv Read00BankSwitch (BYTE read); // $00
+//void __iocallconv Write00BankSwitch (BYTE write, BYTE value); // $00
+//BYTE __iocallconv Read01IntStatus (BYTE read); // $01
+//void __iocallconv Write01IntEnable (BYTE write, BYTE value); // $01
 //void __iocallconv Write02Timer0Value(BYTE write, BYTE value); // $02
 void __iocallconv Write04GeneralCtrl(BYTE write, BYTE value); // $04
-void __iocallconv Write05ClockCtrl(BYTE write, BYTE value); // $05
+//void __iocallconv Write05ClockCtrl(BYTE write, BYTE value); // $05
 void __iocallconv Write06LCDStartAddr (BYTE write, BYTE value); // $06
-void __iocallconv Write0BLCDStartAddrPort3(BYTE write, BYTE value); // $0B
+//void __iocallconv Write0BLCDStartAddrPort3(BYTE write, BYTE value); // $0B
 void __iocallconv Write0CTimer01Control (BYTE write, BYTE value); // $0C
 void __iocallconv Write0FZPBankPort0Dir( BYTE write, BYTE value );  // $0F    //added
 void __iocallconv Write08Port0 (BYTE write, BYTE value); // $08
@@ -120,14 +124,14 @@ void __iocallconv Write15Dir1( BYTE write, BYTE value ); // $15
 void __iocallconv Write18Port4(BYTE write, BYTE value); // $18
 void __iocallconv Write1EPort6(BYTE write, BYTE value); // $1E //added for nc3000
 
-void __iocallconv WriteZeroPageBankswitch (BYTE write, BYTE value); // $0F
-void __iocallconv Write0AROABBS (BYTE write, BYTE value); // $0A
-void __iocallconv Write0DVolumeIDLCDSegCtrl(BYTE write, BYTE value); // $0D
-void __iocallconv Write20JG(BYTE write, BYTE value); // $20
-void __iocallconv Write23Unknow(BYTE write, BYTE value); // $20
+//void __iocallconv WriteZeroPageBankswitch (BYTE write, BYTE value); // $0F
+//void __iocallconv Write0AROABBS (BYTE write, BYTE value); // $0A
+//void __iocallconv Write0DVolumeIDLCDSegCtrl(BYTE write, BYTE value); // $0D
+//void __iocallconv Write20JG(BYTE write, BYTE value); // $20
+//void __iocallconv Write23Unknow(BYTE write, BYTE value); // $20
 
-void CreateHotlinkMapping();
-void RemoveHotlinkMapping();
+//void CreateHotlinkMapping();
+//void RemoveHotlinkMapping();
 void UpdateKeypadRegisters();
 
 bool KeepTimer01( unsigned int cpuTick );
