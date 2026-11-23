@@ -265,7 +265,7 @@ void cpu_run3(){
 				if(enable_dyn_debug_next_n) printf("time to timer01!!!!\n");
 		}
 
-		timer_ab_step(cycles - last_cycles);
+		timer_ab_step(last_cycles, cycles);
 
 		//timebase is trigged by address line of lcd, 
 		//the trigger rule is complex, it depends on TBC cps and cpf.

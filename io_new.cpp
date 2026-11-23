@@ -554,18 +554,11 @@ void io_v2_write(int address, int value) {
             timer_ab_write_13_tmbh(value);
             return;
         }
-        if(address==0x14){
-            timer_ab_write_14_ctrl(value);
-            return;
-        }
         if(address==0x15){
             return Write15Dir1(address, value);
         }
         if(address==0x18){
             return Write18Port4(address, value);
-        }
-        if(address==0x19){
-            return timer_ab_write_19_tmact(value);
         }
         /*
         if(address==0x20){

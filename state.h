@@ -170,12 +170,10 @@ struct nc2k_states_t{
 	u64_t last_p_cycles;
 
 	struct timer_ab_state_t{
-		uint16_t tma_val;
-		uint16_t tma_reload;
-		uint64_t tma_acc;
-		uint16_t tmb_val;
-		uint16_t tmb_reload;
-		uint64_t tmb_acc;
+		uint16_t tma_val;    // Timer A live up-counter ($10/$11 read returns and clears read byte)
+		uint16_t tma_reload; // Timer A auto-reload latch (updated by $10/$11 writes; $11 loads tma_val)
+		uint16_t tmb_val;    // Timer B live up-counter (12-bit on PC1000, 16-bit on NC1020/2000/3000)
+		uint16_t tmb_reload; // Timer B auto-reload latch (updated by $12/$13 writes; $13 loads tmb_val)
 	} timer_ab;
 
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
