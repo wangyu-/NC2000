@@ -9,6 +9,7 @@
 uint8_t lcd_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8*2];
 
 unsigned char *lcd_effect_buffer = nullptr; //cannot be preallocated, because size is from options
+SDL_Texture *lcd_texture = nullptr;
 
 inline void handle_pixel(int u,int v,const unsigned char * color_arr[], int idx){
     //todo: inefficient, change to for each lcd tile use SDL_RenderCopy
@@ -74,7 +75,6 @@ void Render(u64_t tick) {
     CopyLcdBuffer(lcd_buf);
   }
   
-  SDL_Texture *texture;
   static SDL_Rect source = { 0, 0, SCREEN_WIDTH*total_size, SCREEN_HEIGHT*total_size };
   unsigned char* bytes = nullptr;
   int pitch = 0;
@@ -89,9 +89,7 @@ void Render(u64_t tick) {
 
     SDL_RenderSetLogicalSize(renderer, (SCREEN_WIDTH +LEFT_GAP +RIGHT_GAP-1) * lcd_scale *total_size+ (LEFT_GAP_EXTRA+RIGHT_GAP_EXTRA)*lcd_scale, SCREEN_HEIGHT * lcd_scale *total_size);
     //SDL_RenderClear(renderer);
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-    SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH*total_size, SCREEN_HEIGHT*total_size);
-    SDL_LockTexture(texture, &source, reinterpret_cast<void**>(&bytes), &pitch);
+    SDL_LockTexture(lcd_texture, &source, reinterpret_cast<void**>(&bytes), &pitch);
   }
   
   static const unsigned char colors[4]={245,180,105,0};
@@ -202,7 +200,7 @@ void Render(u64_t tick) {
   if(!do_SDL_refresh) return;
   memcpy(bytes,lcd_effect_buffer,SCREEN_HEIGHT*total_size* SCREEN_WIDTH*total_size * 4);
 
-  SDL_UnlockTexture(texture);
+  SDL_UnlockTexture(lcd_texture);
 
     static SDL_Rect destination =
     { LEFT_GAP* lcd_scale *total_size + LEFT_GAP_EXTRA*lcd_scale, 0, SCREEN_WIDTH* lcd_scale *total_size, SCREEN_HEIGHT * lcd_scale *total_size };
@@ -210,9 +208,8 @@ void Render(u64_t tick) {
   static SDL_Rect source2 = { 1*total_size, 0, (SCREEN_WIDTH-1)*total_size, SCREEN_HEIGHT*total_size };
   static SDL_Rect destination2 =
     { LEFT_GAP* lcd_scale *total_size + LEFT_GAP_EXTRA*lcd_scale, 0, (SCREEN_WIDTH -1)* lcd_scale *total_size, SCREEN_HEIGHT * lcd_scale *total_size };
-  if(console_on) SDL_RenderCopy(renderer, texture, &source, &destination);
-  else SDL_RenderCopy(renderer, texture, &source2, &destination2);
+  if(console_on) SDL_RenderCopy(renderer, lcd_texture, &source, &destination);
+  else SDL_RenderCopy(renderer, lcd_texture, &source2, &destination2);
 
   SDL_RenderPresent(renderer);
-  SDL_DestroyTexture(texture);
 }

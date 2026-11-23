@@ -56,6 +56,12 @@ void init_resource() {
     std::cout << "Failed to create renderer : " << SDL_GetError() << std::endl;
     exit(-1);
   }
+  lcd_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+    SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH * total_size, SCREEN_HEIGHT * total_size);
+  if (!lcd_texture) {
+    std::cout << "Failed to create lcd texture : " << SDL_GetError() << std::endl;
+    exit(-1);
+  }
 
   lcdview = new MyLCDView(("resource/lcdstripe_slice_"+lcdstripe_suffix+".json").c_str());
   lcdview->loadStripeTexture(("resource/lcdstripe_"+lcdstripe_suffix+".bmp").c_str(), renderer);
