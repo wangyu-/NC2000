@@ -253,15 +253,14 @@ void cpu_run3(){
 	}
 
 	if(!clk_off && (nc1020mode||nc2000mode||nc3000mode||(pc1000mode_normal()))) {
-		bool KeepTimer01( unsigned int cpuTick);
+		bool KeepTimer01_new(uint64_t last_p_cycles, uint64_t p_cycles);
 		long long scaled_last_p_cycles = last_p_cycles;
 		long long scaled_p_cycles = p_cycles;
 		if(timer01_speed_fix!=1){
 			scaled_last_p_cycles *= timer01_speed_fix;
 			scaled_p_cycles *= timer01_speed_fix;
 		}
-		int delta= scaled_p_cycles - scaled_last_p_cycles;
-		if(KeepTimer01(delta)){ //note: during clk off timer01 is auto shut down because p_cycle doesn't move, so if !clk_off is not really needed
+		if(KeepTimer01_new(scaled_last_p_cycles, scaled_p_cycles)){ //note: during clk off timer01 is auto shut down because p_cycle doesn't move, so if !clk_off is not really needed
 				if(enable_dyn_debug_next_n) printf("time to timer01!!!!\n");
 		}
 

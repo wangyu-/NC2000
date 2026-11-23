@@ -1055,6 +1055,105 @@ bool KeepTimer01( unsigned int cpuTick )
     return needirq;
 }
 
+// Stateless Timer 0/1 step over (last_p_cycles, p_cycles] (AI re-written of KeepTimer01).
+// Compatible with Read04..07 ($04-$07 start/stop) and Write0C (w0c_* bitfields);
+// equivalent to KeepTimer01 except:
+// 1. Stateless: uses (last_p_cycles, p_cycles] instead of timer0ticks/timer1ticks,
+//    avoiding stale remainder ticks when switching $0C prescaler/mode while running.
+// 2. Uses uint64_t for counter math to avoid 16-bit overflow on very large increments.
+bool KeepTimer01_new(uint64_t last_p_cycles, uint64_t p_cycles)
+{
+    if (p_cycles <= last_p_cycles || (!timer0run && !timer1run_tmie)) {
+        return false;
+    }
+
+    uint8_t &t0 = zpioregs[io02_timer0_val]; // $02 R/W
+    uint8_t &t1 = zpioregs[io03_timer1_val]; // $03 R/W
+    bool needirq = false;
+
+    // Timer 0 runs in all 4 modes when timer0run ($05 start / $04 stop) is set.
+    if (timer0run) {
+        // Mode 1: $0C b5..b4 (TM0S) => P/2, P/8, P/32, P/128 (shift = 1, 3, 5, 7)
+        // Mode 0/2/3: $0C b5..b3 (TMS) => P/2 .. P/256 (shift = 1..8)
+        int mul0 = 1 + (w0c_b67_TMODESL == 1 ? w0c_b45_TM0S * 2 : w0c_b345_TMS);
+        uint64_t inc0 = (p_cycles >> mul0) - (last_p_cycles >> mul0);
+
+        if (inc0 > 0) {
+            uint64_t newt = (uint64_t)t0 + inc0;
+            bool ovf0 = newt >= 256;
+
+            if (w0c_b67_TMODESL == 0) {
+                // Mode 0: Timer 0 8-bit auto-reload from $03 (t1); $06/$07 (timer1run_tmie) gates TM0I ($01 b4)
+                if (ovf0) {
+                    uint32_t reload = t1;
+                    t0 = (uint8_t)(reload + (newt - 256) % (256 - reload));
+                    if (timer1run_tmie) {
+                        _ADD_TM0I_BIT();
+                        needirq = true;
+                    }
+                } else {
+                    t0 = (uint8_t)newt;
+                }
+            } else if (w0c_b67_TMODESL == 1) {
+                // Mode 1: Timer 0 independent 8-bit non-reload; overflow always sets TM0I ($01 b4)
+                t0 = (uint8_t)newt;
+                if (ovf0) {
+                    _ADD_TM0I_BIT();
+                    needirq = true;
+                }
+            } else if (w0c_b67_TMODESL == 2) {
+                // Mode 2: 16-bit non-reload (t0=lo, t1=hi); only hi-byte overflow sets TM1I ($01 b5), no TM0I
+                t0 = (uint8_t)newt;
+                if (ovf0) {
+                    uint64_t newt1 = (uint64_t)t1 + (newt >> 8);
+                    t1 = (uint8_t)newt1;
+                    if (newt1 >= 256) {
+                        _ADD_TM1I_BIT();
+                        needirq = true;
+                    }
+                }
+            } else if (w0c_b67_TMODESL == 3) {
+                // Mode 3: 8-bit Timer 0 sets TM0I ($01 b4) and cascades overflow ticks into Timer 1 if timer1run_tmie
+                t0 = (uint8_t)newt;
+                if (ovf0) {
+                    _ADD_TM0I_BIT();
+                    needirq = true;
+                    if (timer1run_tmie) {
+                        uint64_t newt1 = (uint64_t)t1 + (newt >> 8);
+                        t1 = (uint8_t)newt1;
+                        if (newt1 >= 256) {
+                            _ADD_TM1I_BIT();
+                            needirq = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Mode 1 only: Timer 1 runs on its own clock (TM1S) independently of timer0run ($07 start / $06 stop).
+    // (Other modes are already handled inside the Timer 0 block above:
+    //  Mode 0: $03 is Timer 0's reload value & timer1run_tmie is TMIE;
+    //  Mode 2: $03 is high byte of 16-bit Timer 0+1;
+    //  Mode 3: $03 is cascaded from Timer 0 overflow.)
+    if (w0c_b67_TMODESL == 1 && timer1run_tmie) {
+        // $0C b3..b2 (TM1S) => P/4, P/16, P/64, P/256 (shift = 2, 4, 6, 8)
+        int mul1 = (w0c_b23_TM1S + 1) * 2;
+        uint64_t inc1 = (p_cycles >> mul1) - (last_p_cycles >> mul1);
+
+        if (inc1 > 0) {
+            uint64_t newt1 = (uint64_t)t1 + inc1;
+            t1 = (uint8_t)newt1;
+            if (newt1 >= 256) {
+                _ADD_TM1I_BIT();
+                needirq = true;
+            }
+        }
+    }
+
+    return needirq;
+}
+
 BYTE __iocallconv Read0CGeneralStatus( BYTE read ) {  //added
     unsigned char old_value = nc2k_states.r0c_general_status;
 

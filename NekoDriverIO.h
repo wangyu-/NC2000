@@ -135,5 +135,6 @@ void __iocallconv Write1EPort6(BYTE write, BYTE value); // $1E //added for nc300
 void UpdateKeypadRegisters();
 
 bool KeepTimer01( unsigned int cpuTick );
+bool KeepTimer01_new(uint64_t last_p_cycles, uint64_t p_cycles);
 
 #endif
