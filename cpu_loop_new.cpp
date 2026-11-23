@@ -64,7 +64,9 @@ void init_cpu_new(){
 	}
 
 	if(cpu_loop_version==CPU_RUN3&&io_version!=IO_EMUX){
-		cpu->enable_irq_line_mode();
+		cpu->set_irq_mode(IrqMode::IRQ_LINE);
+	}else{
+		cpu->set_irq_mode(IrqMode::IRQ_SET_PENDING);
 	}
 	
 }

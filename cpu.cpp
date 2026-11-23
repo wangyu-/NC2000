@@ -45,11 +45,13 @@ void CPUInterface::reset(){
 }
 
 bool CPUInterface::irq_pending() {
-	if(irq_line_mode){
-        return (ram_io[0x01] & 0x3f) ||nc2k_states.iv_set;
+	if(irq_mode==IrqMode::IRQ_LINE){
+		return (ram_io[0x01] & 0x3f) ||nc2k_states.iv_set;
 	}
-	if(version==CPU_EMUX) return cpu_impl_emux->irqPending;
-	if(version==CPU_HANDYPSP) return g_irq;
+	else if(irq_mode==IrqMode::IRQ_SET_PENDING) {
+		if (version==CPU_EMUX) return cpu_impl_emux->irqPending;
+		return g_irq;
+	}
 	return false;
 }
 
@@ -140,6 +142,7 @@ void CPUInterface::irq_now() {
 
 }
 void CPUInterface::set_irq_pending() {
+	assert(irq_mode == IrqMode::IRQ_SET_PENDING);
 	if(enable_dyn_debug_next_n) printf("set_irq_pending!!!\n");
 	if(version==CPU_EMUX) {
 		cpu_impl_emux->irqPending = true;

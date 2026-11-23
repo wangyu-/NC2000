@@ -33,8 +33,8 @@ public:
     bool I();
 
     //use irq_line instead of set_irq_pending()
-    void enable_irq_line_mode(){
-        irq_line_mode = true;
+    void set_irq_mode(IrqMode mode){
+        irq_mode = mode;
     }
 
     bool irq_pending();
@@ -44,7 +44,7 @@ public:
 
     private:
     CpuVersion version = CPU_INVALID; //use a flag instead of inheritance, to avoid virtual function overhead
-    bool irq_line_mode=false;
+    IrqMode irq_mode= IrqMode::IRQ_NONE;
 
     //only for emux cpu
     C6502 *cpu_impl_emux = NULL;

@@ -66,6 +66,12 @@ enum CpuVersion {
     CPU_EMUX = 2,
 };
 
+enum IrqMode {
+    IRQ_NONE = 0,
+    IRQ_SET_PENDING = 1,
+    IRQ_LINE = 2,
+};
+
 enum CpuLoopVersion {
     CPU_RUN1 = 1, // cpu_run,    only IO_V1
     CPU_RUN2 = 2, // cpu_run2,   both IO_V1 and IO_V2
