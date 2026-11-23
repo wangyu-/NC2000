@@ -25,14 +25,13 @@ inline void handle_pixel(int u,int v,const unsigned char * color_arr[], int idx)
           delta/=lcd_effect_charge_b;
           if(delta==0) delta++;
           p[u][v][i]-=delta;
-        }if(color_arr[idx][i]>p[u][v][i]){
+        } else if(color_arr[idx][i]>p[u][v][i]){
           //voltage reducing
           unsigned int delta=color_arr[idx][i]-p[u][v][i];
           delta*=lcd_effect_discharge_a;
           delta/=lcd_effect_discharge_b;
           if(delta==0) delta++;
           p[u][v][i]+=delta;
-        }else{
         }
       }
     }
