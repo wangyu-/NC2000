@@ -143,7 +143,11 @@ bool read_nor(uint16_t addr, uint8_t &value){
             }else assert(false);
             return true;
         }else if (addr==0x8001){
-            value= 0xD7;
+            if(pc1000mode||nc1020mode||nc2000mode){
+                value = 0xD7;
+            }else if(nc3000mode){
+                value = 0xD8;
+            }else assert(false);
             return true;
         }else {
             value= 0xff;
