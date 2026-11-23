@@ -52,15 +52,18 @@ void Render(u64_t tick) {
   unsigned char &lcden = nc2k_states.lcden;
   unsigned char &lcdon = nc2k_states.lcdon;
   bool lcd_on = true;
-  if(nc2000mode||nc1020mode){
+  if(nc2000mode||nc1020mode||nc3000mode||pc1000mode){
     uint8_t* ram_io=nc2k_states.ram_io;
-    if(nc2000mode) lcd_on = (lcden && lcdon);
-    if(nc1020mode) lcd_on = lcdon;
+    if(nc2000mode) lcd_on = (lcden && lcdon); //pin31 is lcden, nc2000 connects it, nc1020 doesn't connect it
+    else lcd_on = lcdon; // SPDC1064 changed $0B b1 from LCDEN to FMEN
+    if((nc2000mode||nc1020mode||nc3000mode) && (ram_io[0x05] & 0x07) == 0){ // SPDC1024/1064: CPS=000 disables LCD shift clock CP
+      lcd_on=false;
+    }
     if(is_clk_off()){ //clk off
       lcd_on=false;
     }
-    if(io_version == IO_V1){
-      //be comaptible with io_v1
+    if(io_version == IO_V1 || io_version == IO_EMUX){
+      //be comaptible with io_v1 and pc1000emux
       lcd_on = true;
     }
   }
