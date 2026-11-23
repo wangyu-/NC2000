@@ -376,13 +376,13 @@ void cpu_run3(){
 		}
 	}
 
-	if(!clk_off && (nc1020mode||nc2000mode)){
+	if(!clk_off && (nc1020mode||nc2000mode||nc3000mode)){
 		// without FP nc1020 physical dump won't work (include nc1020 and nc1020tw)
 		// pc2000hd.doc says "Lcd Common data FP (72HZ)" , nc2000hd.doc says "P34: Lcd Common data FP (73.8HZ)"
 		// todo: make this part of better lcd driver implementation
 		int trigger_cycles= 0;
 		if(nc1020mode) trigger_cycles= CYCLES_SECOND/72;
-		else if(nc2000mode) trigger_cycles= CYCLES_SECOND*10/738;
+		else if(nc2000mode||nc3000mode) trigger_cycles= CYCLES_SECOND*10/738;
 		else assert(false);
 		
 		int FP_tigger=trigger_every_x_cycle(trigger_cycles);

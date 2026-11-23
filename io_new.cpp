@@ -284,11 +284,6 @@ int io_v2_read(int address) {
         }
     }
     if(nc1020mode||nc2000mode){
-        if(address==0x0c){
-            //pc1000's 0x0c has different definition, if used it won't boot
-            //it should apply to nc3000 as well, but don't enable for nc3000 for now
-            return Read0CGeneralStatus(address);
-        }
         if(address== 0x1c){
             int battery_detect_level= ram_io[0x1c]&0x1f;
             //basic电源管理认为12是满电，lav电源检测认为11是满电
@@ -301,6 +296,10 @@ int io_v2_read(int address) {
         }
     }
     if(nc1020mode||nc2000mode||nc3000mode){
+        if(address==0x0c){
+            //pc1000's 0x0c has different definition, if used it won't boot
+            return Read0CGeneralStatus(address);
+        }
         if(address==0x3a) return read_3a();
         if(address==0x3b) return read_3b();
         if(address==0x3c) return read_3c();
