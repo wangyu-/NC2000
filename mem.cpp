@@ -14,13 +14,16 @@ extern BusPC1000 *bus_pc1000;
 extern nc2k_states_t nc2k_states;
 
 uint8_t* memmap[8];
-// Unmapped BMI bus region: open bus holds last AD[7:0] low-byte address (addr & 0xFF).
-static uint8_t unmapped_page[0x2000];
+// Unmapped BMI multiplexed ADBUS (MC0/1): open bus holds last AD[7:0] low-byte address (addr & 0xFF).
+static uint8_t unmapped_page_adbus[0x2000];
+// Unmapped parallel bus (non-ADBUS, e.g. SPDC1064): floating data bus (0xFF).
+static uint8_t unmapped_page_float[0x2000];
 
 
 void init_mem(){	
 	for (int i = 0; i < 0x2000; i++) {
-		unmapped_page[i] = i & 0xFF;
+		unmapped_page_adbus[i] = i & 0xFF;
+		unmapped_page_float[i] = 0xFF;
 	}
 	memmap[0] = ram00;
 	super_switch(); //will segfault if commented out, since some legacy code is access the memmap
@@ -156,6 +159,16 @@ uint8_t* GetBank(uint8_t bank_idx){
 
 	uint8_t volume_idx = ram_io[0x0D];
 	bool roa = ram_io[0x0a] & 0x80;
+
+	if (nc3000mode) {
+		// SPDC1064: XM0CF=000 maps XM0CEZ to ROA=0, Bank=00h-FFh.
+		// 1MB NOR (MA0-MA19) wraps around across 00h-FFh.
+		if (!roa) {
+			return nor_banks[bank_idx % num_nor_pages];
+		}
+		return NULL;
+	}
+
     if (bank_idx < num_nor_pages) { 
 		if(bank_idx >= 0x10 && nc1020mode && nc1020tw_mode){
 			//printf("bidx=%02x\n",bank_idx);
@@ -167,9 +180,6 @@ uint8_t* GetBank(uint8_t bank_idx){
 		}
     	return nor_banks[bank_idx];
     } else if (bank_idx >= 0x80) {
-		if(nc3000mode){
-			return NULL;
-		}
 		if(nc1020mode){
 			if(roa){
 				return NULL;
@@ -186,6 +196,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(nc2000mode){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
+			// SPDC1024: XM1CF=00011b maps XM1CEZ to ROA=1, Bank=80h-FFh (32KB ext_ram wraps around).
 			if(roa){
 				return nc2k_states.ext_ram;
 			}
@@ -255,11 +266,12 @@ void SwitchBank_2345(){
 	if(bank_idx<0x80 && ram_io[0x0a]&0x80){
 		if(debug_level>=2)printf("oops, bank_idx=%02x ram_io[0x0a]&0x80 is true\n",bank_idx);
 	}
-	if(bank== NULL) {
-		memmap[2] = unmapped_page;
-		memmap[3] = unmapped_page;
-		memmap[4] = unmapped_page;
-		memmap[5] = unmapped_page;
+	if(bank == NULL) {
+		uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
+		memmap[2] = unmapped;
+		memmap[3] = unmapped;
+		memmap[4] = unmapped;
+		memmap[5] = unmapped;
 	} else {
 		memmap[2] = bank + 0x4000;
 		memmap[3] = bank + 0x6000;
