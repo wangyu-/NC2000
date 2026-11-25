@@ -155,23 +155,25 @@ uint8_t* GetBank(uint8_t bank_idx){
 	}
 
 	uint8_t volume_idx = ram_io[0x0D];
+	bool roa = ram_io[0x0a] & 0x80;
     if (bank_idx < num_nor_pages) { 
 		if(bank_idx >= 0x10 && nc1020mode && nc1020tw_mode){
 			//printf("bidx=%02x\n",bank_idx);
 		}
 
-		if(ram_io[0x0a] & 0x80){
+		if(roa){
 			if(debug_level>=2) printf("oops, GetBank bank_idx=%02x ram_io[0x0a]&0x80 is true\n",bank_idx);
+			return NULL;
 		}
-		//todo: improve emulation of non-exist nor pages?
-		//      current behavor is do not switch, is this correct? even if from ext_ram to nor
-		//      maybe whenever fall into nor range, should use last worked bank_idx
     	return nor_banks[bank_idx];
     } else if (bank_idx >= 0x80) {
 		if(nc3000mode){
 			return NULL;
 		}
 		if(nc1020mode){
+			if(roa){
+				return NULL;
+			}
 			if ((volume_idx & 0x03)==0x01) {
 				return rom_volume1[bank_idx];
 			} else if ((volume_idx & 0x03)==0x02) {
@@ -184,7 +186,7 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(nc2000mode){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
-			if(ram_io[0x0a] & 0x80){
+			if(roa){
 				return nc2k_states.ext_ram;
 			}
 			return NULL;
@@ -258,13 +260,12 @@ void SwitchBank_2345(){
 		memmap[3] = unmapped_page;
 		memmap[4] = unmapped_page;
 		memmap[5] = unmapped_page;
-		return;
+	} else {
+		memmap[2] = bank + 0x4000;
+		memmap[3] = bank + 0x6000;
+		memmap[4] = bank + 0x0000;
+		memmap[5] = bank + 0x2000;
 	}
-	
-    memmap[2] = bank+ 0x4000;
-    memmap[3] = bank + 0x6000;
-    memmap[4] = bank + 0x0000;
-    memmap[5] = bank + 0x2000;
 
 	if(nc3000mode){
 		if(bank_idx==0){
@@ -274,16 +275,8 @@ void SwitchBank_2345(){
 	}
 	if(nc1020mode||nc2000mode){
 		if(bank_idx==0){
-			if(ram_io[0x0a]&0x80){
-				//special case of roa=1 and bs=0;
-				memmap[2]=ram04;
-				memmap[3]=ram04;
-				memmap[4] = nc2k_states.ext_ram + 0x0000;   //todo: ext ram doesn't exist in nc1020, hwo to handle?
-				memmap[5] = nc2k_states.ext_ram + 0x2000;
-			}else{
-				memmap[2]=ram04;
-				memmap[3]=ram04;
-			}
+			memmap[2]=ram04;
+			memmap[3]=ram04;
 		}
 	}
 
