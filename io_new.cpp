@@ -155,8 +155,10 @@ void dsp33write_cmd_data(int value) {
             }
             break;
         case 0x8:
-            if (cmd == 0x8000) {
-                if (debug_level >= 2) printf("[dsp] got cmd 0x8000, enable dsp sleep\n");
+            // SLEEP (0x80xx): real SPDS104A decodes high byte 0x80 regardless of low byte
+            // (nc2600 factory test at 0x1f68d writes $33=#$80 before $32=#$00, sending 0x80ff)
+            if (high == 0x80) {
+                if (debug_level >= 2) printf("[dsp] got cmd %04x, enable dsp sleep\n", cmd);
                 dspSleep = true;
             }
             break;
