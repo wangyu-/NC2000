@@ -157,13 +157,13 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(debug_level>=99) printf("vol=%02x!!!!!!!!!!!!\n",ram_io[0x0D]&0x3);
 	}
 
-	uint8_t volume_idx = ram_io[0x0D];
+	uint8_t volume_idx = ram_io[0x0D] & 0x03;
 	bool roa = ram_io[0x0a] & 0x80;
 
 	if (nc3000mode) {
-		// SPDC1064: XM0CF=000 maps XM0CEZ to ROA=0, Bank=00h-FFh.
+		// SPDC1064: XM0CF=000 maps XM0CEZ to ROA=0, Vol=00, Bank=00h-FFh.
 		// 1MB NOR (MA0-MA19) wraps around across 00h-FFh.
-		if (!roa) {
+		if (!roa && volume_idx == 0) {
 			return nor_banks[bank_idx % num_nor_pages];
 		}
 		return NULL;
@@ -174,8 +174,8 @@ uint8_t* GetBank(uint8_t bank_idx){
 			//printf("bidx=%02x\n",bank_idx);
 		}
 
-		if(roa){
-			if(debug_level>=2) printf("oops, GetBank bank_idx=%02x ram_io[0x0a]&0x80 is true\n",bank_idx);
+		if(roa || volume_idx != 0){
+			if(debug_level>=2) printf("oops, GetBank bank_idx=%02x roa=%d vol=%d\n",bank_idx, roa, volume_idx);
 			return NULL;
 		}
     	return nor_banks[bank_idx];
@@ -184,20 +184,21 @@ uint8_t* GetBank(uint8_t bank_idx){
 			if(roa){
 				return NULL;
 			}
-			if ((volume_idx & 0x03)==0x01) {
-				return rom_volume1[bank_idx];
-			} else if ((volume_idx & 0x03)==0x02) {
-				return rom_volume2[bank_idx];
-			} else {
+			if (volume_idx == 0x00) {
 				return rom_volume0[bank_idx];
+			} else if (volume_idx == 0x01) {
+				return rom_volume1[bank_idx];
+			} else if (volume_idx == 0x02) {
+				return rom_volume2[bank_idx];
 			}
+			return NULL;
 		}
 
 		if(nc2000mode){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
-			// SPDC1024: XM1CF=00011b maps XM1CEZ to ROA=1, Bank=80h-FFh (32KB ext_ram wraps around).
-			if(roa){
+			// SPDC1024: XM1CF=00011b maps XM1CEZ to Vol=0, ROA=1, Bank=80h-FFh (32KB ext_ram wraps around).
+			if(roa && volume_idx == 0){
 				return nc2k_states.ext_ram;
 			}
 			return NULL;
@@ -210,8 +211,9 @@ uint8_t* GetBank(uint8_t bank_idx){
 
 void SwitchBank_2345(){
 	uint8_t bank_idx = ram_io[0x00];
+	uint8_t volume_idx = ram_io[0x0D] & 0x03;
 
-	if(nc3000mode) {
+	if(nc3000mode && volume_idx == 0) {
 		if(bank_idx ==0 && ram_io[0x0a]&0x80) {
 				memmap[2] = ram04;
     			memmap[3] = ram06;
@@ -280,13 +282,13 @@ void SwitchBank_2345(){
 	}
 
 	if(nc3000mode){
-		if(bank_idx==0){
+		if(bank_idx==0 && volume_idx==0){
 			memmap[2]=ram04;
 			memmap[3]=ram06;
 		}
 	}
 	if(nc1020mode||nc2000mode){
-		if(bank_idx==0){
+		if(bank_idx==0 && volume_idx==0){
 			memmap[2]=ram04;
 			memmap[3]=ram04;
 		}
