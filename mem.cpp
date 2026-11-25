@@ -29,12 +29,23 @@ void init_mem(){
 	super_switch(); //will segfault if commented out, since some legacy code is access the memmap
 }
 
+static inline bool is_unmapped_ramb_hi(uint16_t addr) {
+	// BFI_4M (p.13): single SPR4096 (CF[6:3]=0000, CF7=1) only has 4KB SRAM at 2000-2FFF.
+	// 3000-3FFF requires a 2nd SPR4096 (CF[6:3]=0001, e.g. nc1020tw); otherwise it is unmapped ADBUS.
+	return addr >= 0x3000 && addr < 0x4000
+		&& memmap[1] == ram_b
+		&& !(nc1020mode && nc1020tw_mode);
+}
+
 //this is a simplified version of memory access without side effected (e.g. io, nor)
 uint8_t & Peek16(uint16_t addr) {
 	if(addr<0x40){
 		return ram_io[addr];
 	}else if(addr<0x80){
 		return ram_40[addr-0x40];
+	}
+	if (is_unmapped_ramb_hi(addr)) {
+		return unmapped_page_adbus[addr & 0x1FFF];
 	}
 	return memmap[addr >> 13][addr & 0x1FFF];
 }
@@ -82,6 +93,9 @@ uint8_t Load(uint16_t addr) {
 			memmap[0][0x45F] = wake_up_key;
 		}
 	}*/
+	if (is_unmapped_ramb_hi(addr)) {
+		return unmapped_page_adbus[addr & 0x1FFF];
+	}
 	return memmap[addr >> 13][addr & 0x1FFF];
 }
 void Store(uint16_t addr, uint8_t value) {
@@ -119,6 +133,9 @@ void Store(uint16_t addr, uint8_t value) {
 
 	if (addr < 0x2000) {
 		memmap[0][addr & 0x1FFF] = value;
+		return;
+	}
+	if (is_unmapped_ramb_hi(addr)) {
 		return;
 	}
 	uint8_t* page = memmap[addr >> 13];
