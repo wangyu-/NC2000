@@ -117,8 +117,8 @@ void Store(uint16_t addr, uint8_t value) {
 		return;
 	}
 
-	if (addr < 0x4000) {
-		memmap[addr >> 13][addr & 0x1FFF] = value;
+	if (addr < 0x2000) {
+		memmap[0][addr & 0x1FFF] = value;
 		return;
 	}
 	uint8_t* page = memmap[addr >> 13];
@@ -323,21 +323,17 @@ uint8_t** GetVolumm(uint8_t volume_idx){
 	assert(false);
 }
 void Switch0x2000(){
-	if(nc1020mode){
-		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
-		/*if(nc1020tw_mode){
-			if(ram_io[0x0d]&0x4){
-				if((ram_io[0x0]&0x10)==0){
-					memmap[1] = nc2k_states.ram_b;
-				}
-				else {
-					memmap[1] = nc2k_states.ram_b2;
-				}
-			}
-		}*/
-	}
-	if(nc2000mode){
-		memmap[1] = (ram_io[0x0d]&0x04 ? ram_b : ram02);
+	uint8_t volume_idx = ram_io[0x0d] & 0x03;
+	bool ramb = ram_io[0x0d] & 0x04;
+	if(nc1020mode || nc2000mode){
+		if(!ramb){
+			memmap[1] = ram02;
+		} else if(volume_idx == 0){
+			memmap[1] = ram_b;
+		} else {
+			// CE_R1..CE_R3: no chip on Vol 1..3 -> MC0/1 ADBUS open bus
+			memmap[1] = unmapped_page_adbus;
+		}
 	}
 	if(nc3000mode){
 		memmap[1] = ram02;  //todo add RAMS (but it works without RAMS  logic)
@@ -348,10 +344,20 @@ void Switch0x2000(){
 }
 
 void SwitchBbsBios_67(){
+	uint8_t volume_idx = ram_io[0x0D] & 0x03;
+	bool exc = ram_io[0x1A] & 0x80;
+
+	if((nc2000mode || nc1020mode || nc3000mode) && exc && volume_idx != 0){
+		// EXC=1 & Vol=1..3 (RAMV=0): C000-DFFF (incl. BBS=1) and E000-FFFF map to external Vol 1..3 (unmapped)
+		uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
+		memmap[6] = unmapped;
+		memmap[7] = unmapped;
+		return;
+	}
+
 	uint8_t** candidate_for_bbs;
 	uint8_t* bbs_pages[0x10];
 	if(pc1000mode){
-		uint8_t volume_idx = ram_io[0x0D];
 		candidate_for_bbs = GetVolumm(volume_idx);
 	}
 

@@ -629,6 +629,10 @@ void io_v2_write(int address, int value) {
             /////////////biosBankSwitch();
             /////////////bankSwitch();
             return;
+        case 0x1a:
+            ioReg[0x1a] = value;
+            super_switch();
+            return;
         default:
             ioReg[address] = value;
     }
