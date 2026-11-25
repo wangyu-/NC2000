@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include "comm.h"
-#include "dsp/dsp.h"
+#include "dsp_new/dsp.h"
 #include "iv_uart.h"
 #include "nor.h"
 #include "settings.h"

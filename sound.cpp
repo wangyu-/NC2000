@@ -1,5 +1,5 @@
 #include "comm.h"
-#include "dsp/dsp.h"
+#include "dsp_new/dsp.h"
 #include "state.h"
 
 extern nc2k_states_t nc2k_states;
