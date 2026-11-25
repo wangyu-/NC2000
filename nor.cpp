@@ -195,11 +195,6 @@ void write_nor0(uint16_t addr,uint8_t value){
     if(nc2000mode||nc3000mode){
 		//assert(addr>=0x4000&& addr<=0xbfff);
 	}
-    if (bank_idx >= num_nor_pages) {
-        if(debug_level>=1) printf("oops, in nor write, bank_idx>=num_nor_pages, bank_idx=%02x\n",bank_idx);
-        //note: bank_idx is not really used in below code
-        return;
-    }
 
     //uint8_t* bank = nor_banks[bank_idx];
 

@@ -14,9 +14,14 @@ extern BusPC1000 *bus_pc1000;
 extern nc2k_states_t nc2k_states;
 
 uint8_t* memmap[8];
+// Unmapped BMI bus region: open bus holds last AD[7:0] low-byte address (addr & 0xFF).
+static uint8_t unmapped_page[0x2000];
 
 
 void init_mem(){	
+	for (int i = 0; i < 0x2000; i++) {
+		unmapped_page[i] = i & 0xFF;
+	}
 	memmap[0] = ram00;
 	super_switch(); //will segfault if commented out, since some legacy code is access the memmap
 }
@@ -179,8 +184,10 @@ uint8_t* GetBank(uint8_t bank_idx){
 		if(nc2000mode){
 			//printf("<%x\n>",bank_idx);
 			//assert(bank_idx==0x80);
-
-			return nc2k_states.ext_ram;
+			if(ram_io[0x0a] & 0x80){
+				return nc2k_states.ext_ram;
+			}
+			return NULL;
 		}
     }else{
 		if(debug_level>=1) printf("oops GetBank bank_idx=%02x invalid roa_bbs=%02x \n",bank_idx, ram_io[0x0a]);
@@ -246,7 +253,13 @@ void SwitchBank_2345(){
 	if(bank_idx<0x80 && ram_io[0x0a]&0x80){
 		if(debug_level>=2)printf("oops, bank_idx=%02x ram_io[0x0a]&0x80 is true\n",bank_idx);
 	}
-	if(bank== NULL) return;
+	if(bank== NULL) {
+		memmap[2] = unmapped_page;
+		memmap[3] = unmapped_page;
+		memmap[4] = unmapped_page;
+		memmap[5] = unmapped_page;
+		return;
+	}
 	
     memmap[2] = bank+ 0x4000;
     memmap[3] = bank + 0x6000;
