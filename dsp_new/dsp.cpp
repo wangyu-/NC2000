@@ -18,7 +18,6 @@ constexpr int kWordMode = 2;
 constexpr int kDiphoneMode = 3;
 constexpr int kPcmMode = 4;
 
-constexpr int kFadeSamples = 12;
 constexpr double kPi = 3.14159265358979323846;
 
 bool g_log_info = true;
@@ -355,13 +354,6 @@ void Dsp::write(int high, int low) {
             }
             int start = std::max(0, std::min(cut_head_, end));
 
-            // Gentle edge fade to suppress syllable-boundary clicks
-            for (int j = 0; start + j < end && j < kFadeSamples; ++j) {
-                word_buf_[start + j] = static_cast<int16_t>(word_buf_[start + j] * j / kFadeSamples);
-            }
-            for (int j = 0; j < kFadeSamples && end - 1 - j >= start; ++j) {
-                word_buf_[end - 1 - j] = static_cast<int16_t>(word_buf_[end - 1 - j] * j / kFadeSamples);
-            }
             if (callback) {
                 for (int i = start; i < end; ++i) {
                     int16_t s = word_buf_[i];
