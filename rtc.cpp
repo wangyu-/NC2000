@@ -1,35 +1,13 @@
 #include "comm.h"
 #include "state.h"
-#include "compare/pc1000bus.h"
 #include "mem.h"
 #include "rtc.h"
+
+extern nc2k_states_t nc2k_states;
 
 static uint8_t * rtc_reg=nc2k_states.ext_reg;
 
 static bool& time_adjusted=nc2k_states.time_adjusted;
-
-void setTime1000emux() {
-    extern BusPC1000 *bus_pc1000;
-
-	const int ADDR_POWER_UP_FLAG = 0x435;
-	const int ADDR_WATCH_DOG = 0x468;
-	const int ADDR_IDLESEC = 0x471;
-    const int ADDR_HOUR = 0x469;
-    const int ADDR_YEAR = 0x46c;
-
-    bus_pc1000->write(ADDR_IDLESEC, 0); //设置idlesec为0，禁止自动关机
-    int year = bus_pc1000->read(ADDR_YEAR) + 1881;
-    if (year == 2000) {
-		/*SYSTEMTIME sys;
-		GetLocalTime(&sys);
-        bus->write(ADDR_YEAR, sys.wYear - 1881);
-        bus->write(ADDR_YEAR + 1, sys.wMonth - 1);
-        bus->write(ADDR_YEAR + 2, sys.wDay - 1);
-        bus->write(ADDR_HOUR, sys.wHour);
-        bus->write(ADDR_HOUR + 1, sys.wMinute);
-        bus->write(ADDR_HOUR + 2, sys.wSecond * 2);*/
-    }
-}
 
 // from nc3000lee1.1 version
 bool chk_ar()

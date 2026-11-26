@@ -1,4 +1,7 @@
 #pragma once
+#include <cstdint>
+
+const uint16_t IO_LIMIT = 0x40;
 
 int io_v2_read(int address);
 void io_v2_write(int address, int value);

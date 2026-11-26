@@ -4,13 +4,9 @@
 #include "mem.h"
 #include "nor.h"
 #include "rom.h"
-#include "io.h"
 #include "io_new.h"
 #include <cassert>
 
-#include "compare/pc1000bus.h"
-
-extern BusPC1000 *bus_pc1000;
 extern nc2k_states_t nc2k_states;
 
 uint8_t* memmap[8];
@@ -76,15 +72,7 @@ uint8_t Load(uint16_t addr) {
 	}
 
 	if (addr < IO_LIMIT) {
-		if(io_version== IO_V1){
-			return io_read[addr](addr);
-		} else if (io_version == IO_V2) {
-			return io_v2_read(addr);
-		} else if (io_version == IO_EMUX) {
-			return bus_pc1000->in(addr);
-		}else{
-			assert(false);
-		}
+		return io_v2_read(addr);
 	}
 
 	if (addr <0x80) {
@@ -120,16 +108,7 @@ void Store(uint16_t addr, uint8_t value) {
 	}
 
 	if (addr < IO_LIMIT) {
-		if(io_version== IO_V1){
-			io_write[addr](addr, value);
-		}else if (io_version == IO_V2) {
-			io_v2_write(addr, value);
-		}else if (io_version == IO_EMUX) {
-			bus_pc1000->out(addr, value);
-		}else {
-			assert(false);
-		}
-
+		io_v2_write(addr, value);
 		return;
 	}
 

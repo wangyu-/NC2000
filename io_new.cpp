@@ -6,7 +6,6 @@
 #include "ram.h"
 #include "dsp/dsp.h"
 #include "mem.h"
-#include "io.h"
 #include <cassert>
 #include "CC800IOName.h"
 #include "iv_uart.h"

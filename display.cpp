@@ -62,10 +62,6 @@ void Render(u64_t tick) {
     if(is_clk_off()){ //clk off
       lcd_on=false;
     }
-    if(io_version == IO_V1 || io_version == IO_EMUX){
-      //be comaptible with io_v1 and pc1000emux
-      lcd_on = true;
-    }
   }
   if (console_on){
     draw_console();

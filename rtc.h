@@ -11,8 +11,6 @@ const int AR_h=0x07;
 const int RTC_CTRL=0x0a;
 const int INT_CLEAR=0x0b;
 
-void setTime1000emux();
-
 void bumpRTC();
 bool chk_ar();
 

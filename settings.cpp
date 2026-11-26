@@ -80,7 +80,6 @@ void process_args(int argc, char *argv[])
 		{"port", required_argument, 0, 1},
 		{"cpu", required_argument, 0, 1},
 		{"loop", required_argument, 0, 1},
-		{"io", required_argument, 0, 1},
 		{"oc", required_argument, 0, 1},
 		{"rtc-speed", required_argument, 0, 1},
 		{"nor-read", required_argument, 0, 1},
@@ -143,7 +142,6 @@ void process_args(int argc, char *argv[])
 		{"spin-wait", no_argument, 0, 1},
 		{"lcd-debug", no_argument, 0, 1},
 		{"sdl-hint-render-driver", required_argument, 0, 1},
-		{"legacy-key-io", no_argument, 0, 1},
 		{NULL, 0, 0, 0}
 	};
 	string uart_dev_name;
@@ -256,10 +254,6 @@ void process_args(int argc, char *argv[])
 				if (power_save_interval==0){
 					power_save_interval = int_inf;
 				}
-			}
-			else if(strcmp(long_options[option_index].name,"io")==0)
-			{
-				io_version = (IoVersion)stoi(optarg);
 			}
 			else if(strcmp(long_options[option_index].name,"oc")==0)
 			{
@@ -442,9 +436,6 @@ void process_args(int argc, char *argv[])
 			else if (strcmp(long_options[option_index].name,"sdl-hint-render-driver")==0){
 				//empty value means don't set SDL_HINT_RENDER_DRIVER
 				render_driver = optarg;
-			}
-			else if (strcmp(long_options[option_index].name,"legacy-key-io")==0){
-				use_legacy_key_io = true;
 			}
 			else
 			{

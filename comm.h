@@ -73,15 +73,9 @@ enum IrqMode {
 };
 
 enum CpuLoopVersion {
-    CPU_RUN1 = 1, // cpu_run,    only IO_V1
-    CPU_RUN2 = 2, // cpu_run2,   both IO_V1 and IO_V2
-    CPU_RUN3 = 3, // cpu_run3,   only IO_V2
-};
-
-enum IoVersion {
-    IO_V1 = 1,
-    IO_V2 = 2,
-    IO_EMUX = 3
+    CPU_RUN1 = 1, // cpu_run
+    CPU_RUN2 = 2, // cpu_run2
+    CPU_RUN3 = 3, // cpu_run3
 };
 
 /*
@@ -98,9 +92,6 @@ extern bool nc1020tw_mode;
 
 extern CpuVersion cpu_version;
 extern CpuLoopVersion cpu_loop_version;
-extern IoVersion io_version;
-
-extern bool use_legacy_key_io;
 
 extern NorFormat nor_read_format;
 extern NorFormat nor_write_format;

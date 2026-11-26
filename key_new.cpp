@@ -2,13 +2,11 @@
 #include <SDL_keyboard.h>
 #include <SDL_keycode.h>
 #include <map>
-#include "compare/pc1000bus.h"
 #include "console.h"
 #include "state.h"
 #include "NekoDriverIO.h"
 #include "nc2000.h"
 using namespace std;
-extern BusPC1000 *bus_pc1000;
 extern nc2k_states_t nc2k_states;
 static uint8_t * ext_reg=nc2k_states.ext_reg;
 
@@ -482,13 +480,6 @@ void handle_key_wayback(signed int sym, bool key_down){
         }
         if(value.first!=-1 && value.second!=-1){
           SetKeyWayback(value.first,value.second, key_down); //set up the 8x8 key scan matrix
-          if(bus_pc1000){ //for compatibility with pc1000emux bus
-            if(key_down){
-              bus_pc1000->keyDown2(value.first, value.second);
-            }else{
-              bus_pc1000->keyUp();
-            }
-          }
         }
         if(log_on_key_press==1 &&sym != SDLK_F11 || (log_on_key_press >1 && sym== log_on_key_press)){
           // --log-on-key-press, enable logging for debug when interested key is pressed

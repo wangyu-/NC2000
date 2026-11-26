@@ -7,7 +7,6 @@
 #include <map>
 #include "sound.h"
 #include "misc/udp_server.h"
-#include "key.h"
 #include "key_new.h"
 #include "settings.h"
 #include "display.h"
@@ -158,8 +157,7 @@ void main_loop() {
         if(console_on_saved){
           continue;
         }
-        if(use_legacy_key_io) handle_key(event.key.keysym.sym, key_down);
-        else handle_key_wayback(event.key.keysym.sym,key_down);
+        handle_key_wayback(event.key.keysym.sym,key_down);
       } else if (event.type == SDL_TEXTINPUT) {
         input_text(event.text.text);
       }

@@ -76,14 +76,14 @@ struct nc2k_states_t{
 	unsigned short gThreadFlags;
 	bool timer0run;
 	bool timer1run_tmie;
-	bool timer0waveoutstart;
-	int prevtimer0value;
+	bool UNUSED_timer0waveoutstart;
+	int UNUSED_prevtimer0value;
 	bool rw0f_b4_DIR00;
 	bool rw0f_b5_DIR01;
 	bool rw0f_b6_DIR023;
 	bool rw0f_b7_DIR047;
-	bool rw0f_b3_SH;
-	uint8_t rw0f_b02_ZB02;
+	bool UNUSED_rw0f_b3_SH;
+	uint8_t UNUSED_rw0f_b02_ZB02;
 	bool w04_b7_EPOL;
 	uint8_t w04_b46_PTYPE;
 	uint8_t w04_b03_TBC;
@@ -98,9 +98,9 @@ struct nc2k_states_t{
 	uint8_t w0c_b345_TMS;
 	int timer0ticks;
 	int timer1ticks;
-	uint8_t w01_int_enable;
+	uint8_t UNUSED_w01_int_enable;
 	
-	bool lcdoffshift0flag;
+	bool UNUSED_lcdoffshift0flag;
 	unsigned short lcdbuffaddr;
 	unsigned short lcdbuffaddrmask;
 	unsigned char cpf;  
@@ -111,11 +111,11 @@ struct nc2k_states_t{
 	int dspRetData;
 	bool dspTrans;
 	bool dspSleep;
-	int tmaValue;  // unused, kept for save-state compatibility
-	int tmaReload; // unused, kept for save-state compatibility
+	int UNUSED_tmaValue;  // unused, kept for save-state compatibility
+	int UNUSED_tmaReload; // unused, kept for save-state compatibility
 	unsigned char inner_interrupt_control;
-	unsigned int speed_scaledown; //not used any more
-	uint8_t cps;
+	unsigned int UNUSED_speed_scaledown; //not used any more
+	uint8_t UNUSED_cps;
 	uint8_t lcdon;
 	bool dsp_0xd0;
 	int dsp_0x7001_0x7002;
@@ -196,15 +196,15 @@ below are all legacy fields, only used in old cpu_loop or io
 	uint8_t clock_buff[80];
 	uint8_t clock_flags;
 
-	uint8_t jg_wav_data[0x20];
-	uint8_t jg_wav_flags;
-	uint8_t jg_wav_idx;
-	bool jg_wav_playing;
+	uint8_t UNUSED_jg_wav_data[0x20];
+	uint8_t UNUSED_jg_wav_flags;
+	uint8_t UNUSED_jg_wav_idx;
+	bool UNUSED_jg_wav_playing;
     
-	bool slept;
+	bool UNUSED_slept;
 	bool should_wake_up;
-	bool pending_wake_up;
-	uint8_t wake_up_flags;
+	bool UNUSED_pending_wake_up;
+	uint8_t UNUSED_wake_up_flags;
 
 	bool timer0_toggle;
 
@@ -213,7 +213,7 @@ below are all legacy fields, only used in old cpu_loop or io
 	u64_t timer1_cycles;
 	u64_t timebase_cycles;
 	u64_t nmi_cycles;
-	uint8_t keypad_matrix[8];
+	uint8_t UNUSED_keypad_matrix[8];
 
 	int gDeadlockCounter; //only used in leacy cpu loop
 

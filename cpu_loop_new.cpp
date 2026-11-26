@@ -7,7 +7,6 @@
 #include "ram.h"
 #include "state.h"
 #include "misc/disassembler.h"
-#include "compare/pc1000bus.h"
 #include "io_new.h"
 #include "iv_uart.h"
 #include "sound.h"
@@ -31,39 +30,24 @@ static uint8_t * ext_reg=nc2k_states.ext_reg;
 static bool& do_warm_reset=nc2k_states.do_warm_reset;
 
 BusWrapper *dummy_bus;
-BusPC1000 *bus_pc1000;
 C6502 *c6502;
 
 void init_cpu_new(){
 	if(cpu){delete cpu; cpu=nullptr;}
 	if(c6502){delete c6502; c6502=nullptr;}
 	if(dummy_bus){delete dummy_bus; dummy_bus=nullptr;}
-	if(bus_pc1000){delete bus_pc1000; bus_pc1000=nullptr;}
 
-	if(io_version == IO_V1 || io_version == IO_V2){
-		if(cpu_version== CPU_HANDYPSP) {
-			cpu=new CPUInterface();
-		} else if(cpu_version==CPU_EMUX) {
-			dummy_bus=new BusWrapper();
-			c6502 = new C6502(dummy_bus);
-			cpu = new CPUInterface(c6502);
-		} else {
-			assert(false);
-		}
-	}else if(io_version == IO_EMUX){
-		//emux io只能运行于pc1000mode + bus_pc1000
-		assert(pc1000mode);
-		assert(cpu_loop_version==CPU_RUN3);
-		bus_pc1000=new BusPC1000();
-		c6502=new C6502(bus_pc1000);
+	if(cpu_version== CPU_HANDYPSP) {
+		cpu=new CPUInterface();
+	} else if(cpu_version==CPU_EMUX) {
+		dummy_bus=new BusWrapper();
+		c6502 = new C6502(dummy_bus);
 		cpu = new CPUInterface(c6502);
-		bus_pc1000->cpu=c6502;
-	}else{
-		printf("unknown io version %d\n", io_version);
+	} else {
 		assert(false);
 	}
 
-	if(cpu_loop_version==CPU_RUN3&&io_version!=IO_EMUX){
+	if(cpu_loop_version==CPU_RUN3){
 		cpu->set_irq_mode(IrqMode::IRQ_LINE);
 	}else{
 		cpu->set_irq_mode(IrqMode::IRQ_NOW_OR_LATCHED);
@@ -148,14 +132,6 @@ void debug_pc(){
 
 }
 
-bool pc1000mode_normal(){
-	return pc1000mode && io_version!= IO_EMUX;
-}
-
-bool pc1000mode_emux(){
-	return pc1000mode && io_version== IO_EMUX;
-}
-
 void cpu_run3(){
 	if(do_warm_reset){
 		do_warm_reset=0;
@@ -231,28 +207,7 @@ void cpu_run3(){
 	}
 
 
-	if(!clk_off && pc1000mode_emux()){
-		//magic number to fit pc1000emux's timer0,timer1 and timerA code
-		if(int trigger_cnt=trigger_x_times_per_s(576*50)){
-			for(int i=0;i<trigger_cnt;i++){
-				bus_pc1000->setTimer();
-				if (bus_pc1000->setTimer0()) {
-					//timer0用于录放音，蜂鸣器音乐
-					bus_pc1000->setIrqTimer0();
-					//printf("irq1!\n");
-					cpu->irq_now();
-				}
-				if (bus_pc1000->setTimer1()) {
-					//timer1用于秒表的百分之一秒，每秒200次
-					bus_pc1000->setIrqTimer1();
-					cpu->irq_now();
-					//printf("irq2!\n");
-				}
-			}
-		}
-	}
-
-	if(!clk_off && (nc1020mode||nc2000mode||nc3000mode||(pc1000mode_normal()))) {
+	if(!clk_off && (nc1020mode||nc2000mode||nc3000mode||pc1000mode)) {
 		bool KeepTimer01_new(uint64_t last_p_cycles, uint64_t p_cycles);
 		long long scaled_last_p_cycles = last_p_cycles;
 		long long scaled_p_cycles = p_cycles;
@@ -273,7 +228,7 @@ void cpu_run3(){
 		//timebase affect's game music speed
 
 		//nc2000 and nc3000 use TBC=0c, pc1000 and nc1020 use TBC=0a
-		if(nc1020mode||pc1000mode_normal()) {
+		if(nc1020mode||pc1000mode) {
 			// for nc1020:
 			// tbc=0x0a, so L8 triggers TBI interrupt, it happens every time L8 flips from 0 to 1
 			// from 09c0 to 0x0fff, L8 flips 0->1 three times.
@@ -298,16 +253,6 @@ void cpu_run3(){
 				if (timeBaseEnable()) {
 					setIrqTimeBase();
 				}
-			}
-		}
-	}
-
-	if(!clk_off && pc1000mode_emux()){
-		if(trigger_x_times_per_s(250)){
-			if (bus_pc1000->timeBaseEnable()) {
-				//timebase中断为4ms一次，主要用于键盘扫描
-				bus_pc1000->setIrqTimeBase();
-				cpu->irq_now();
 			}
 		}
 	}
@@ -391,7 +336,7 @@ void cpu_run3(){
 		}
 	}
 
-	if(pc1000mode_normal() && trigger_x_times_per_s(2)){//kept running after clock off
+	if(pc1000mode && trigger_x_times_per_s(2)){//kept running after clock off
 		if (nmiEnable()){
 			cpu->set_nmi_pending();
 				//on pc1000mode the nmi is triggered by RTC and it can wake up clk (not 100% confirmed)
@@ -403,12 +348,5 @@ void cpu_run3(){
 				}
 		}
 	}
-	if(pc1000mode_emux() && trigger_x_times_per_s(2)){//kept running after clock off
-		setTime1000emux();
-		if (bus_pc1000->nmiEnable()){
-			cpu->set_nmi_pending();
-		}
-	}
-
 	dsp_move(trigger_x_times_per_s(100)*(long long)(DSP_AUDIO_HZ)/100);
 }

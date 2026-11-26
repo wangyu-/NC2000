@@ -4,7 +4,6 @@
 #include "state.h"
 #include "cpu.h"
 #include "mem.h"
-#include "io.h"
 #include "rom.h"
 #include "nor.h"
 #include "nand.h"
@@ -74,8 +73,6 @@ void LoadNC2k(){
 	nc2k_states.zero_init();
 	
 	init_keyitems();
-
-	init_io(); //for old io implemet only
 
 	init_nor();
 	if(pc1000mode||nc1020mode) {

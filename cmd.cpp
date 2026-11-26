@@ -15,7 +15,6 @@
 extern "C" {
 #include "ansi/w65c02.h"
 }
-#include "compare/pc1000bus.h"
 #include "nc2000.h"
 #include "nor.h"
 #include "settings.h"
