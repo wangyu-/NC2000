@@ -354,7 +354,11 @@ void Switch0x2000(){
 		}
 	}
 	if(nc3000mode){
-		memmap[1] = ram02;  //todo add RAMS (but it works without RAMS  logic)
+		// SPDC1064 p.4 & p.13: $0019 bits 2:0 = RAMS[2:0]
+		static uint8_t* const rams_pages[8] = {
+			ram02, ram02, ram04, ram06, ram08, ram0a, ram0c, ram0e
+		};
+		memmap[1] = rams_pages[ram_io[0x19] & 0x07];
 	}
 	if(pc1000mode){
 		memmap[1] = ram02;

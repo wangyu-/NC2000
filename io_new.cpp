@@ -632,6 +632,10 @@ void io_v2_write(int address, int value) {
             /////////////biosBankSwitch();
             /////////////bankSwitch();
             return;
+        case 0x19:
+            ioReg[0x19] = value;
+            if (nc3000mode) super_switch();
+            return;
         case 0x1a:
             ioReg[0x1a] = value;
             super_switch();
