@@ -8,6 +8,29 @@ extern nc2k_states_t nc2k_states;
 static int &patch_idx=nc2k_states.patch_idx;
 static unsigned char *patch_table=nc2k_states.patch_table;
 
+//only for experiment, no effect unless enabled 'patch_table_experiment'
+void write_0x3e_0x3f_patchtable_helper(int address,int value){ 
+    assert(address==0x3e||address==0x3f);
+    assert(nc1020mode||nc2000mode||nc3000mode);
+    if(address==0x3e){
+        if(value>=0x10 &&value<=0x1f){
+            if(enable_assert_for_wqx_software) assert(value==0x10);
+            patch_idx=value;
+            if(debug_level>=1) printf("[io_v2_write] 0x3e value=%02x\n",value);
+            //enable_dyn_debug_next_n=100;
+        }
+        else{
+            patch_idx=0;
+        }
+    }
+    if(address==0x3f){
+        if(patch_idx>=0x10 &&patch_idx<=0x1f){
+            patch_table[patch_idx]=value;
+            patch_idx++;
+        }
+    }
+}
+
 //experiment hacking code, not really needed, only for hardware authentic.
 //  disabled by deault. need rewrite
 void handle_patch_table_experiment(){

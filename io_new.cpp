@@ -31,9 +31,6 @@ static unsigned char* ioReg=nc2k_states.ram_io;
 
 uint8_t &lcdon=nc2k_states.lcdon;
 
-static int &patch_idx=nc2k_states.patch_idx;
-static unsigned char *patch_table=nc2k_states.patch_table;
-
 /////d0应该是未定指令
 ////不处理这个有声读物会死机
 bool &dsp_0xd0=nc2k_states.dsp_0xd0;
@@ -241,16 +238,7 @@ bool nmiEnable() {
 }
 
 bool timeBaseEnable() {
-    //if(nc1020mode||nc2000mode||nc3000mode){
-        //////////if((ioReg[O_INT_ENABLE] & 8)) return false;  //not correct, b3 is EXIE1, not for timebase
-        /*
-        // todo fix this
-        if (this->field_0x96d4ac != '\0') {
-            return true;
-        }*/
-        return (ioReg[io04_general_ctrl] & 0xf)!=0;
-    //}
-    //assert(false);
+    return (ioReg[io04_general_ctrl] & 0xf)!=0;
 }
 
 int io_v2_read(int address) {
@@ -356,6 +344,7 @@ int io_v2_read(int address) {
             return ioReg[address];
     }
 }
+
 int cks_to_speed_scaledown(int cks){
     int ret=0;
     if(nc2000mode||nc1020mode||pc1000mode){
@@ -386,29 +375,6 @@ int cks_to_speed_scaledown(int cks){
         assert(false); //unsupported mode
     }
     return ret;
-}
-
-//only for experiment, no effect unless enabled 'patch_table_experiment'
-void write_0x3e_0x3f_patchtable_helper(int address,int value){ 
-    assert(address==0x3e||address==0x3f);
-    assert(nc1020mode||nc2000mode||nc3000mode);
-    if(address==0x3e){
-        if(value>=0x10 &&value<=0x1f){
-            if(enable_assert_for_wqx_software) assert(value==0x10);
-            patch_idx=value;
-            if(debug_level>=1) printf("[io_v2_write] 0x3e value=%02x\n",value);
-            //enable_dyn_debug_next_n=100;
-        }
-        else{
-            patch_idx=0;
-        }
-    }
-    if(address==0x3f){
-        if(patch_idx>=0x10 &&patch_idx<=0x1f){
-            patch_table[patch_idx]=value;
-            patch_idx++;
-        }
-    }
 }
 void io_v2_write(int address, int value) {
     if(nc2000mode&&log_all_dsp_io&&address>=0x30 && address<=0x33){
@@ -569,7 +535,10 @@ void io_v2_write(int address, int value) {
     }
     if(nc1020mode||nc2000mode||nc3000mode){
         if(address==0x3e||address==0x3f){
-            write_0x3e_0x3f_patchtable_helper(address,value);
+            if (patch_table_experiment) {
+			    void write_0x3e_0x3f_patchtable_helper(int address,int value);
+                write_0x3e_0x3f_patchtable_helper(address,value);
+            }
         }
 
         if(address==0x3a) return write_3a(value);
