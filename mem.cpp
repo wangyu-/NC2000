@@ -173,7 +173,10 @@ uint8_t* GetBank(uint8_t bank_idx) {
 	bool roa = ram_io[0x0A] & 0x80;
 
 	if (nc3000mode) {
-		return (!roa && volume_idx == 0) ? nor_banks[bank_idx % num_nor_pages] : NULL;
+		if (volume_idx != 0) return NULL;
+		if (!roa) return nor_banks[bank_idx % num_nor_pages];
+		if (bank_idx <= 1) return bank_idx == 0 ? ram00 : ram08;
+		return NULL;
 	}
 	if (nc1020mode) {
 		if (roa) return NULL;
@@ -198,23 +201,6 @@ uint8_t* GetBank(uint8_t bank_idx) {
 void SwitchBank_2345(){
 	uint8_t bank_idx = ram_io[0x00];
 	uint8_t volume_idx = ram_io[0x0D] & 0x03;
-
-	if(nc3000mode && volume_idx == 0) {
-		if(bank_idx ==0 && ram_io[0x0a]&0x80) {
-				memmap[2] = ram04;
-    			memmap[3] = ram06;
-    			memmap[4] = ram00;
-                memmap[5] = ram02;
-				return;
-		}
-		if(bank_idx ==1 && ram_io[0x0a]&0x80) {
-				memmap[2] = ram0c;
-    			memmap[3] = ram0e;
-    			memmap[4] = ram08;
-                memmap[5] = ram0a;
-				return;
-		}
-	}
 
 	if(pc1000mode){
 		uint8_t* bank;
@@ -248,18 +234,10 @@ void SwitchBank_2345(){
 		return; //pc1000mode nerver run to below
 	}
 
-
-
 	uint8_t* bank = GetBank(bank_idx);
-	if(bank_idx<0x80 && ram_io[0x0a]&0x80){
-		if(debug_level>=2)printf("oops, bank_idx=%02x ram_io[0x0a]&0x80 is true\n",bank_idx);
-	}
-	if(bank == NULL) {
+	if (bank == NULL) {
 		uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
-		memmap[2] = unmapped;
-		memmap[3] = unmapped;
-		memmap[4] = unmapped;
-		memmap[5] = unmapped;
+		memmap[2] = memmap[3] = memmap[4] = memmap[5] = unmapped;
 	} else {
 		memmap[2] = bank + 0x4000;
 		memmap[3] = bank + 0x6000;
@@ -267,29 +245,13 @@ void SwitchBank_2345(){
 		memmap[5] = bank + 0x2000;
 	}
 
-	bool ramv = (nc2k_states.ext_reg[0x25] & 0x80) != 0;
-	if(nc3000mode){
-		if(bank_idx==0 && (volume_idx==0 || ramv)){
-			memmap[2]=ram04;
-			memmap[3]=ram06;
-		}
-	}
-	if(nc1020mode||nc2000mode){
-		if(bank_idx==0 && (volume_idx==0 || ramv)){
-			memmap[2]=ram04;
-			memmap[3]=ram04;
-		}
+	bool ramv = nc2k_states.ext_reg[0x25] & 0x80;
+	if (bank_idx == 0 && (volume_idx == 0 || ramv)) {
+		memmap[2] = ram04;
+		memmap[3] = nc3000mode ? ram06 : ram04;
 	}
 
-	if(nc1020mode){
-		/*if(bank_idx==0x80){     //this is incorrect for sure, dictionary result got corrupted
-				memmap[2] = nor_banks[0] + 0x4000;
-				memmap[3] = nor_banks[0] + 0x6000;
-		}*/
-
-	}
-
-	if(patch_table_experiment){
+	if (patch_table_experiment) {
 		void handle_patch_table_experiment();
 		handle_patch_table_experiment();
 	}
