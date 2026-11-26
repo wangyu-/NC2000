@@ -14,26 +14,17 @@ unsigned char illegal_op_byte[256];
 unsigned char illegal_op_cycle[256];
 
 CPUInterface::CPUInterface():A(mA), X(mX), Y(mY), SP(mSP), PC(mPC) {
-	init();
 	printf("using handypsp cpu\n");
 	version = CPU_HANDYPSP;
 	//CpuInitialize();
 };
 
 CPUInterface::CPUInterface(C6502 *cpu) :A(cpu->A), X(cpu->X), Y(cpu->Y), SP(cpu->SP), PC(cpu->PC) {
-	init();
 	printf("using emux cpu\n");
 	version = CPU_EMUX;
 	cpu_impl_emux = cpu;
 	//cpu->reset();
 };
-
-void CPUInterface::init(){
-	memset(illegal_op_byte,0,sizeof(illegal_op_byte));
-	memset(illegal_op_cycle,0,sizeof(illegal_op_cycle));
-	void initalize_illegal_op_tables();
-	initalize_illegal_op_tables();
-}
 
 void CPUInterface::reset(){
 	mi_clear_delay=0;
@@ -164,7 +155,10 @@ bool CPUInterface::I() {
 	return mI;
 }
 
-void initalize_illegal_op_tables(){
+void initialize_illegal_op_tables(){
+	memset(illegal_op_byte,0,sizeof(illegal_op_byte));
+	memset(illegal_op_cycle,0,sizeof(illegal_op_cycle));
+
 	unsigned char * byte=illegal_op_byte;
 	unsigned char * cycle=illegal_op_cycle;
 

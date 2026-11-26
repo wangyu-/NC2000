@@ -37,6 +37,8 @@ void init_cpu_new(){
 	if(c6502){delete c6502; c6502=nullptr;}
 	if(dummy_bus){delete dummy_bus; dummy_bus=nullptr;}
 
+	initialize_illegal_op_tables();
+
 	if(cpu_version== CPU_HANDYPSP) {
 		cpu=new CPUInterface();
 	} else if(cpu_version==CPU_EMUX) {
@@ -45,6 +47,11 @@ void init_cpu_new(){
 		cpu = new CPUInterface(c6502);
 	} else {
 		assert(false);
+	}
+
+	if(cpu_loop_version==CPU_RUN1 && cpu_version!=CPU_HANDYPSP){
+		printf("cpu_loop1 can only be used with handypsp cpu\n");
+		exit(-1);
 	}
 
 	if(cpu_loop_version==CPU_RUN3){

@@ -5,6 +5,7 @@
 
 extern unsigned char illegal_op_byte[256];
 extern unsigned char illegal_op_cycle[256];
+void initialize_illegal_op_tables();
 
 class CPUInterface{
 public:
@@ -23,7 +24,6 @@ public:
     CPUInterface();
     CPUInterface(C6502 *cpu);
 
-    void init();
     void reset();
     int execute(int max_cycles);
     void set_nmi_pending();
