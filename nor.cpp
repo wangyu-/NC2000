@@ -329,8 +329,19 @@ void write_nor0(uint16_t addr,uint8_t value){
         reset_nor_status();
         return;
     }
-    
-    if(debug_level>=1) printf("error occurs when operate in flash! addr=%04x value=%02x; fp_step=%d tp_type=%d\n",addr,value,fp_step,fp_type);
+
+    // Mid-command sequence (unlock or erase setup): invalid cycle aborts back to read mode.
+    // Latched modes (SW_ID/INFO_READ/POLL_STATUS and post-op READY at step 4/6) only exit on 0xF0.
+    bool in_cmd_seq = (fp_step == 1 || fp_step == 2) ||
+        ((fp_type == NOR_CMD::BLOCK_OR_MASS_ERASE || fp_type == NOR_CMD::INFO_OR_BMASS_ERASE) &&
+         (fp_step == 3 || fp_step == 4 || fp_step == 5));
+    if (in_cmd_seq) {
+        reset_nor_status();
+        RATE_LIMIT_LOG(3000,5,"[nor] ERR: error occurs when operate in flash! addr=%04x value=%02x; fp_step=%d tp_type=%d. reset!!",addr,value,fp_step,fp_type);
+    }
+    else{
+        RATE_LIMIT_LOG(3000,5,"[nor] ERR: error occurs when operate in flash! addr=%04x value=%02x; fp_step=%d tp_type=%d.",addr,value,fp_step,fp_type);
+    }
 }
 
 bool write_nor(uint16_t addr, uint8_t value){
