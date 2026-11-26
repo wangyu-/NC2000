@@ -605,6 +605,9 @@ void io_v2_write(int address, int value) {
             if(index == 0x24) {//port0 pull high/low control
                 UpdateKeypadRegisters();
             }
+            if(index == 0x25) {//XM0CF: bit 7 is RAMV
+                super_switch();
+            }
             if(nc3000mode){
                 if(index == 0x20){//P06 direction control
                     UpdateKeypadRegisters();

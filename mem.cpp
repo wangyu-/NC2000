@@ -298,14 +298,15 @@ void SwitchBank_2345(){
 		memmap[5] = bank + 0x2000;
 	}
 
+	bool ramv = (nc2k_states.ext_reg[0x25] & 0x80) != 0;
 	if(nc3000mode){
-		if(bank_idx==0 && volume_idx==0){
+		if(bank_idx==0 && (volume_idx==0 || ramv)){
 			memmap[2]=ram04;
 			memmap[3]=ram06;
 		}
 	}
 	if(nc1020mode||nc2000mode){
-		if(bank_idx==0 && volume_idx==0){
+		if(bank_idx==0 && (volume_idx==0 || ramv)){
 			memmap[2]=ram04;
 			memmap[3]=ram04;
 		}
@@ -362,56 +363,37 @@ void Switch0x2000(){
 
 void SwitchBbsBios_67(){
 	uint8_t volume_idx = ram_io[0x0D] & 0x03;
-	bool exc = ram_io[0x1A] & 0x80;
+	uint8_t bbs_idx = ram_io[0x0A] & 0x0f;
+	uint8_t** candidate_for_bbs = pc1000mode ? GetVolumm(volume_idx) : nor_banks;
 
-	if((nc2000mode || nc1020mode || nc3000mode) && exc && volume_idx != 0){
-		// EXC=1 & Vol=1..3 (RAMV=0): C000-DFFF (incl. BBS=1) and E000-FFFF map to external Vol 1..3 (unmapped)
-		uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
-		memmap[6] = unmapped;
-		memmap[7] = unmapped;
-		return;
-	}
-
-	uint8_t** candidate_for_bbs;
 	uint8_t* bbs_pages[0x10];
-	if(pc1000mode){
-		candidate_for_bbs = GetVolumm(volume_idx);
-	}
-
-	if(nc2000mode||nc3000mode||nc1020mode){
-		candidate_for_bbs = nor_banks;
-	}
-
 	for (int i=0; i<4; i++) {
-		bbs_pages[i * 4] = candidate_for_bbs[i]+0x4000;
+		bbs_pages[i * 4]     = candidate_for_bbs[i] + 0x4000;
 		bbs_pages[i * 4 + 1] = candidate_for_bbs[i] + 0x6000;
 		bbs_pages[i * 4 + 2] = candidate_for_bbs[i] + 0x0000;
 		bbs_pages[i * 4 + 3] = candidate_for_bbs[i] + 0x2000;
 	}
 
-	uint8_t bbs_idx = ram_io[0x0A]&0x0f;
 	memmap[6] = bbs_pages[bbs_idx];
 	memmap[7] = bbs_pages[1];
 
+	if (pc1000mode) {
+		if (bbs_idx == 1) {
+			memmap[6] = (ram_io[0x0d] & 0x01) ? (nor_banks[0] + 0x6000) : ram04;
+		}
+		return;
+	}
 
-	if(bbs_idx ==1){
-		if(nc1020mode){
-			memmap[6] = ram04;
-		}
-		if(nc2000mode){
-			memmap[6]=ram04;
-		}
-		if(nc3000mode){
-			memmap[6]=ram06;
-		}
+	bool exc = ram_io[0x1A] & 0x80;
+	bool ramv = nc2k_states.ext_reg[0x25] & 0x80;
+	uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
 
-		if(pc1000mode){
-			if(ram_io[0x0d]&0x01){
-				memmap[6] = nor_banks[0]+0x6000;
-			}else{
-				memmap[6] = ram04;
-			}
-		}
+	if (exc && volume_idx != 0) {
+		memmap[6] = unmapped;
+		memmap[7] = unmapped;
+	}
+	if (bbs_idx == 1) {
+		memmap[6] = (volume_idx == 0 || ramv) ? (nc3000mode ? ram06 : ram04) : unmapped;
 	}
 }
 void SwitchZP40(){
