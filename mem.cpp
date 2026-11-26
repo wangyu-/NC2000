@@ -168,62 +168,31 @@ void CStore(uint16_t addr, uint8_t value){
 }
 }
 
-uint8_t* GetBank(uint8_t bank_idx){
-
-	if((ram_io[0x0D]&0x3)!=0) {
-		if(debug_level>=99) printf("vol=%02x!!!!!!!!!!!!\n",ram_io[0x0D]&0x3);
-	}
-
+uint8_t* GetBank(uint8_t bank_idx) {
 	uint8_t volume_idx = ram_io[0x0D] & 0x03;
-	bool roa = ram_io[0x0a] & 0x80;
+	bool roa = ram_io[0x0A] & 0x80;
 
 	if (nc3000mode) {
-		// SPDC1064: XM0CF=000 maps XM0CEZ to ROA=0, Vol=00, Bank=00h-FFh.
-		// 1MB NOR (MA0-MA19) wraps around across 00h-FFh.
-		if (!roa && volume_idx == 0) {
-			return nor_banks[bank_idx % num_nor_pages];
+		return (!roa && volume_idx == 0) ? nor_banks[bank_idx % num_nor_pages] : NULL;
+	}
+	if (nc1020mode) {
+		if (roa) return NULL;
+		if (bank_idx < num_nor_pages) {
+			return (volume_idx == 0) ? nor_banks[bank_idx] : NULL;
+		}
+		if (bank_idx >= 0x80 && volume_idx <= 2) {
+			uint8_t** vols[3] = { rom_volume0, rom_volume1, rom_volume2 };
+			return vols[volume_idx][bank_idx];
 		}
 		return NULL;
 	}
-
-    if (bank_idx < num_nor_pages) { 
-		if(bank_idx >= 0x10 && nc1020mode && nc1020tw_mode){
-			//printf("bidx=%02x\n",bank_idx);
-		}
-
-		if(roa || volume_idx != 0){
-			if(debug_level>=2) printf("oops, GetBank bank_idx=%02x roa=%d vol=%d\n",bank_idx, roa, volume_idx);
-			return NULL;
-		}
-    	return nor_banks[bank_idx];
-    } else if (bank_idx >= 0x80) {
-		if(nc1020mode){
-			if(roa){
-				return NULL;
-			}
-			if (volume_idx == 0x00) {
-				return rom_volume0[bank_idx];
-			} else if (volume_idx == 0x01) {
-				return rom_volume1[bank_idx];
-			} else if (volume_idx == 0x02) {
-				return rom_volume2[bank_idx];
-			}
-			return NULL;
-		}
-
-		if(nc2000mode){
-			//printf("<%x\n>",bank_idx);
-			//assert(bank_idx==0x80);
-			// SPDC1024: XM1CF=00011b maps XM1CEZ to Vol=0, ROA=1, Bank=80h-FFh (32KB ext_ram wraps around).
-			if(roa && volume_idx == 0){
-				return nc2k_states.ext_ram;
-			}
-			return NULL;
-		}
-    }else{
-		if(debug_level>=1) printf("oops GetBank bank_idx=%02x invalid roa_bbs=%02x \n",bank_idx, ram_io[0x0a]);
+	if (nc2000mode) {
+		if (volume_idx != 0) return NULL;
+		if (!roa && bank_idx < num_nor_pages) return nor_banks[bank_idx];
+		if (roa && bank_idx >= 0x80) return nc2k_states.ext_ram;
+		return NULL;
 	}
-    return NULL;
+	return NULL;
 }
 
 void SwitchBank_2345(){
