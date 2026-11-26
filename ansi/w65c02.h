@@ -72,17 +72,19 @@ extern regsrec    regs;
 //extern BOOL       &restart;
 extern BOOL       &g_irq;    // FIXME: NO MORE REVERSE
 extern BOOL       &g_nmi;    // FIXME: NO MORE REVERSE
-extern BOOL       &g_wai, &g_wai_saved;
-extern BOOL       &g_stp;
+//extern BOOL       &g_wai, &g_wai_saved;
+//extern BOOL       &g_stp;
 
 
 
-DWORD   CpuExecute();
+DWORD   LEGACY_CpuExecute();
 void    CpuInitialize();
+
+/*
 void    MemDestroy();
 void    MemInitialize();
 void    MemReset();
-
+*/
 
 
 unsigned char GetByte(unsigned short address);
@@ -99,7 +101,6 @@ unsigned short GetWord(unsigned short address);
 #define  AF_INTERRUPT  0x04
 #define  AF_ZERO       0x02
 #define  AF_CARRY      0x01
-
 // Handy
 
 #ifdef TRACE_CPU

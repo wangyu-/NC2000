@@ -15,9 +15,9 @@ extern nc2k_states_t nc2k_states;
 
 BOOL      &g_irq             = nc2k_states.g_irq;    // FIXME: NO MORE REVERSE
 BOOL      &g_nmi             = nc2k_states.g_nmi;    // FIXME: NO MORE REVERSE
-BOOL      &g_stp             = nc2k_states.g_stp;
-BOOL      &g_wai             = nc2k_states.g_wai;
-BOOL      &g_wai_saved       = nc2k_states.g_wai_saved;
+//BOOL      &g_stp             = nc2k_states.g_stp;
+//BOOL      &g_wai             = nc2k_states.g_wai;
+//BOOL      &g_wai_saved       = nc2k_states.g_wai_saved;
 // CPU Flags & status
 
 int &mA=nc2k_states.mA;     // Accumulator                 8 bits
@@ -75,8 +75,8 @@ void CpuInitialize()
 
     g_nmi = FALSE; // MERGE
     g_irq = FALSE; // MERGE
-    g_wai = FALSE;
-    g_wai_saved = FALSE;
+    //g_wai = FALSE;
+    //g_wai_saved = FALSE;
 
 
     if(true){

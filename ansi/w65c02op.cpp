@@ -11,7 +11,6 @@ extern "C" {
 #include "comm.h"
 
 const bool enable_illegal_op_fix=true;
-const bool enable_irq_nmi_cycle_fix=true;
 
 // Read/Write Cycle definitions
 #define CPU_RDWR_CYC    1
@@ -74,7 +73,7 @@ DWORD CpuExecuteOP(void)
     //
     // If the CPU is asleep then skip to the next timer event
     //
-    if (g_wai) return cycle;
+    //if (g_wai) return cycle;
 
     // Fetch opcode
     mOpcode = CPU_PEEK(mPC);
@@ -446,20 +445,20 @@ DWORD CpuExecuteOP(void)
         // Only clear IRQ if this is not a BRK instruction based RTI
 
         // B flag is on the stack cant test the flag
-        int tmp;
-        PULL(tmp);
-        PUSH(tmp);
-        if (!(tmp & 0x10)) {
-            g_wai = g_wai_saved;
+        //int tmp;
+        //PULL(tmp);
+        //PUSH(tmp);
+        //if (!(tmp & 0x10)) {
+            //g_wai = g_wai_saved;
 
             // If were in sleep mode then we need to push the
             // wakeup counter along by the same number of cycles
             // we have used during the sleep period
-            if (g_wai) {
-                // FIXME: CC800 wakeup
-                //gCPUWakeupTime += gSystemCycleCount - gIRQEntryCycle;
-            }
-        }
+            //if (g_wai) {
+            //    // FIXME: CC800 wakeup
+            //    //gCPUWakeupTime += gSystemCycleCount - gIRQEntryCycle;
+            //}
+        //}
         // IMPLIED
         xRTI();
         break;
@@ -1480,134 +1479,34 @@ DWORD CpuExecuteOP(void)
 
 
 DWORD CpuExecuteNMI(void) {
-    DWORD cycle = 0;
-    // FIXME: GET Latest GGV Simulator
-    // NC3000 have same behavior
-    if (true || g_nmi) {                      //change: give the control to caller
-        //printf("NMI!!!\n");
-        // Mark the NMI as services
-        //g_nmi = FALSE;
-        cycle += 6; // NMI?
+    // Push processor status
+    PUSH(mPC >> 8);
+    PUSH(mPC & 0xff);
+    PUSH(PS() & 0xef);      // Clear B flag on stack
 
-        if(enable_irq_nmi_cycle_fix) cycle++;
-        //mProcessingInterrupt++;
+    mI = TRUE; //note: original wayback doesn't set mI unless MERGEGGVSIM
 
-        // Push processor status
-        //original wayback:
-        // issue 1: mSP might be come negative
-        // issue 2: B flag not clearly
-        /*
-        CPU_POKE(0x0100 + mSP, mPC >> 8); // don't use ++ in poke or will inc/dec 4 times
-        mSP--;
-        CPU_POKE(0x0100 + mSP, mPC & 0x00ff);
-        mSP--;
-#ifdef MERGEGGVSIM
-        mI = TRUE; // FIXME: MERGE
-#endif
-        CPU_POKE(0x0100 + mSP, PS());
-        mSP--;
-        */
-        //new:
-        // make it consistent with CpuExecuteIRQ
-        PUSH(mPC >> 8);
-        PUSH(mPC & 0xff);
-#ifdef MERGEGGVSIM
-        mI = TRUE; // FIXME: MERGE
-        PUSH(PS());
-#else
-        PUSH(PS() & 0xef);      // Clear B flag on stack
-#endif
+    // Pick up the new PC
+    mPC = CPU_PEEKW(NMI_VECTOR);
 
-        // Pick up the new PC
-        mPC = CPU_PEEKW(NMI_VECTOR);
-    }
-    return cycle;
+    return 7;
 }
 
 DWORD CpuExecuteIRQ(void) {
-    DWORD cycle = 0;
-    if ( true|| (g_irq && !mI)) {            //change: give the control to caller
-        //printf("irq!!\n");
-        TRACE_CPU1("Update() IRQ taken at PC=%04x", mPC);
-        // IRQ signal clearance is handled by CMikie::Update() as this
-        // is the only source of interrupts
+    // Push processor status
+    PUSH(mPC >> 8);
+    PUSH(mPC & 0xff);
+    PUSH(PS() & 0xef);      // Clear B flag on stack
 
-        // Push processor status
-        PUSH(mPC >> 8);
-        PUSH(mPC & 0xff);
-#ifdef MERGEGGVSIM
-        mB = FALSE; // MERGE
-        PUSH(PS());
-#else
-        PUSH(PS() & 0xef);      // Clear B flag on stack
-#endif
+    mI = TRUE;                // Stop further interrupts
 
-        mI = TRUE;              // Stop further interrupts
+    // Pick up the new PC
+    mPC = CPU_PEEKW(IRQ_VECTOR);
 
-        if(false){//文曲星真机进入interrupt不会自动clear D
-            mD = FALSE;             // Clear decimal mode
-        }
-
-        // Pick up the new PC
-        mPC = CPU_PEEKW(IRQ_VECTOR);
-
-        // Save the sleep state as an irq has possibly woken the processor
-        g_wai_saved = g_wai;
-        g_wai = FALSE;
-
-        // Log the irq entry time
-        // FIXME: cc800 wakeup IRQ
-        //gIRQEntryCycle = gSystemCycleCount;
-
-        // Clear the interrupt status line
-        //g_irq = FALSE;
-        cycle += 6;
-        if(enable_irq_nmi_cycle_fix) cycle++;
-    }
-    return cycle;
+    return 7;
 }
 
-DWORD CpuExecuteUnused(void) {
-    DWORD cycle = 0;
-#ifdef _LYNXDBG
-
-    // Trigger breakpoint if required
-
-    for (int loop = 0; loop < MAX_CPU_BREAKPOINTS; loop++) {
-        if (mPcBreakpoints[loop] == mPC) {
-            gBreakpointHit = TRUE;
-            mSystem.DebugTrace(0);
-        }
-    }
-
-    // Check code level debug features
-    // back to back CPX ($Absolute)
-    // on the 2nd Occurance we do some debug
-    if (mOpcode == 0xec) {
-        if (mDbgFlag) {
-            // We shoud do some debug now
-            if (!mOperand) {
-                // Trigger a breakpoint
-                gBreakpointHit = TRUE;
-                // Generate a debug trail output
-                mSystem.DebugTrace(0);
-            } else {
-                // Generate a debug trail output
-                mSystem.DebugTrace(mOperand);
-            }
-            mDbgFlag = 0;
-        } else {
-            if (mOperand == 0x5aa5) mDbgFlag = 1;
-            else mDbgFlag = 0;
-        }
-    } else {
-        mDbgFlag = 0;
-    }
-#endif
-    return cycle;
-}
-
-DWORD CpuExecute(void){
+DWORD LEGACY_CpuExecute(void){
     DWORD cycle = CpuExecuteOP();
     if (g_nmi) {
         g_nmi = FALSE; // Clear NMI

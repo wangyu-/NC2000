@@ -797,7 +797,7 @@
 
 #define xSTP()\
 {\
-    g_wai=TRUE;\
+    /*g_wai=TRUE;*/\
 }
 
 #define xSTX()\
@@ -894,7 +894,7 @@
 
 #define xWAI()\
 {\
-    g_wai=TRUE;\
+    /*g_wai=TRUE;*/\
 }
 
 

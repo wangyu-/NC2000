@@ -178,7 +178,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 			//getchar();		
 		}
 
-		uint32_t CpuTicks = CpuExecute();
+		uint32_t CpuTicks = LEGACY_CpuExecute();
 		cycles+=CpuTicks;
 
 		if(nc2000mode||nc3000mode){

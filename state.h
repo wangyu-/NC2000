@@ -133,7 +133,8 @@ struct nc2k_states_t{
 	uint8_t RESET_STATE_END;
 
 	//handypsp cpu states
-	bool g_irq,g_nmi,g_stp,g_wai,g_wai_saved;
+	bool g_irq,g_nmi;
+	bool UNUSED_g_stp,UNUSED_g_wai,UNUSED_g_wai_saved;
 	int mA,mX,mY,mSP,mPC;
 	int mOpcode,mOperand;
 	int mN,mV,mB,mD,mI,mZ,mC;

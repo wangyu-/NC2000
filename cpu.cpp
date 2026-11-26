@@ -85,7 +85,6 @@ int CPUInterface::execute(int max_cycles){
     if(g_nmi){
         g_nmi = false;
         cycle+=CpuExecuteNMI();
-		mI = true;     //note: original wayback doesn't set mI unless MERGEGGVSIM
     }
 
     do{
@@ -100,7 +99,7 @@ int CPUInterface::execute(int max_cycles){
 
 		void debug_pc();
 		debug_pc();
-		if(g_wai) {cycle=max_cycles;if(cycle<=0) cycle=dummy_cycles;break;}
+		//if(g_wai) {cycle=max_cycles;if(cycle<=0) cycle=dummy_cycles;break;}
 		bool old_mi=mI;
 		cycle += CpuExecuteOP();
 		if(old_mi==true && mI==false && mOpcode != 0x40) { // CLI(0x58)/PLP(0x28) delay 1 op; RTI(0x40) takes effect immediately
