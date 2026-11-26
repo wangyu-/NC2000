@@ -32,15 +32,13 @@ public:
 
     bool I();
 
-    //use irq_line instead of set_irq_pending()
     void set_irq_mode(IrqMode mode){
         irq_mode = mode;
     }
 
     bool irq_pending();
 
-    void set_irq_pending();
-
+    //void set_irq_pending();
 
     private:
     CpuVersion version = CPU_INVALID; //use a flag instead of inheritance, to avoid virtual function overhead

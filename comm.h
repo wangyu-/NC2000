@@ -68,7 +68,7 @@ enum CpuVersion {
 
 enum IrqMode {
     IRQ_NONE = 0,
-    IRQ_SET_PENDING = 1,
+    IRQ_NOW_OR_LATCHED = 1,
     IRQ_LINE = 2,
 };
 

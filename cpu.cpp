@@ -48,7 +48,7 @@ bool CPUInterface::irq_pending() {
 	if(irq_mode==IrqMode::IRQ_LINE){
 		return (ram_io[0x01] & 0x3f) ||nc2k_states.iv_set;
 	}
-	else if(irq_mode==IrqMode::IRQ_SET_PENDING) {
+	else if(irq_mode==IrqMode::IRQ_NOW_OR_LATCHED) {
 		if (version==CPU_EMUX) return cpu_impl_emux->irqPending;
 		return g_irq;
 	}
@@ -130,6 +130,7 @@ void CPUInterface::set_nmi_pending() {
 }
 
 void CPUInterface::irq_now() {
+	assert(irq_mode == IrqMode::IRQ_NOW_OR_LATCHED);
 	if(version==CPU_EMUX) return cpu_impl_emux->IRQ();
 
 	if(!mI) {
@@ -141,7 +142,8 @@ void CPUInterface::irq_now() {
 	}
 
 }
-void CPUInterface::set_irq_pending() {
+
+/*void CPUInterface::set_irq_pending() {
 	assert(irq_mode == IrqMode::IRQ_SET_PENDING);
 	if(enable_dyn_debug_next_n) printf("set_irq_pending!!!\n");
 	if(version==CPU_EMUX) {
@@ -149,7 +151,7 @@ void CPUInterface::set_irq_pending() {
 		return;
 	}
 	g_irq = true;
-}
+}*/
 
 int CPUInterface::P() {
 	if(version==CPU_EMUX) return cpu_impl_emux->P;
