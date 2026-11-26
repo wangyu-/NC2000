@@ -351,7 +351,7 @@ void SwitchBbsBios_67(){
 			memmap[7] = unmapped;
 		}
 		if (bbs_idx == 1) {
-			if (volume_idx == 0 || ramv) {
+			if (!exc || volume_idx == 0 || ramv) {
 				if (nc3000mode) memmap[6] = ram06;
 				else if (nc1020mode || nc2000mode) memmap[6] = ram04;
 				else assert(false);
