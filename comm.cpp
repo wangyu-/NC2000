@@ -48,7 +48,6 @@ bool enable_quit_after_debug_next_n=false;
 
 bool enable_debug_nand=false;
 
-bool enable_debug_switch=false;
 bool enable_debug_pc=false;
 bool enable_oops=false;
 bool enable_inject=false;
@@ -104,16 +103,8 @@ double oc_factor=1.0;
 
 //uint32_t static_multipler;
 uint32_t CYCLES_SECOND;
-uint32_t UNKNOWN_TIMER_FREQ;
-uint32_t TIMER0_FREQ;
-uint32_t TIMER1_FREQ;
-uint32_t TIMEBASE_FREQ;
 uint32_t CYCLES_UNKNOWN_TIMER;
-uint32_t CYCLES_TIMER0;
-uint32_t CYCLES_TIMER1;
 uint32_t CYCLES_TIMEBASE;
-uint32_t CYCLES_TIMER1_SPEED_UP;
-uint32_t CYCLES_NMI;
 uint32_t CYCLES_MS;
 /*
 ===================
@@ -192,20 +183,8 @@ void init_parameters(){
     
     // below are not used in new cpu loop,
     // but they are kept for old cpu loop for compare
-    UNKNOWN_TIMER_FREQ = 2;
-    TIMER0_FREQ = 2; //not used now
-    TIMER1_FREQ = 200;//not used now
-    TIMEBASE_FREQ = 250;
-    CYCLES_UNKNOWN_TIMER = CYCLES_SECOND / UNKNOWN_TIMER_FREQ;
-    // cpu cycles per timer0 period (1/2 s).
-    CYCLES_TIMER0 = CYCLES_SECOND / TIMER0_FREQ;
-    // cpu cycles per timer1 period (1/256 s).
-    CYCLES_TIMER1 = CYCLES_SECOND / TIMER1_FREQ;
-    CYCLES_TIMEBASE = CYCLES_SECOND / TIMEBASE_FREQ;
-    // speed up
-    CYCLES_TIMER1_SPEED_UP = CYCLES_SECOND / TIMER1_FREQ / 20;
-    // cpu cycles per ms (1/1000 s).
-    CYCLES_NMI = CYCLES_SECOND / 2;
+    CYCLES_UNKNOWN_TIMER = CYCLES_SECOND / 2;
+    CYCLES_TIMEBASE = CYCLES_SECOND / 250;
 
 
     /*
@@ -218,8 +197,7 @@ void init_parameters(){
     //this is the nand pages of 528byte each
     num_nand_pages = 0+ uint32_t(nc2000mode)*65536  + uint32_t(nc3000mode)*65536*2;
 
-    //const uint32_t num_nor_pages =0x20;
-    num_rom_pages =0x300;
+    num_rom_pages = 0x300;
     ROM_SIZE = 0x8000 * num_rom_pages;
     NOR_SIZE = 0x8000 * num_nor_pages;
 

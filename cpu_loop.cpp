@@ -27,22 +27,22 @@ static bool &timer0run= nc2k_states.timer0run;
 static bool &timer1run_tmie= nc2k_states.timer1run_tmie;
 static unsigned char *zpioregs=nc2k_states.ram_io;
 
-static int &gDeadlockCounter = nc2k_states.gDeadlockCounter;
+static int &gDeadlockCounter = nc2k_states.LEGACY_gDeadlockCounter;
 
 static u64_t& cycles = nc2k_states.cycles;
 //static bool& should_irq = nc1020_states.should_irq;
-static bool& timer0_toggle = nc2k_states.timer0_toggle;
-static u64_t& unknown_timer_cycles = nc2k_states.unknown_timer_cycles;
-static u64_t& timer0_cycles = nc2k_states.timer0_cycles;
-static u64_t& timer1_cycles = nc2k_states.timer1_cycles;
-static u64_t& timebase_cycles = nc2k_states.timebase_cycles;
+static bool& timer0_toggle = nc2k_states.LEGACY_timer0_toggle;
+static u64_t& unknown_timer_cycles = nc2k_states.LEGACY_unknown_timer_cycles;
+static u64_t& timer0_cycles = nc2k_states.LEGACY_timer0_cycles;
+static u64_t& timer1_cycles = nc2k_states.LEGACY_timer1_cycles;
+static u64_t& timebase_cycles = nc2k_states.LEGACY_timebase_cycles;
 
-static u64_t& nmi_cycles = nc2k_states.nmi_cycles;
+static u64_t& nmi_cycles = nc2k_states.LEGACY_nmi_cycles;
 
-static bool& should_wake_up = nc2k_states.should_wake_up;
+static bool& should_wake_up = nc2k_states.LEGACY_should_wake_up;
 
 void AdjustTime(){ //legacy code, only used in old cpu loop
-	uint8_t* clock_buff = nc2k_states.clock_buff;
+	uint8_t* clock_buff = nc2k_states.LEGACY_clock_buff;
     if (++ clock_buff[0] >= 60) {
         clock_buff[0] = 0;
         if (++ clock_buff[1] >= 60) {
@@ -56,8 +56,8 @@ void AdjustTime(){ //legacy code, only used in old cpu loop
 }
 
 bool IsCountDown(){//legacy code, only used in old cpu loop
-	uint8_t* clock_buff = nc2k_states.clock_buff;
-	uint8_t& clock_flags = nc2k_states.clock_flags;
+	uint8_t* clock_buff = nc2k_states.LEGACY_clock_buff;
+	uint8_t& clock_flags = nc2k_states.LEGACY_clock_flags;
     if (!(clock_buff[10] & 0x02) ||
         !(clock_flags & 0x02)) {
         return false;
@@ -224,7 +224,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 				ram_io[0x3D] = 0;
 			} else {
 				ram_io[0x3D] = 0x20;
-				nc2k_states.clock_flags &= 0xFD;
+				nc2k_states.LEGACY_clock_flags &= 0xFD;
 			}
 			//g_irq = true;
 		}
@@ -232,7 +232,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 		if ((nc1020mode) && cycles >= timebase_cycles) {
 			timebase_cycles += CYCLES_TIMEBASE;
 
-			nc2k_states.clock_buff[4] ++;
+			nc2k_states.LEGACY_clock_buff[4] ++;
 			if (should_wake_up) {
 				should_wake_up = false;
 				ram_io[0x01] |= 0x01;
@@ -343,7 +343,7 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 			ram_io[0x3D] = 0;
 		} else {
 			ram_io[0x3D] = 0x20;
-			nc2k_states.clock_flags &= 0xFD;
+			nc2k_states.LEGACY_clock_flags &= 0xFD;
 		}
 		//g_irq = true;
 	}
@@ -357,7 +357,7 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 		else{
 				ram_io[0x0c]&=0xfe;
 		}
-		nc2k_states.clock_buff[4] ++;
+		nc2k_states.LEGACY_clock_buff[4] ++;
 		if (should_wake_up) {
 			should_wake_up = false;
 			ram_io[0x01] |= 0x01;

@@ -193,8 +193,8 @@ below are all legacy fields, only used in old cpu_loop or io
 ===================
 */
 
-	uint8_t clock_buff[80];
-	uint8_t clock_flags;
+	uint8_t LEGACY_clock_buff[80];
+	uint8_t LEGACY_clock_flags;
 
 	uint8_t UNUSED_jg_wav_data[0x20];
 	uint8_t UNUSED_jg_wav_flags;
@@ -202,20 +202,20 @@ below are all legacy fields, only used in old cpu_loop or io
 	bool UNUSED_jg_wav_playing;
     
 	bool UNUSED_slept;
-	bool should_wake_up;
+	bool LEGACY_should_wake_up;
 	bool UNUSED_pending_wake_up;
 	uint8_t UNUSED_wake_up_flags;
 
-	bool timer0_toggle;
+	bool LEGACY_timer0_toggle;
 
-	u64_t unknown_timer_cycles;
-	u64_t timer0_cycles;
-	u64_t timer1_cycles;
-	u64_t timebase_cycles;
-	u64_t nmi_cycles;
+	u64_t LEGACY_unknown_timer_cycles;
+	u64_t LEGACY_timer0_cycles;
+	u64_t LEGACY_timer1_cycles;
+	u64_t LEGACY_timebase_cycles;
+	u64_t LEGACY_nmi_cycles;
 	uint8_t UNUSED_keypad_matrix[8];
 
-	int gDeadlockCounter; //only used in leacy cpu loop
+	int LEGACY_gDeadlockCounter; //only used in leacy cpu loop
 
 	nc2k_states_t(){
 		zero_init();

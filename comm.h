@@ -37,8 +37,6 @@ typedef short i16_t;
 common types
 ===================
 */
-typedef uint8_t (IO_API *io_read_func_t)(uint8_t);
-typedef void (IO_API *io_write_func_t)(uint8_t, uint8_t);
 struct WqxRom {
     std::string romPath;
     std::string norFlashPath;
@@ -124,7 +122,6 @@ extern int enable_dyn_debug_next_n_default;
 extern bool enable_quit_after_debug_next_n;
 
 extern bool enable_debug_nand;
-extern bool enable_debug_switch;
 extern bool enable_debug_pc;
 extern bool enable_oops;
 extern bool enable_inject;
@@ -133,7 +130,6 @@ extern bool wanna_inject;
 extern bool injected;
 
 
-const bool enabled_dsp=true;
 const bool enable_beeper=true;
 
 extern double beeper_volume;
@@ -234,16 +230,8 @@ extern double oc_factor;
 
 //extern uint32_t static_multipler;
 extern uint32_t CYCLES_SECOND;
-extern uint32_t UNKNOWN_TIMER_FREQ;
-extern uint32_t TIMER0_FREQ;
-extern uint32_t TIMER1_FREQ;
-extern uint32_t TIMEBASE_FREQ;
 extern uint32_t CYCLES_UNKNOWN_TIMER;
-extern uint32_t CYCLES_TIMER0;
-extern uint32_t CYCLES_TIMER1;
 extern uint32_t CYCLES_TIMEBASE;
-extern uint32_t CYCLES_TIMER1_SPEED_UP;
-extern uint32_t CYCLES_NMI;
 extern uint32_t CYCLES_MS;
 
 const uint32_t DSP_AUDIO_HZ = 8000;
