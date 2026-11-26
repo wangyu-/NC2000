@@ -129,6 +129,7 @@ extern u64_t tick;
 
 extern bool enable_dyn_debug;
 extern int enable_dyn_debug_next_n;
+extern int enable_dyn_debug_next_n_default;
 extern bool enable_quit_after_debug_next_n;
 
 extern bool enable_debug_nand;

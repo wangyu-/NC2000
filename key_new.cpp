@@ -493,7 +493,7 @@ void handle_key_wayback(signed int sym, bool key_down){
         if(log_on_key_press==1 &&sym != SDLK_F11 || (log_on_key_press >1 && sym== log_on_key_press)){
           // --log-on-key-press, enable logging for debug when interested key is pressed
           if(key_down && shift_down){
-            enable_dyn_debug_next_n=100*1000000;
+            enable_dyn_debug_next_n=enable_dyn_debug_next_n_default;
           }
         }
         switch ( sym) {

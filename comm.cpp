@@ -45,6 +45,7 @@ u64_t tick=0;  //tick is mostly for debug
 
 bool enable_dyn_debug=false;
 int enable_dyn_debug_next_n=0;
+int enable_dyn_debug_next_n_default=100*1000000;
 bool enable_quit_after_debug_next_n=false;
 
 
