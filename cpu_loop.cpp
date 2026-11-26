@@ -189,7 +189,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 		//don't use magic number
 		//if (gDeadlockCounter == 6000) {
 		if ((nc2000mode||nc3000mode||pc1000mode) && cycles >= timebase_cycles) {
-			timebase_cycles += CYCLES_TIMEBASE;
+			timebase_cycles += LEGACY_CYCLES_TIMEBASE;
 			// overflowed
 			gDeadlockCounter = 0;
 			if ((gThreadFlags & 0x80u) == 0) {
@@ -215,7 +215,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 		}
 
 		if ((nc1020mode) && cycles >= unknown_timer_cycles) {
-			unknown_timer_cycles += CYCLES_UNKNOWN_TIMER;
+			unknown_timer_cycles += LEGACY_CYCLES_UNKNOWN_TIMER;
 			timer0_toggle = !timer0_toggle;
 			if (!timer0_toggle) {
 				AdjustTime();
@@ -230,7 +230,7 @@ void cpu_run(){ //legacy cpu loop1, not suggested to use unless for comparison a
 		}
 
 		if ((nc1020mode) && cycles >= timebase_cycles) {
-			timebase_cycles += CYCLES_TIMEBASE;
+			timebase_cycles += LEGACY_CYCLES_TIMEBASE;
 
 			nc2k_states.LEGACY_clock_buff[4] ++;
 			if (should_wake_up) {
@@ -308,7 +308,7 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 	//don't use magic number
 	//if (gDeadlockCounter == 6000) {
 	if ((nc2000mode||nc3000mode||pc1000mode) && cycles >= timebase_cycles) {
-		timebase_cycles += CYCLES_TIMEBASE;
+		timebase_cycles += LEGACY_CYCLES_TIMEBASE;
 		// overflowed
 		gDeadlockCounter = 0;
 		if ((gThreadFlags & 0x80u) == 0) {
@@ -334,7 +334,7 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 	}
 
 	if ((nc1020mode) && cycles >= unknown_timer_cycles) {
-		unknown_timer_cycles += CYCLES_UNKNOWN_TIMER;
+		unknown_timer_cycles += LEGACY_CYCLES_UNKNOWN_TIMER;
 		timer0_toggle = !timer0_toggle;
 		if (!timer0_toggle) {
 			AdjustTime();
@@ -348,8 +348,8 @@ void cpu_run2(){ //legacy cpu loop2, not suggested to use unless for comparison 
 		//g_irq = true;
 	}
 	if ((nc1020mode) && cycles >= timebase_cycles) {
-		timebase_cycles += CYCLES_TIMEBASE;
-		uint32_t hack1020_cnt= cycles/CYCLES_TIMEBASE;
+		timebase_cycles += LEGACY_CYCLES_TIMEBASE;
+		uint32_t hack1020_cnt= cycles/LEGACY_CYCLES_TIMEBASE;
 		// cheat boot program to pass
 		if(hack1020_cnt%20==10){
 				ram_io[0x0c]|=0x01;

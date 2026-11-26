@@ -103,8 +103,8 @@ double oc_factor=1.0;
 
 //uint32_t static_multipler;
 uint32_t CYCLES_SECOND;
-uint32_t CYCLES_UNKNOWN_TIMER;
-uint32_t CYCLES_TIMEBASE;
+uint32_t LEGACY_CYCLES_UNKNOWN_TIMER;
+uint32_t LEGACY_CYCLES_TIMEBASE;
 uint32_t CYCLES_MS;
 /*
 ===================
@@ -183,8 +183,8 @@ void init_parameters(){
     
     // below are not used in new cpu loop,
     // but they are kept for old cpu loop for compare
-    CYCLES_UNKNOWN_TIMER = CYCLES_SECOND / 2;
-    CYCLES_TIMEBASE = CYCLES_SECOND / 250;
+    LEGACY_CYCLES_UNKNOWN_TIMER = CYCLES_SECOND / 2;
+    LEGACY_CYCLES_TIMEBASE = CYCLES_SECOND / 250;
 
 
     /*

@@ -230,8 +230,8 @@ extern double oc_factor;
 
 //extern uint32_t static_multipler;
 extern uint32_t CYCLES_SECOND;
-extern uint32_t CYCLES_UNKNOWN_TIMER;
-extern uint32_t CYCLES_TIMEBASE;
+extern uint32_t LEGACY_CYCLES_UNKNOWN_TIMER;
+extern uint32_t LEGACY_CYCLES_TIMEBASE;
 extern uint32_t CYCLES_MS;
 
 const uint32_t DSP_AUDIO_HZ = 8000;
