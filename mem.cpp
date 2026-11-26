@@ -29,6 +29,13 @@ void init_mem(){
 	super_switch(); //will segfault if commented out, since some legacy code is access the memmap
 }
 
+static inline uint8_t* get_unmapped_page() {
+	if (nc3000mode) return unmapped_page_float;
+	if (nc1020mode || nc2000mode || pc1000mode) return unmapped_page_adbus;
+	assert(false);
+	return unmapped_page_adbus;
+}
+
 static inline bool is_unmapped_ramb_hi(uint16_t addr) {
 	// BFI_4M (p.13): single SPR4096 (CF[6:3]=0000, CF7=1) only has 4KB SRAM at 2000-2FFF.
 	// 3000-3FFF requires a 2nd SPR4096 (CF[6:3]=0001, e.g. nc1020tw); otherwise it is unmapped ADBUS.
@@ -171,7 +178,8 @@ void CStore(uint16_t addr, uint8_t value){
 uint8_t* GetBank(uint8_t bank_idx) {
 	uint8_t volume_idx = ram_io[0x0D] & 0x03;
 	bool roa = ram_io[0x0A] & 0x80;
-
+	
+	assert(!pc1000mode);
 	if (nc3000mode) {
 		if (volume_idx != 0) return NULL;
 		if (!roa) return nor_banks[bank_idx % num_nor_pages];
@@ -195,6 +203,7 @@ uint8_t* GetBank(uint8_t bank_idx) {
 		if (roa && bank_idx >= 0x80) return nc2k_states.ext_ram;
 		return NULL;
 	}
+	assert(false);
 	return NULL;
 }
 
@@ -234,27 +243,35 @@ void SwitchBank_2345(){
 		return; //pc1000mode nerver run to below
 	}
 
-	uint8_t* bank = GetBank(bank_idx);
-	if (bank == NULL) {
-		uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
-		memmap[2] = memmap[3] = memmap[4] = memmap[5] = unmapped;
-	} else {
-		memmap[2] = bank + 0x4000;
-		memmap[3] = bank + 0x6000;
-		memmap[4] = bank + 0x0000;
-		memmap[5] = bank + 0x2000;
-	}
+	if (nc1020mode || nc2000mode || nc3000mode) {
+		uint8_t* bank = GetBank(bank_idx);
+		if (bank == NULL) {
+			uint8_t* unmapped = get_unmapped_page();
+			memmap[2] = memmap[3] = memmap[4] = memmap[5] = unmapped;
+		} else {
+			memmap[2] = bank + 0x4000;
+			memmap[3] = bank + 0x6000;
+			memmap[4] = bank + 0x0000;
+			memmap[5] = bank + 0x2000;
+		}
 
-	bool ramv = nc2k_states.ext_reg[0x25] & 0x80;
-	if (bank_idx == 0 && (volume_idx == 0 || ramv)) {
-		memmap[2] = ram04;
-		memmap[3] = nc3000mode ? ram06 : ram04;
+		bool ramv = nc2k_states.ext_reg[0x25] & 0x80;
+		if (bank_idx == 0 && (volume_idx == 0 || ramv)) {
+			if (nc3000mode) {
+				memmap[2] = ram04;
+				memmap[3] = ram06;
+			} else if (nc1020mode || nc2000mode) {
+				memmap[2] = ram04;
+				memmap[3] = ram04;
+			} else assert(false);
+		}
+		if (patch_table_experiment) {
+			void handle_patch_table_experiment();
+			handle_patch_table_experiment();
+		}
+		return;
 	}
-
-	if (patch_table_experiment) {
-		void handle_patch_table_experiment();
-		handle_patch_table_experiment();
-	}
+	assert(false);
 }
 
 uint8_t** GetVolumm(uint8_t volume_idx){
@@ -267,7 +284,6 @@ uint8_t** GetVolumm(uint8_t volume_idx){
 		} else {
 			return rom_volume0;
 		}
-		assert(false);
 	}
 	assert(false);
 }
@@ -283,6 +299,7 @@ void Switch0x2000(){
 			// CE_R1..CE_R3: no chip on Vol 1..3 -> MC0/1 ADBUS open bus
 			memmap[1] = unmapped_page_adbus;
 		}
+		return;
 	}
 	if(nc3000mode){
 		// SPDC1064 p.4 & p.13: $0019 bits 2:0 = RAMS[2:0]
@@ -290,16 +307,24 @@ void Switch0x2000(){
 			ram02, ram02, ram04, ram06, ram08, ram0a, ram0c, ram0e
 		};
 		memmap[1] = rams_pages[ram_io[0x19] & 0x07];
+		return;
 	}
 	if(pc1000mode){
 		memmap[1] = ram02;
+		return;
 	}
+	assert(false);
 }
 
 void SwitchBbsBios_67(){
 	uint8_t volume_idx = ram_io[0x0D] & 0x03;
 	uint8_t bbs_idx = ram_io[0x0A] & 0x0f;
-	uint8_t** candidate_for_bbs = pc1000mode ? GetVolumm(volume_idx) : nor_banks;
+	uint8_t** candidate_for_bbs = NULL;
+	if (pc1000mode) {
+		candidate_for_bbs = GetVolumm(volume_idx);
+	} else if (nc1020mode || nc2000mode || nc3000mode) {
+		candidate_for_bbs = nor_banks;
+	} else assert(false);
 
 	uint8_t* bbs_pages[0x10];
 	for (int i=0; i<4; i++) {
@@ -316,20 +341,25 @@ void SwitchBbsBios_67(){
 		if (bbs_idx == 1) {
 			memmap[6] = (ram_io[0x0d] & 0x01) ? (nor_banks[0] + 0x6000) : ram04;
 		}
-		return;
-	}
+	} else if (nc1020mode || nc2000mode || nc3000mode) {
+		bool exc = ram_io[0x1A] & 0x80;
+		bool ramv = nc2k_states.ext_reg[0x25] & 0x80;
+		uint8_t* unmapped = get_unmapped_page();
 
-	bool exc = ram_io[0x1A] & 0x80;
-	bool ramv = nc2k_states.ext_reg[0x25] & 0x80;
-	uint8_t* unmapped = nc3000mode ? unmapped_page_float : unmapped_page_adbus;
-
-	if (exc && volume_idx != 0) {
-		memmap[6] = unmapped;
-		memmap[7] = unmapped;
-	}
-	if (bbs_idx == 1) {
-		memmap[6] = (volume_idx == 0 || ramv) ? (nc3000mode ? ram06 : ram04) : unmapped;
-	}
+		if (exc && volume_idx != 0) {
+			memmap[6] = unmapped;
+			memmap[7] = unmapped;
+		}
+		if (bbs_idx == 1) {
+			if (volume_idx == 0 || ramv) {
+				if (nc3000mode) memmap[6] = ram06;
+				else if (nc1020mode || nc2000mode) memmap[6] = ram04;
+				else assert(false);
+			} else {
+				memmap[6] = unmapped;
+			}
+		}
+	} else assert(false);
 }
 void SwitchZP40(){
 	uint8_t value= ram_io[0xf];
