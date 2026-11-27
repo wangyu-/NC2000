@@ -108,6 +108,7 @@ public:
             sw_reset();
         } else if (value & kCtrlWakeup) {
             sleeping_ = false;
+            tx_busy_ = false;
             // Hardware wakeup preserves volume and mode; only clears partial packet state.
             core_.clear_packet();
         }
@@ -173,6 +174,7 @@ public:
                 if (high == 0x80) {
                     if (debug_level >= 2) std::printf("[DSP] sleep (%04x)\n", cmd);
                     sleeping_ = true;
+                    tx_busy_ = false;
                 }
                 break;
 
