@@ -12,8 +12,8 @@ void dsp_write_data_high(uint8_t value);
 // Hardware reset (cold boot / machine reload)
 void dsp_hw_reset();
 
-// Advance DSP internal 8 kHz DAC clock by `samples` and push output to host audio sink
-void dsp_tick(int samples);
+// Advance DSP clocks & internal timers across (last_cycles, cycles]
+void dsp_step(uint64_t last_cycles, uint64_t cycles);
 
 // DSP internal PCM FIFO backpressure status & logging control
 bool dsp_is_busy();

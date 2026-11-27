@@ -356,5 +356,5 @@ void cpu_run3(){
 				}
 		}
 	}
-	dsp_tick(trigger_x_times_per_s(100)*(long long)(DSP_AUDIO_HZ)/100);
+	dsp_step(last_cycles, cycles);
 }

@@ -35,21 +35,34 @@ constexpr uint8_t kCtrlWakeup = 0x80;   // B7: wake up
 constexpr uint8_t kCtrlReset = 0x40;    // B6: software reset
 
 // Internal 8 kHz PCM output FIFO watermarks (unit: samples @ 8 kHz).
-constexpr size_t kPcmFifoBusyThreshold = 5000;  // 625 ms
+// Kept at 250 ms so SLEEP (0x8000) draining pcm_fifo_ always completes well under
+// the 6502 BIOS 2-NMI (0.5-1.0 s) watchdog while keeping >10x margin over SDL callbacks.
+constexpr size_t kPcmFifoBusyThreshold = 2000;  // 250 ms
 constexpr size_t kPcmFifoDropLimit = 10000;     // 1250 ms
+
+// Host SDL audio staging batch (80 samples @ 8 kHz = 10 ms, flushed at most at 100 Hz).
+constexpr int kHostAudioBatchSamples = 80;
+constexpr uint64_t kHostAudioFlushHz = 100;
+
+// Exact floor(c * freq / CYCLES_SECOND) without 64-bit mul overflow at large cycle counts.
+inline uint64_t ticks_at_freq(uint64_t c, uint64_t freq) {
+    return (c / CYCLES_SECOND) * freq + (c % CYCLES_SECOND) * freq / CYCLES_SECOND;
+}
 
 class Spds104a {
 public:
     Spds104a()
         : sleeping_(false),
+          sleep_pending_(false),
           loopback_(false),
           tx_busy_(false),
           data_low_(0),
           mode_(DspMode::Celp),
-          cut_head_(0),
+          head_skip_(0),
           cut_tail_(0),
           cut_frames_(0),
-          word_data_cnt_(0),
+          syllable_frame_(0),
+          host_out_count_(0),
           log_level_(1) {}
 
     void set_log_level(int level) {
@@ -66,6 +79,7 @@ public:
         sw_reset();
         data_low_ = 0;
         pcm_fifo_.clear();
+        host_out_count_ = 0;
     }
 
     uint8_t read_status() {
@@ -108,6 +122,7 @@ public:
             sw_reset();
         } else if (value & kCtrlWakeup) {
             sleeping_ = false;
+            sleep_pending_ = false;
             tx_busy_ = false;
             // Hardware wakeup preserves volume and mode; only clears partial packet state.
             core_.clear_packet();
@@ -144,9 +159,9 @@ public:
                 if (log_level_ >= 1) std::printf("[DSP] mode PCM -> CELP\n");
                 mode_ = DspMode::Celp;
             } else {
-                latch_busy_if_needed();
                 int16_t sample = core_.decode_pcm_word(cmd);
                 push_pcm(&sample, 1);
+                latch_busy_if_needed();
             }
             return;
         }
@@ -170,11 +185,19 @@ public:
 
             case 0x8:
                 // SLEEP (0x80xx): hardware decodes high byte 0x80 regardless of low byte
-                // (nc2600 factory test at 0x1f68d writes $33=#$80 before $32=#$00, sending 0x80FF)
+                // (nc2600 factory test at 0x1f68d writes $33=#$80 before $32=#$00, sending 0x80FF).
+                // Per SPDS104A manual p.23/26, normal SLEEP waits until queued audio finishes
+                // playing before asserting $30 bit 7 (sleeping).
                 if (high == 0x80) {
-                    if (debug_level >= 2) std::printf("[DSP] sleep (%04x)\n", cmd);
-                    sleeping_ = true;
+                    if (debug_level >= 2) {
+                        std::printf("[DSP] sleep (%04x, pending_pcm=%zu)\n", cmd, pcm_fifo_.size());
+                    }
                     tx_busy_ = false;
+                    if (pcm_fifo_.empty()) {
+                        finish_sleep();
+                    } else {
+                        sleep_pending_ = true;
+                    }
                 }
                 break;
 
@@ -210,12 +233,9 @@ public:
                 break;
 
             case 0xE:
-                // 0xE000: CMD_DELAY / flush pending packet & syllable buffer
+                // 0xE000: CMD_DELAY (Not Defined / NOP in SPDS104A; used as a handshake delay word before 0xFFFF / 0x8000)
                 if (high == 0xE0) {
-                    if (debug_level >= 1) std::printf("[DSP] flush (%04x)\n", cmd);
-                    core_.clear_packet();
-                    word_data_cnt_ = 0;
-                    word_buf_.clear();
+                    if (debug_level >= 1) std::printf("[DSP] nop/delay (%04x)\n", cmd);
                 }
                 break;
 
@@ -232,31 +252,66 @@ public:
         }
     }
 
-    // Drain up to `samples` at emulated 8 kHz DAC clock and forward to host SDL audio sink.
-    void tick(int samples) {
-        if (samples <= 0) return;
+    // Advance DSP cycle-level timers and 8 kHz DAC clock across (last_cycles, cycles].
+    void step(uint64_t last_cycles, uint64_t cycles) {
+        if (cycles <= last_cycles || CYCLES_SECOND == 0) return;
 
-        int16_t batch[256];
-        int remaining = samples;
-        while (remaining > 0 && !pcm_fifo_.empty()) {
-            int n = std::min(remaining, static_cast<int>(sizeof(batch) / sizeof(batch[0])));
-            int actual = 0;
-            while (actual < n && !pcm_fifo_.empty()) {
-                batch[actual++] = pcm_fifo_.front();
-                pcm_fifo_.pop_front();
-            }
-            if (actual > 0) {
-                sound_push_dsp_samples(batch, actual);
-                remaining -= actual;
+        const uint64_t delta_cycles = cycles - last_cycles;
+        step_timers(delta_cycles);
+
+        const uint64_t dac_samples =
+            ticks_at_freq(cycles, DSP_AUDIO_HZ) - ticks_at_freq(last_cycles, DSP_AUDIO_HZ);
+        if (dac_samples > 0) {
+            step_dac(dac_samples);
+        }
+
+        if (sleep_pending_ && pcm_fifo_.empty()) {
+            finish_sleep();
+        }
+
+        if (host_out_count_ > 0 &&
+            ticks_at_freq(cycles, kHostAudioFlushHz) != ticks_at_freq(last_cycles, kHostAudioFlushHz)) {
+            flush_host_audio();
+        }
+    }
+
+private:
+    // Cycle-resolution hardware timing hook (handshake / wakeup / reset / sleep / 0xD001 timers).
+    void step_timers(uint64_t /*delta_cycles*/) {}
+
+    // Drain `samples` at the emulated 8 kHz DAC clock and stage into host SDL audio batches.
+    void step_dac(uint64_t samples) {
+        while (samples > 0 && !pcm_fifo_.empty()) {
+            host_out_buf_[host_out_count_++] = pcm_fifo_.front();
+            pcm_fifo_.pop_front();
+            --samples;
+            if (host_out_count_ == kHostAudioBatchSamples) {
+                flush_host_audio();
             }
         }
 
         if (!is_busy()) {
             tx_busy_ = false;
         }
+
+        if (sleep_pending_ && pcm_fifo_.empty()) {
+            finish_sleep();
+        }
     }
 
-private:
+    void finish_sleep() {
+        flush_host_audio();
+        sleeping_ = true;
+        sleep_pending_ = false;
+        tx_busy_ = false;
+    }
+
+    void flush_host_audio() {
+        if (host_out_count_ > 0) {
+            sound_push_dsp_samples(host_out_buf_, host_out_count_);
+            host_out_count_ = 0;
+        }
+    }
     // Software reset ($30 bit 6): preserves forward-data latch (per datasheet p.5) and queued PCM tail.
     void sw_reset() {
         if (log_level_ >= 1) {
@@ -266,27 +321,29 @@ private:
             }
         }
         sleeping_ = false;
+        sleep_pending_ = false;
         loopback_ = false;
         tx_busy_ = false;
         rx_fifo_.clear();
 
         mode_ = DspMode::Celp;
-        cut_head_ = 0;
+        head_skip_ = 0;
         cut_tail_ = 0;
         cut_frames_ = 0;
-        word_data_cnt_ = 0;
-        word_buf_.clear();
+        syllable_frame_ = 0;
         core_.reset();
     }
 
     void reset_syllable() {
         core_.reset_decoder();
-        word_data_cnt_ = 0;
-        word_buf_.clear();
+        head_skip_ = 0;
+        cut_tail_ = 0;
+        cut_frames_ = 0;
+        syllable_frame_ = 0;
     }
 
     void latch_busy_if_needed() {
-        if (!sleeping_ && is_busy()) {
+        if (!sleeping_ && !sleep_pending_ && is_busy()) {
             tx_busy_ = true;
         }
     }
@@ -319,16 +376,33 @@ private:
         }
 
         latch_busy_if_needed();
-        ++word_data_cnt_;
+        frame_scratch_.clear();
+        if (!core_.feed_celp_word(word, frame_scratch_)) {
+            return;
+        }
 
         if (mode_ == DspMode::Word || mode_ == DspMode::Diphone) {
-            core_.feed_celp_word(word, word_buf_);
-        } else {
-            frame_scratch_.clear();
-            if (core_.feed_celp_word(word, frame_scratch_)) {
-                push_pcm(frame_scratch_.data(), frame_scratch_.size());
+            // Stream-trim each decoded frame on the fly using 0xC2/0xC4/0xC8 parameters
+            // (real SPDS104A streams frame-by-frame rather than buffering an entire syllable).
+            const int n = static_cast<int>(frame_scratch_.size());
+            int end = n;
+            if (cut_tail_ != 0) {
+                if (syllable_frame_ == cut_frames_) {
+                    end = std::min(cut_tail_, n);
+                } else if (syllable_frame_ > cut_frames_) {
+                    end = 0;
+                }
             }
+            const int start = std::min(head_skip_, end);
+            head_skip_ -= std::min(head_skip_, n);
+            if (end > start) {
+                push_pcm(frame_scratch_.data() + start, static_cast<size_t>(end - start));
+            }
+            ++syllable_frame_;
+        } else {
+            push_pcm(frame_scratch_.data(), frame_scratch_.size());
         }
+        latch_busy_if_needed();
     }
 
     void handle_mode_switch(uint8_t low) {
@@ -346,7 +420,10 @@ private:
                         static_cast<unsigned>(mode_), static_cast<unsigned>(next));
         }
         mode_ = next;
-        word_data_cnt_ = 0;
+        head_skip_ = 0;
+        cut_tail_ = 0;
+        cut_frames_ = 0;
+        syllable_frame_ = 0;
         core_.clear_packet();
     }
 
@@ -358,45 +435,21 @@ private:
 
         switch (high) {
             case 0xC2:
-                cut_head_ = low;
-                word_data_cnt_ = 0;
+                head_skip_ = low;
+                syllable_frame_ = 0;
                 break;
             case 0xC4:
                 cut_tail_ = low;
-                word_data_cnt_ = 0;
+                syllable_frame_ = 0;
                 break;
             case 0xC8:
                 cut_frames_ = low;
-                word_data_cnt_ = 0;
+                syllable_frame_ = 0;
                 break;
             case 0xC1:
-            case 0xC3: {
-                if (word_data_cnt_ % DspCore::kWordsPerFrame != 0) {
-                    if (log_level_ >= 1) {
-                        std::printf("[DSP] word_data_cnt=%d not multiple of 15 on %02x, reset syllable\n",
-                                    word_data_cnt_, high);
-                    }
-                    reset_syllable();
-                    return;
-                }
-                int num_frames = word_data_cnt_ / DspCore::kWordsPerFrame;
-                int end = (cut_tail_ == 0)
-                    ? (DspCore::kMaxFrameSamples * num_frames)
-                    : (cut_tail_ + DspCore::kMaxFrameSamples * (num_frames - 1));
-                int buf_sz = static_cast<int>(word_buf_.size());
-                if (end > buf_sz) {
-                    if (log_level_ >= 1) {
-                        std::printf("[DSP] syllable end=%d > buf_size=%d, clamping\n", end, buf_sz);
-                    }
-                    end = buf_sz;
-                }
-                int start = std::max(0, std::min(cut_head_, end));
-                if (end > start) {
-                    push_pcm(word_buf_.data() + start, static_cast<size_t>(end - start));
-                }
+            case 0xC3:
                 reset_syllable();
                 break;
-            }
             default:
                 if (log_level_ >= 1) {
                     std::printf("[DSP] unhandled word cmd %02x %02x\n", high, low);
@@ -407,6 +460,7 @@ private:
 
     // Hardware interface registers (SPDS104A-03B p.5)
     bool sleeping_;
+    bool sleep_pending_;
     bool loopback_;
     bool tx_busy_;
     uint8_t data_low_;
@@ -414,17 +468,20 @@ private:
     DspCore core_;
     DspMode mode_;
 
-    // WORD_MODE / DIPHONE syllable assembly & trimming
-    std::vector<int16_t> word_buf_;
+    // WORD_MODE / DIPHONE streaming syllable trimming (0xC2/0xC4/0xC8)
     std::vector<int16_t> frame_scratch_;
-    int cut_head_;
+    int head_skip_;
     int cut_tail_;
     int cut_frames_;
-    int word_data_cnt_;
+    int syllable_frame_;
 
     // Host bus RX FIFO (DSP -> 6502) and internal 8 kHz PCM output FIFO
     std::deque<uint8_t> rx_fifo_;
     std::deque<int16_t> pcm_fifo_;
+
+    // Staging buffer to batch per-sample DAC pops before locking host SDL audio
+    int16_t host_out_buf_[kHostAudioBatchSamples];
+    int host_out_count_;
 
     int log_level_;
 };
@@ -439,6 +496,6 @@ void dsp_write_ctrl(uint8_t value) { g_dsp.write_ctrl(value); }
 void dsp_write_data_low(uint8_t value) { g_dsp.write_data_low(value); }
 void dsp_write_data_high(uint8_t value) { g_dsp.write_data_high(value); }
 void dsp_hw_reset() { g_dsp.hw_reset(); }
-void dsp_tick(int samples) { g_dsp.tick(samples); }
+void dsp_step(uint64_t last_cycles, uint64_t cycles) { g_dsp.step(last_cycles, cycles); }
 bool dsp_is_busy() { return g_dsp.is_busy(); }
 void dsp_set_log_level(int level) { g_dsp.set_log_level(level); }
