@@ -143,6 +143,14 @@ public:
         const uint16_t cmd = static_cast<uint16_t>((static_cast<uint16_t>(high) << 8) | low);
         core_.set_dual_mode(nc2000mode);
 
+        if (sleeping_ || sleep_pending_) {
+            if (debug_level >= 1) {
+                std::printf("[DSP] ignored word %04x while %s\n",
+                            cmd, sleeping_ ? "sleeping" : "sleep_pending");
+            }
+            return;
+        }
+
         if (log_level_ >= 3) {
             std::printf("[DSP] got word %04x (mode=%u)\n", cmd, static_cast<unsigned>(mode_));
         }
@@ -237,16 +245,15 @@ public:
                 }
                 break;
 
-            case 0x9:
-                // Volume control: 0x9000..0x93FF (Q8 gain 0.0x .. ~4.0x)
-                if (high <= 0x93) {
-                    int vol = ((high & 0x03) << 8) | low;
-                    core_.set_volume_q8(vol);
-                    if (log_level_ >= 2) {
-                        std::printf("[DSP] volume=0x%03x (%.2fx)\n", vol, vol / 256.0);
-                    }
+            case 0x9: {
+                // Volume control (SPDS104A manual p.18 Note 5: b10..b11 don't care, b0..b9 = Q8 gain)
+                int vol = ((high & 0x03) << 8) | low;
+                core_.set_volume_q8(vol);
+                if (log_level_ >= 2) {
+                    std::printf("[DSP] volume=0x%03x (%.2fx)\n", vol, vol / 256.0);
                 }
                 break;
+            }
 
             case 0xA:
                 if (high == 0xA0) {
@@ -277,10 +284,8 @@ public:
                 break;
 
             case 0xF:
-                // 0xF000 (SPEECH_END) / 0xFFFF
-                if (high == 0xF0 || cmd == 0xFFFF) {
-                    reset_syllable();
-                }
+                // Speech End (SPDS104A manual p.17 Table 3: ID 1111 = 0xF000..0xFFFF)
+                reset_syllable();
                 break;
 
             default:
@@ -348,10 +353,6 @@ private:
 
         if (!is_busy()) {
             tx_busy_ = false;
-        }
-
-        if (sleep_pending_ && pcm_fifo_.empty()) {
-            finish_sleep();
         }
     }
 
@@ -499,14 +500,17 @@ private:
             case 0xC2:
                 head_skip_ = low;
                 syllable_frame_ = 0;
+                core_.clear_packet();
                 break;
             case 0xC4:
                 cut_tail_ = low;
                 syllable_frame_ = 0;
+                core_.clear_packet();
                 break;
             case 0xC8:
                 cut_frames_ = low;
                 syllable_frame_ = 0;
+                core_.clear_packet();
                 break;
             case 0xC1:
             case 0xC3:

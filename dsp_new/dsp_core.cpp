@@ -219,7 +219,7 @@ bool DspCore::feed_celp_word(uint16_t word, std::vector<int16_t>& out) {
         packets_[packet_off_++] = word;
         return false;
     }
-    if (pkg_id < 6 && ((packet_off_ % 3) + 3) == pkg_id) {
+    if (packet_off_ >= 3 && pkg_id < 6 && ((packet_off_ % 3) + 3) == pkg_id) {
         packets_[packet_off_++] = word;
         if (packet_off_ == kWordsPerFrame) {
             packet_off_ = 0;
@@ -239,14 +239,14 @@ void DspCore::unpack_and_decode_frame(std::vector<int16_t>& out) {
 
     frame[0] = static_cast<uint8_t>((mode_bits << 4) | (p[0] & 0x0F));
     frame[1] = static_cast<uint8_t>(((p[0] >> 4) & 0x0F) | (((p[0] >> 8) & 0x07) << 4) | ((p[1] & 0x01) << 7));
-    frame[2] = static_cast<uint8_t>(((p[1] >> 1) & 0x7F) | (((p[1] >> 8) & 0x01) << 7));
+    frame[2] = static_cast<uint8_t>((p[1] >> 1) & 0xFF);
     frame[3] = static_cast<uint8_t>(((p[1] >> 9) & 0x03) | ((p[2] & 0x3F) << 2));
     frame[4] = static_cast<uint8_t>(((p[2] >> 6) & 0x03) | (((p[2] >> 8) & 0x0F) << 2) | ((p[3] & 0x03) << 6));
     frame[5] = static_cast<uint8_t>(((p[3] >> 2) & 0x3F) | ((p[4] & 0x03) << 6));
     frame[6] = static_cast<uint8_t>(((p[4] >> 2) & 0x3F) | (((p[4] >> 8) & 0x03) << 6));
     frame[7] = static_cast<uint8_t>(p[5] & 0xFF);
     frame[8] = static_cast<uint8_t>(((p[5] >> 8) & 0x03) | ((p[6] & 0x1F) << 2) | ((p[7] & 0x01) << 7));
-    frame[9] = static_cast<uint8_t>(((p[7] >> 1) & 0x7F) | ((p[7] >> 1) & 0x80));
+    frame[9] = static_cast<uint8_t>((p[7] >> 1) & 0xFF);
     frame[10] = static_cast<uint8_t>(((p[7] >> 9) & 0x01) | ((p[8] & 0x7F) << 1));
     frame[11] = static_cast<uint8_t>(((p[8] >> 7) & 0x01) | (((p[8] >> 8) & 0x03) << 1) | ((p[9] & 0x1F) << 3));
     frame[12] = static_cast<uint8_t>(((p[9] >> 5) & 0x07) | ((p[10] & 0x1F) << 3));
