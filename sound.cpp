@@ -110,20 +110,18 @@ void write_audio_dump_file(unsigned char *p, int size){
 
 const int dsp_drop_len_host = 10000;
 
-// Adaptive DSP playback rate control (0.75x .. 1.30x):
-// 1) Start slightly stretched (0.985x, down to 0.75x when low) after a small prebuffer
-//    so a nominal 8 kHz or slower producer stays ahead of SDL without underrunning.
-// 2) If host queue builds up well before dsp_drop_len_host, gently compress (up to 1.30x)
-//    to drain the backlog without hard-dropping samples.
-static constexpr int    kDspPrebufferSamples = 480;   // 60 ms @ 8 kHz
-static constexpr int    kDspMinWatermark     = 200;   // 25 ms: max stretch (-25%)
-static constexpr int    kDspLowWatermark     = 480;   // 60 ms: initial stretch (-1.5%)
-static constexpr int    kDspTargetWatermark  = 800;   // 100 ms: nominal 1.00x
-static constexpr int    kDspHighWatermark    = 2400;  // 300 ms: begin compressing backlog
-static constexpr int    kDspMaxWatermark     = 8000;  // 1000 ms: max compress (+30%)
-static constexpr double kDspInitScale        = 0.985;
-static constexpr double kDspMinScale         = 0.75;
-static constexpr double kDspMaxScale         = 1.30;
+// Adaptive DSP playback rate control (±3% max, early intervention):
+// 1) Prebuffer 600 samples (75 ms) and start at -3% (0.97x) so any producer down to
+//    ~7760 Hz builds comfortable headroom (100-200 ms) instead of hovering near underrun.
+// 2) Hold nominal 1.00x across [1600, 3200], then ramp early to +3% (1.03x) by 6000
+//    (still 4000 samples / 500 ms below dsp_drop_len_host = 10000) to absorb backlog.
+static constexpr int    kDspPrebufferSamples = 600;   // 75 ms @ 8 kHz
+static constexpr int    kDspMinWatermark     = 800;   // 100 ms: full -3% stretch below this
+static constexpr int    kDspTargetWatermark  = 1600;  // 200 ms: nominal 1.00x
+static constexpr int    kDspHighWatermark    = 3200;  // 400 ms: begin compressing backlog
+static constexpr int    kDspMaxWatermark     = 6000;  // 750 ms: full +3% compress (4000 below drop)
+static constexpr double kDspMinScale         = 0.97;
+static constexpr double kDspMaxScale         = 1.03;
 
 // Linear resampler state for DSP -> output
 static double g_dsp_phase = 0.0;  // in [0,1)
@@ -132,7 +130,7 @@ static float  g_dsp_s1 = 0.0f;    // next DSP sample (lookahead)
 static bool   g_dsp_buffering = true;
 static int    g_dsp_idle_cbs = 0;
 static int    g_dsp_pushed_since_cb = 0;
-static double g_dsp_rate_scale = kDspInitScale;
+static double g_dsp_rate_scale = kDspMinScale;
 
 static const double g_dsp_ratio = (double)DSP_AUDIO_HZ / (double)BEEPER_AUDIO_HZ;
 
@@ -183,28 +181,25 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
     if (g_dsp_buffering) {
         if (q >= kDspPrebufferSamples || (q > 0 && !producer_active)) {
             g_dsp_buffering = false;
-            g_dsp_rate_scale = kDspInitScale;
+            g_dsp_rate_scale = kDspMinScale;
         }
     } else {
         double target_scale;
-        if (!producer_active && q <= kDspTargetWatermark) {
+        if (!producer_active && q <= kDspHighWatermark) {
             // Draining tail after speech/PCM ended: play out at nominal 1.0x speed.
             target_scale = 1.0;
         } else if (q <= kDspMinWatermark) {
             target_scale = kDspMinScale;
-        } else if (q <= kDspLowWatermark) {
-            double t = (double)(q - kDspMinWatermark) / (kDspLowWatermark - kDspMinWatermark);
-            target_scale = kDspMinScale + (kDspInitScale - kDspMinScale) * t;
         } else if (q <= kDspTargetWatermark) {
-            double t = (double)(q - kDspLowWatermark) / (kDspTargetWatermark - kDspLowWatermark);
-            target_scale = kDspInitScale + (1.0 - kDspInitScale) * t;
+            double t = (double)(q - kDspMinWatermark) / (kDspTargetWatermark - kDspMinWatermark);
+            target_scale = kDspMinScale + (1.0 - kDspMinScale) * t;
         } else if (q <= kDspHighWatermark) {
             target_scale = 1.0;
         } else {
             double t = std::min(1.0, (double)(q - kDspHighWatermark) / (kDspMaxWatermark - kDspHighWatermark));
             target_scale = 1.0 + (kDspMaxScale - 1.0) * t;
         }
-        g_dsp_rate_scale += (target_scale - g_dsp_rate_scale) * 0.15;
+        g_dsp_rate_scale += (target_scale - g_dsp_rate_scale) * 0.25;
     }
 
     const double dsp_ratio_adjusted = g_dsp_ratio * g_dsp_rate_scale;
@@ -241,7 +236,7 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
                         g_dsp_s1 = 0.0f;
                         g_dsp_phase = 0.0;
                         g_dsp_buffering = true;
-                        g_dsp_rate_scale = kDspInitScale;
+                        g_dsp_rate_scale = kDspMinScale;
                         break;
                     }
                 }
@@ -274,7 +269,7 @@ void init_audio() {
     g_dsp_buffering = true;
     g_dsp_idle_cbs = 0;
     g_dsp_pushed_since_cb = 0;
-    g_dsp_rate_scale = kDspInitScale;
+    g_dsp_rate_scale = kDspMinScale;
 
     if(g_audio_device){
         //if previous audio device is not correctly shutdhown.

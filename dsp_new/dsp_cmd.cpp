@@ -50,8 +50,8 @@ constexpr uint8_t kCtrlReset = 0x40;    // B6: software reset
 // Kept at 250 ms so SLEEP (0x8000) draining pcm_fifo_ always completes well under
 // the 6502 BIOS 2-NMI (0.5-1.0 s) watchdog while keeping >10x margin over SDL callbacks.
 constexpr size_t kPcmFifoBusyThreshold = 2000;   // 250 ms
-constexpr size_t kPcmFifoSpillThreshold = 3000;  // 375 ms (spill excess in PCM_MODE to host resampler)
-constexpr size_t kPcmFifoDropLimit = 4000;       // 500 ms
+constexpr size_t kPcmFifoSpillThreshold = 6000;  // 750 ms (spill excess in PCM_MODE to host resampler)
+constexpr size_t kPcmFifoDropLimit = 10000;      // 1250 ms
 
 // Host SDL audio staging batch (80 samples @ 8 kHz = 10 ms, flushed at most at 100 Hz).
 constexpr int kHostAudioBatchSamples = 80;
