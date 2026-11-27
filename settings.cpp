@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include "comm.h"
-#include "dsp_new/dsp.h"
+#include "dsp_new/dsp_cmd.h"
 #include "iv_uart.h"
 #include "nor.h"
 #include "settings.h"
@@ -454,7 +454,7 @@ void process_args(int argc, char *argv[])
 		timer01_speed_fix = 1.0/oc_factor;
 	}
 
-	set_dsp_log_level(debug_level);
+	dsp_set_log_level(debug_level);
 
 	int mode_cnt=0;
 	mode_cnt+= nc1020mode;

@@ -4,8 +4,7 @@
 #include "nand.h"
 #include "state.h"
 #include "ram.h"
-#include <deque>
-#include "dsp_new/dsp.h"
+#include "dsp_new/dsp_cmd.h"
 #include "mem.h"
 #include <cassert>
 #include "CC800IOName.h"
@@ -15,11 +14,6 @@
 #include "timer_ab.h"
 
 extern nc2k_states_t nc2k_states;
-extern Dsp dsp;
-
-static int &dspRetData=nc2k_states.dspRetData;
-static bool &dspTrans=nc2k_states.dspTrans;
-static bool &dspSleep=nc2k_states.dspSleep;
 
 const int INT_TIME_BASE = 8;
 
@@ -31,174 +25,6 @@ static uint8_t * ext_reg=nc2k_states.ext_reg;
 static unsigned char* ioReg=nc2k_states.ram_io;
 
 uint8_t &lcdon=nc2k_states.lcdon;
-
-/////d0应该是未定指令
-////不处理这个有声读物会死机
-bool &dsp_0xd0=nc2k_states.dsp_0xd0;
-
-int &dsp_0x7001_0x7002=nc2k_states.dsp_0x7001_0x7002;
-
-//bool dsp_0x91_volume_adjust=false;
-
-bool &dsp_data_feeded_but_hasnt_fetched=nc2k_states.dsp_data_feeded_but_hasnt_fetched;
-unsigned char &dsp_data_low=nc2k_states.dsp_data_low;
-
-static std::deque<uint8_t> dsp_rx_fifo;
-
-int dsp31read_RetData() {
-    if (!dsp_rx_fifo.empty()) {
-        int ret = dsp_rx_fifo.front();
-        dsp_rx_fifo.pop_front();
-        return ret;
-    }
-    if (dspRetData != -1) {
-        int ret = dspRetData;
-        dspRetData = -1;
-        return ret;
-    }
-    return 0xff;
-}
-
-
-int dsp30read_Stat() {
-    const int DSP_SLEEP_FLAG = 0x80;
-    const int DSP_RETURN_DATA_READY_FLAG = 0x40;
-    const int DSP_DATA_HASNT_FETCHED_FLAG = 0x30;
-
-    int value = 0;
-
-    if (dspSleep)
-        value |= DSP_SLEEP_FLAG;
-
-    bool sound_busy(void);
-    if (!dspSleep && sound_busy()) {
-        if (dsp_data_feeded_but_hasnt_fetched) {
-            value |= DSP_DATA_HASNT_FETCHED_FLAG;
-        }
-    } else {
-        dsp_data_feeded_but_hasnt_fetched = false;
-    }
-
-    if (!dsp_rx_fifo.empty() || dspRetData != -1) {
-        value |= DSP_RETURN_DATA_READY_FLAG;
-    }
-
-    if (debug_level >= 3) {
-        printf("dspStat() return %02x\n", value);
-    }
-    return value;
-}
-
-void dsp30write_reset_wake(int value) {
-    const int DSP_WAKEUP_FLAG = 0x80;
-    const int DSP_RESET_FLAG = 0x40;
-    dsp.set_dual_mode(nc2000mode);
-
-    if (value & DSP_RESET_FLAG) {
-        dspSleep = false;
-        dspTrans = false;
-        dspRetData = -1;
-        dsp_0x7001_0x7002 = 0;
-        dsp_0xd0 = false;
-        dsp_data_feeded_but_hasnt_fetched = false;
-        dsp_rx_fifo.clear();
-        dsp.reset();
-    } else if (value & DSP_WAKEUP_FLAG) {
-        dspSleep = false;
-        dsp.wakeup();
-    }
-}
-
-void dsp33write_cmd_data(int value) {
-    const int high = value & 0xff;
-    const int low = dsp_data_low & 0xff;
-    const int cmd = (high << 8) | low;
-    dsp.set_dual_mode(nc2000mode);
-
-    // 1. Loopback / trans test mode (0x7004): only 0xFFFF exits; all other words echo low byte
-    if (dspTrans) {
-        if (cmd == 0xffff) {
-            if (debug_level >= 1) printf("[dsp] exit dsp trans on 0xffff\n");
-            dspTrans = false;
-        } else {
-            dsp_rx_fifo.push_back(static_cast<uint8_t>(low));
-        }
-        return;
-    }
-
-    // 2. Raw PCM streaming mode (0xA004): 0xFFxx exits back to CELP mode
-    bool sound_busy(void);
-    if (dsp.dspMode == 4) {
-        if (high != 0xff && !dspSleep && sound_busy()) {
-            dsp_data_feeded_but_hasnt_fetched = true;
-        }
-        dsp.write(high, low);
-        return;
-    }
-
-    // 3. Unified command & CELP packet dispatch
-    if (high < 0x60) {
-        if (!dspSleep && sound_busy()) {
-            dsp_data_feeded_but_hasnt_fetched = true;
-        }
-        dsp.write(high, low);
-        return;
-    }
-
-    switch (high >> 4) {
-        case 0x7:
-            if (cmd == 0x7001 || cmd == 0x7002) {
-                dsp_rx_fifo.push_back(0x06);
-            } else if (cmd == 0x7004) {
-                if (debug_level >= 1) printf("[dsp] got cmd 0x7004, enable dsp trans\n");
-                dspTrans = true;
-            }
-            break;
-        case 0x8:
-            // SLEEP (0x80xx): real SPDS104A decodes high byte 0x80 regardless of low byte
-            // (nc2600 factory test at 0x1f68d writes $33=#$80 before $32=#$00, sending 0x80ff)
-            if (high == 0x80) {
-                if (debug_level >= 2) printf("[dsp] got cmd %04x, enable dsp sleep\n", cmd);
-                dspSleep = true;
-            }
-            break;
-        case 0x9:
-            // 0x9000..0x93FF: Q8 volume control (0.0x .. ~4.0x)
-            if (high <= 0x93) {
-                dsp.write(high, low);
-            }
-            break;
-        case 0xa:
-            if (high == 0xa0) {
-                dsp.write(high, low);
-            }
-            break;
-        case 0xc:
-            // TTS WORD_MODE parameters: C1/C2/C3/C4/C8
-            dsp.write(high, low);
-            break;
-        case 0xd:
-            // 0xD000 / 0xD001 sync/status query: returns 0x5A followed by 0xFF
-            if (high == 0xd0) {
-                if (debug_level >= 1) printf("[DSP] got dsp cmd %04x\n", cmd);
-                dsp_rx_fifo.push_back(0x5a);
-                dsp_rx_fifo.push_back(0xff);
-            }
-            break;
-        case 0xe:
-            // 0xE000: CMD_DELAY / flush
-            if (debug_level >= 1) printf("[dsp] got 0xe0 cmd %04x\n", cmd);
-            dsp.write(high, low);
-            break;
-        case 0xf:
-            // 0xF000 (SPEECH_END) / 0xFFFF
-            dsp.write(high, low);
-            break;
-        default:
-            if (debug_level >= 1) printf("[DSP] unhandled dsp cmd %04x\n", cmd);
-            break;
-    }
-}
 
 void setIrqTimeBase() {
     ioReg[io01_int_status] |= INT_TIME_BASE;
@@ -273,9 +99,9 @@ int io_v2_read(int address) {
     if(nc1020mode||pc1000mode) {
         switch(address){
             case 0x20:
-                return dsp30read_Stat();
+                return dsp_read_status();
             case 0x21:
-                return dsp31read_RetData();
+                return dsp_read_data();
         }
     }
     if(nc3000mode){
@@ -298,9 +124,9 @@ int io_v2_read(int address) {
         }
         switch(address){
             case 0x30:
-                return dsp30read_Stat();
+                return dsp_read_status();
             case 0x31:
-                return dsp31read_RetData();
+                return dsp_read_data();
         }
     }
     switch (address) {
@@ -385,13 +211,13 @@ void io_v2_write(int address, int value) {
         }
         switch(address){
             case 0x30:
-                dsp30write_reset_wake(value);
+                dsp_write_ctrl(value);
                 return;
             case 0x33:
-                dsp33write_cmd_data(value);
+                dsp_write_data_high(value);
                 return;
             case 0x32:
-                dsp_data_low=value;
+                dsp_write_data_low(value);
                 return;
         }
     }
@@ -406,13 +232,13 @@ void io_v2_write(int address, int value) {
         }
         switch (address) {
             case 0x20://0x20
-                dsp30write_reset_wake(value);
+                dsp_write_ctrl(value);
                 return;
             case 0x23://0x23
-                dsp33write_cmd_data(value);
+                dsp_write_data_high(value);
                 return;
             case 0x22://0x22
-                dsp_data_low=value;
+                dsp_write_data_low(value);
                 return;
         }
     }

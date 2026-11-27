@@ -4,9 +4,7 @@
 void init_audio();
 void shutdown_audio();
 
-void reset_dsp();
-void write_data_to_dsp(uint8_t, uint8_t);
-void dsp_move(int len /*unit sample*/);
+void sound_push_dsp_samples(const int16_t* samples, int count);
 
 void beeper_on_io_write(int );
 void post_cpu_run_sound_handling();

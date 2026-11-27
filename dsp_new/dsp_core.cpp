@@ -1,34 +1,21 @@
-﻿// Clean-room Sunplus SPDS104A / SPDS104A-03B CELP & PCM DSP emulator.
-// Implements both legacy single-mode (NC1020) and dual-mode S480 (NC2000/NC2600)
-// based on public SPDS102A/SPDS104A bitstream specifications and standard CELP synthesis.
+﻿// Clean-room Sunplus SPDS104A S480 / CELP & PCM audio synthesis core.
+// Pure signal-processing module with zero emulator or I/O dependencies.
 
-#include "dsp.h"
+#include "dsp_core.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 
 namespace {
 
-constexpr int kNoneMode = 0;
-constexpr int kCelpMode = 1;
-constexpr int kWordMode = 2;
-constexpr int kDiphoneMode = 3;
-constexpr int kPcmMode = 4;
-
 constexpr double kPi = 3.14159265358979323846;
 
-bool g_log_info = true;
-bool g_log_verbose = false;
-bool g_log_verbose2 = false;
-
 // Bit allocation per LSP band (3,4,4,4,4,3,3,3,3,3 -> 112 levels total)
-constexpr int kLspBandOffset[Dsp::kOrder] = {0, 8, 24, 40, 56, 72, 80, 88, 96, 104};
+constexpr int kLspBandOffset[DspCore::kOrder] = {0, 8, 24, 40, 56, 72, 80, 88, 96, 104};
 
 // Sunplus SPDS104A / S480 scalar LSP quantization grid in Hz (8 kHz sample rate, Nyquist = 4000 Hz).
-// Required for bitstream interoperability with existing ROM voice data.
 constexpr float kLspFreqHz[112] = {
     // Band 0 (3-bit)
     100.0f, 170.0f, 225.0f, 250.0f, 280.0f, 340.0f, 420.0f, 500.0f,
@@ -56,17 +43,17 @@ constexpr float kLspFreqHz[112] = {
     3190.0f, 3270.0f, 3350.0f, 3420.0f, 3490.0f, 3590.0f, 3710.0f, 3830.0f,
 };
 
-// Legacy SPDS104A (NC1020) 4-bit innovation gain table (interoperability parameter).
+// Legacy SPDS104A (PC1000/NC1020) 4-bit innovation gain table.
 constexpr double kLegacyCGain[16] = {
     0.0, 1.0, 3.0, 13.0, 35.0, 64.0, 98.0, 136.0,
     178.0, 224.0, 278.0, 340.0, 418.0, 520.0, 660.0, 870.0,
 };
 
-// Generated tables (computed once from pure math formulas, zero copied lookup data)
+// Generated tables (computed once from math formulas).
 struct GeneratedTables {
     double dual_cgain[16];
-    double frac_sinc[2][8];        // 8-tap Hamming-windowed sinc for 1/3 and 2/3 sample delay
-    int8_t stochastic_cb[1084];    // Ternary sparse {-1, 0, +1} codebook (~75% zeros)
+    double frac_sinc[2][8];      // 8-tap Hamming-windowed sinc for 1/3 and 2/3 sample delay
+    int8_t stochastic_cb[1084];  // Ternary sparse {-1, 0, +1} codebook (~75% zeros)
 
     GeneratedTables() {
         // Dual-mode (NC2000/NC2600) logarithmic innovation gain:
@@ -95,7 +82,7 @@ struct GeneratedTables {
             }
         }
 
-        // Deterministic sparse ternary stochastic excitation sequence (~75% 0, ~12.5% +1, ~12.5% -1)
+        // Deterministic sparse ternary stochastic excitation (~75% 0, ~12.5% +1, ~12.5% -1)
         uint32_t rng = 0x5A17C3E9u;
         for (int i = 0; i < 1084; ++i) {
             rng ^= rng << 13;
@@ -118,12 +105,12 @@ const GeneratedTables& tables() {
     return kTables;
 }
 
-inline double pitchGain(int gidx) {
+inline double pitch_gain(int gidx) {
     return (gidx & 0x0F) * 0.075;
 }
 
 // Decode C(30, 2) = 435 lexicographical pulse pair index (0 <= p0 < p1 < 30)
-inline void decodePulsePair(int index, int& p0, int& p1) {
+inline void decode_pulse_pair(int index, int& p0, int& p1) {
     if (index < 0) index = 0;
     if (index >= 435) index = 434;
     p0 = 0;
@@ -157,22 +144,11 @@ private:
 
 }  // namespace
 
-void set_dsp_log_level(int level) {
-    g_log_info = level >= 1;
-    g_log_verbose = level >= 2;
-    g_log_verbose2 = level >= 3;
-}
-
-Dsp::Dsp()
-    : dspMode(kCelpMode),
-      callback(nullptr),
-      packet_off_(0),
+DspCore::DspCore()
+    : packet_off_(0),
       dual_mode_(false),
       volume_q8_(0x3FF),
-      cut_head_(0),
-      cut_tail_(0),
-      cut_frames_(0),
-      data_cnt_(0),
+      log_level_(1),
       first_lsp_frame_(true),
       ltp_write_pos_(kLtpHistorySize - 1),
       ltp_read_base_(0),
@@ -182,14 +158,28 @@ Dsp::Dsp()
       subframe_size_(60),
       pulse_decay_(0.5) {
     std::memset(packets_, 0, sizeof(packets_));
-    resetDecoderState();
+    reset_decoder();
 }
 
-void Dsp::set_dual_mode(bool enable) {
+void DspCore::set_dual_mode(bool enable) {
     dual_mode_ = enable;
 }
 
-void Dsp::resetDecoderState() {
+void DspCore::set_volume_q8(int volume_q8) {
+    volume_q8_ = std::max(0, std::min(0x3FF, volume_q8));
+}
+
+void DspCore::set_log_level(int level) {
+    log_level_ = level;
+}
+
+void DspCore::reset() {
+    volume_q8_ = 0x3FF;
+    reset_decoder();
+}
+
+void DspCore::reset_decoder() {
+    packet_off_ = 0;
     first_lsp_frame_ = true;
     std::memset(prev_lsp_hz_, 0, sizeof(prev_lsp_hz_));
     std::memset(curr_lsp_hz_, 0, sizeof(curr_lsp_hz_));
@@ -201,189 +191,45 @@ void Dsp::resetDecoderState() {
     prev_pitch_idx_ = 0;
     pitch_period_ = 13;
     pitch_frac_ = 0;
+    subframe_size_ = 60;
     pulse_decay_ = 0.5;
 }
 
-void Dsp::resetSyllableState() {
-    resetDecoderState();
-    data_cnt_ = 0;
-    packet_off_ = 0;
-    word_buf_.clear();
-}
-
-void Dsp::reset() {
-    if (g_log_info) {
-        std::printf("[DSP] reset\n");
-        if (dspMode != kCelpMode) {
-            std::printf("[DSP] dsp mode change from %02x to %02x by reset\n", dspMode, kCelpMode);
-        }
-    }
-    dspMode = kCelpMode;
-    volume_q8_ = 0x3FF;
-    cut_head_ = 0;
-    cut_tail_ = 0;
-    cut_frames_ = 0;
-    resetSyllableState();
-}
-
-void Dsp::wakeup() {
-    // Hardware WakeUp preserves configured volume and mode; only clear partial packet state.
+void DspCore::clear_packet() {
     packet_off_ = 0;
 }
 
-void Dsp::flush() {
-    // 0xE000 (CMD_DELAY / flush): clear any pending partial packet or syllable buffer.
-    packet_off_ = 0;
-    data_cnt_ = 0;
-    word_buf_.clear();
+int16_t DspCore::decode_pcm_word(uint16_t word) const {
+    int raw = static_cast<int>(word) - 0x8000;
+    int scaled = (raw * volume_q8_) >> 10;
+    if (scaled > 32767) scaled = 32767;
+    if (scaled < -32768) scaled = -32768;
+    return static_cast<int16_t>(scaled);
 }
 
-void Dsp::write(int high, int low) {
-    high &= 0xFF;
-    low &= 0xFF;
-    if (g_log_verbose2) {
-        std::printf("[DSP] got data %02x %02x\n", high, low);
-    }
-
-    // Raw PCM streaming mode: 0xFFxx exits back to CELP mode
-    if (dspMode == kPcmMode) {
-        if (high == 0xFF) {
-            if (g_log_info) {
-                std::printf("[DSP] dsp mode back to 0x01 celp from 0x04 pcm\n");
-            }
-            dspMode = kCelpMode;
-        } else {
-            int raw = ((high << 8) | low) - 0x8000;
-            int scaled = (raw * volume_q8_) >> 10;
-            scaled = std::max(-32768, std::min(32767, scaled));
-            emitSample8k(static_cast<int16_t>(scaled));
-        }
-        return;
-    }
-
-    // CELP frame data packets (Package 0..5 -> high < 0x60)
-    if (high < 0x60) {
-        if (dspMode != kWordMode && dspMode != kCelpMode && dspMode != kDiphoneMode) {
-            if (g_log_verbose) {
-                std::printf("[DSP] got celp data %02x %02x in unexpected %02x mode\n",
-                            high, low, dspMode);
-            }
-            return;
-        }
-        ++data_cnt_;
-        int pkg_id = high >> 4;
-        if (packet_off_ >= 15) {
-            if (g_log_info) std::printf("[DSP] oops packet_off_ out of bound\n");
-            packet_off_ = 0;
-        }
-        if (pkg_id < 3) {
-            packet_off_ = pkg_id;
-            packets_[packet_off_++] = static_cast<uint16_t>((high << 8) | low);
-        } else if (pkg_id < 6 && ((packet_off_ % 3) + 3) == pkg_id) {
-            packets_[packet_off_++] = static_cast<uint16_t>((high << 8) | low);
-            if (packet_off_ == 15) {
-                packet_off_ = 0;
-                unpackAndDecodeFrame();
-            }
-        }
-        return;
-    }
-
-    // Volume control: 0x9000..0x93FF (Q8 gain 0.0x .. ~4.0x)
-    if (high >= 0x90 && high <= 0x93) {
-        volume_q8_ = ((high & 0x03) << 8) | low;
-        if (g_log_verbose) {
-            std::printf("[DSP] volume set to 0x%03x (%.2fx)\n", volume_q8_, volume_q8_ / 256.0);
-        }
-        return;
-    }
-
-    // Mode switch: 0xA0xx
-    if (high == 0xA0) {
-        if (g_log_verbose) {
-            std::printf("[DSP] got dsp mode change cmd %02x %02x\n", high, low);
-        }
-        if (low != kCelpMode && low != kWordMode && low != kDiphoneMode &&
-            low != kPcmMode && low != kNoneMode) {
-            if (g_log_info) std::printf("[DSP] oops invalid dspMode %02x\n", low);
-            reset();
-            return;
-        }
-        if (g_log_info && dspMode != low) {
-            std::printf("[DSP] dsp mode changed from %02x to %02x\n", dspMode, low);
-        }
-        dspMode = low;
-        data_cnt_ = 0;
+bool DspCore::feed_celp_word(uint16_t word, std::vector<int16_t>& out) {
+    int pkg_id = (word >> 12) & 0x0F;
+    if (packet_off_ >= kWordsPerFrame) {
+        if (log_level_ >= 1) std::printf("[DSP] oops packet_off_ out of bound\n");
         packet_off_ = 0;
-        return;
     }
-
-    // TTS WORD_MODE syllable parameters: 0xC1 / 0xC2 / 0xC3 / 0xC4 / 0xC8
-    if ((high & 0xF0) == 0xC0) {
-        if (g_log_verbose) {
-            std::printf("[DSP] got DSP_CMD %02x %02x\n", high, low);
+    if (pkg_id < 3) {
+        packet_off_ = pkg_id;
+        packets_[packet_off_++] = word;
+        return false;
+    }
+    if (pkg_id < 6 && ((packet_off_ % 3) + 3) == pkg_id) {
+        packets_[packet_off_++] = word;
+        if (packet_off_ == kWordsPerFrame) {
+            packet_off_ = 0;
+            unpack_and_decode_frame(out);
+            return true;
         }
-        if (dspMode != kWordMode && dspMode != kDiphoneMode) return;
-
-        if (high == 0xC2) {
-            cut_head_ = low;
-            data_cnt_ = 0;
-        } else if (high == 0xC4) {
-            cut_tail_ = low;
-            data_cnt_ = 0;
-        } else if (high == 0xC8) {
-            cut_frames_ = low;
-            data_cnt_ = 0;
-        } else if (high == 0xC1 || high == 0xC3) {
-            if (data_cnt_ % 15 != 0) {
-                if (g_log_info) {
-                    std::printf("[DSP] oops, data_cnt=%d while got %02x, mod 15 != 0, reset\n",
-                                data_cnt_, high);
-                }
-                resetSyllableState();
-                return;
-            }
-            int num_frames = data_cnt_ / 15;
-            int end = (cut_tail_ == 0) ? (240 * num_frames) : (cut_tail_ + 240 * (num_frames - 1));
-            int buf_sz = static_cast<int>(word_buf_.size());
-            if (end > buf_sz) {
-                if (g_log_info) {
-                    std::printf("[DSP] oops, end=%d buf_size=%d, clamping\n", end, buf_sz);
-                }
-                end = buf_sz;
-            }
-            int start = std::max(0, std::min(cut_head_, end));
-
-            if (callback) {
-                for (int i = start; i < end; ++i) {
-                    int16_t s = word_buf_[i];
-                    callback(reinterpret_cast<unsigned char*>(&s), sizeof(s));
-                }
-            }
-            // Full per-syllable reset (LTP + synthesis IIR state + LSP history + pulse decay)
-            resetSyllableState();
-        } else {
-            if (g_log_info) {
-                std::printf("[DSP] oops, unhandled tts param cmd, high=%02x low=%02x\n", high, low);
-            }
-        }
-        return;
     }
-
-    // 0xE000: CMD_DELAY / flush
-    if (high == 0xE0) {
-        flush();
-        return;
-    }
-
-    // 0xF000 / 0xFFFF: SPEECH_END / stream end
-    if (high == 0xF0 || (high == 0xFF && low == 0xFF)) {
-        resetSyllableState();
-        return;
-    }
+    return false;
 }
 
-void Dsp::unpackAndDecodeFrame() {
+void DspCore::unpack_and_decode_frame(std::vector<int16_t>& out) {
     uint8_t frame[18];
     const uint16_t* p = packets_;
 
@@ -409,11 +255,13 @@ void Dsp::unpackAndDecodeFrame() {
     frame[16] = static_cast<uint8_t>(((p[13] >> 4) & 0x0F) | (((p[13] >> 8) & 0x03) << 4) | ((p[14] & 0x03) << 6));
     frame[17] = static_cast<uint8_t>(((p[14] >> 2) & 0x3F) | (((p[14] >> 8) & 0x03) << 6));
 
-    decodeCelpFrame(frame, mode_bits, short_frame);
+    decode_celp_frame(frame, mode_bits, short_frame, out);
 }
 
-void Dsp::decodeCelpFrame(const uint8_t frame[18], uint8_t mode_bits, bool short_frame) {
+void DspCore::decode_celp_frame(const uint8_t frame[18], uint8_t mode_bits,
+                                bool short_frame, std::vector<int16_t>& out) {
     subframe_size_ = short_frame ? 40 : 60;
+    out.reserve(out.size() + subframe_size_ * 4);
 
     BitReader br(frame);
 
@@ -452,15 +300,15 @@ void Dsp::decodeCelpFrame(const uint8_t frame[18], uint8_t mode_bits, bool short
             int cg_idx = br.read(4);
             int sign1 = br.read(1);
             int sign0 = br.read(1);
-            synthesizeSubframe(sf, pitch_idx, fixpos, grid, pg_idx, cg_idx, sign0, sign1, true);
+            synthesize_subframe(sf, pitch_idx, fixpos, grid, pg_idx, cg_idx, sign0, sign1, true, out);
         } else {
-            (void)br.read(1);        // unused in stochastic mode
+            (void)br.read(1);
             int pg_idx = br.read(4);
             int cg_signed = br.read(5);
-            (void)br.read(1);        // unused in stochastic mode
+            (void)br.read(1);
             int cg_idx = cg_signed & 0x0F;
             int cg_sign = (cg_signed >> 4) & 1;
-            synthesizeSubframe(sf, pitch_idx, fixpos, 0, pg_idx, cg_idx, cg_sign, cg_sign, false);
+            synthesize_subframe(sf, pitch_idx, fixpos, 0, pg_idx, cg_idx, cg_sign, cg_sign, false, out);
         }
     }
 
@@ -469,7 +317,7 @@ void Dsp::decodeCelpFrame(const uint8_t frame[18], uint8_t mode_bits, bool short
     }
 }
 
-void Dsp::decodePitch(int pitch_idx, int sf) {
+void DspCore::decode_pitch(int pitch_idx, int sf) {
     int p = pitch_idx;
     if ((sf & 1) == 0) {
         prev_pitch_idx_ = p;
@@ -488,13 +336,9 @@ void Dsp::decodePitch(int pitch_idx, int sf) {
     if (pitch_period_ > kLtpHistorySize - 1) pitch_period_ = kLtpHistorySize - 1;
 }
 
-double Dsp::samplePitch(int pos, int frac, int s, int pcount) {
+double DspCore::sample_pitch(int pos, int frac, int s, int pcount) {
     if (frac == 0) {
-        if (pcount < 0) {
-            pitch_buf_[s] = pitch_buf_[-pcount - 1];
-        } else {
-            pitch_buf_[s] = ltp_hist_[pos];
-        }
+        pitch_buf_[s] = (pcount < 0) ? pitch_buf_[-pcount - 1] : ltp_hist_[pos];
     } else {
         const double* filt = tables().frac_sinc[frac - 1];
         int fpos = pos + 4;
@@ -515,17 +359,16 @@ double Dsp::samplePitch(int pos, int frac, int s, int pcount) {
     return pitch_buf_[s];
 }
 
-void Dsp::interpolateLsp(int sf, double out_cos[kOrder]) const {
+void DspCore::interpolate_lsp(int sf, double out_cos[kOrder]) const {
     double w_new = (sf + 1) * 0.25;
     double w_old = 1.0 - w_new;
     for (int i = 0; i < kOrder; ++i) {
         double freq_hz = w_old * prev_lsp_hz_[i] + w_new * curr_lsp_hz_[i];
-        double omega = kPi * freq_hz / 4000.0;
-        out_cos[i] = std::cos(omega);
+        out_cos[i] = std::cos(kPi * freq_hz / 4000.0);
     }
 }
 
-void Dsp::lspToLpc(const double lsp_cos[kOrder], double lpc[kOrder + 1]) {
+void DspCore::lsp_to_lpc(const double lsp_cos[kOrder], double lpc[kOrder + 1]) {
     // Expand P(z) = (1 + z^-1) * prod_{k=0..4}(1 - 2*c[2k]*z^-1 + z^-2)
     // and    Q(z) = (1 - z^-1) * prod_{k=0..4}(1 - 2*c[2k+1]*z^-1 + z^-2)
     double p_poly[kOrder + 2] = {};
@@ -546,7 +389,6 @@ void Dsp::lspToLpc(const double lsp_cos[kOrder], double lpc[kOrder + 1]) {
         deg += 2;
     }
 
-    // Multiply P(z) by (1 + z^-1) and Q(z) by (1 - z^-1), then average A(z) = 0.5 * (P + Q)
     lpc[0] = 1.0;
     for (int i = 1; i <= kOrder; ++i) {
         double pi = p_poly[i] + p_poly[i - 1];
@@ -555,28 +397,27 @@ void Dsp::lspToLpc(const double lsp_cos[kOrder], double lpc[kOrder + 1]) {
     }
 }
 
-void Dsp::synthesizeSubframe(int sf, int pitch_idx, int fixpos, int grid,
-                             int pitch_gidx, int inno_gidx, int sign0, int sign1,
-                             bool two_pulse_mode) {
-    decodePitch(pitch_idx, sf);
+void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
+                                  int pitch_gidx, int inno_gidx, int sign0, int sign1,
+                                  bool two_pulse_mode, std::vector<int16_t>& out) {
+    decode_pitch(pitch_idx, sf);
 
     double lsp_cos[kOrder];
     double lpc[kOrder + 1];
-    interpolateLsp(sf, lsp_cos);
-    lspToLpc(lsp_cos, lpc);
+    interpolate_lsp(sf, lsp_cos);
+    lsp_to_lpc(lsp_cos, lpc);
 
-    double pg = pitchGain(pitch_gidx);
+    double pg = pitch_gain(pitch_gidx);
     double cg = dual_mode_ ? tables().dual_cgain[inno_gidx & 0x0F]
                            : (kLegacyCGain[inno_gidx & 0x0F] * 4.0);
 
-    // Prepare innovation excitation for the subframe
     double exc_inno[kMaxSubframeSize] = {};
     if (two_pulse_mode) {
         if (fixpos < 0 || fixpos >= 435) {
-            if (g_log_info) std::printf("[DSP] oops fixpos %d out of bound\n", fixpos);
+            if (log_level_ >= 1) std::printf("[DSP] oops fixpos %d out of bound\n", fixpos);
         }
         int p0 = 0, p1 = 1;
-        decodePulsePair(fixpos, p0, p1);
+        decode_pulse_pair(fixpos, p0, p1);
         int pos0 = p0 * 2 + (grid & 1);
         int pos1 = p1 * 2 + (grid & 1);
 
@@ -593,7 +434,6 @@ void Dsp::synthesizeSubframe(int sf, int pitch_idx, int fixpos, int grid,
             amp1 *= decay;
         }
     } else {
-        // Dual-mode stochastic sparse ternary codebook excitation (9-bit index 0..511)
         const int8_t* cb = tables().stochastic_cb;
         int cb_base = (fixpos & 0x1FF) * 2;
         double amp = sign0 ? -cg : cg;
@@ -608,11 +448,10 @@ void Dsp::synthesizeSubframe(int sf, int pitch_idx, int fixpos, int grid,
     int ex_pos = ltp_write_pos_;
     int pcount = pitch_period_ - 1;
 
-    // Q8 volume multiplier (0x3FF -> ~4.0x matching wqxsim.exe << 2; 0x100 -> 1.0x)
     double vol_scale = volume_q8_ / 256.0;
 
     for (int i = 0; i < subframe_size_; ++i, --pcount) {
-        double pitch_sample = samplePitch(pit_pos, pitch_frac_, i, pcount);
+        double pitch_sample = sample_pitch(pit_pos, pitch_frac_, i, pcount);
         double exc = pg * pitch_sample + exc_inno[i];
         ltp_hist_[ex_pos] = exc;
 
@@ -625,28 +464,17 @@ void Dsp::synthesizeSubframe(int sf, int pitch_idx, int fixpos, int grid,
         double y = exc - sum;
         lpc_state_[1] = y;
 
-        int out = static_cast<int>(std::lround(y * vol_scale));
-        if (out > 32767) out = 32767;
-        if (out < -32768) out = -32768;
-        emitSample8k(static_cast<int16_t>(out));
+        int sample = static_cast<int>(std::lround(y * vol_scale));
+        if (sample > 32767) sample = 32767;
+        if (sample < -32768) sample = -32768;
+        out.push_back(static_cast<int16_t>(sample));
 
         ex_pos = (ex_pos > 0) ? (ex_pos - 1) : (kLtpHistorySize - 1);
         pit_pos = (pit_pos > 0) ? (pit_pos - 1) : (kLtpHistorySize - 1);
     }
 
-    // Update LTP ring buffer pointers
     ltp_write_pos_ -= subframe_size_;
     if (ltp_write_pos_ < 0) ltp_write_pos_ += kLtpHistorySize;
     ltp_read_base_ = ltp_write_pos_ + 1;
     if (ltp_read_base_ >= kLtpHistorySize) ltp_read_base_ -= kLtpHistorySize;
-}
-
-void Dsp::emitSample8k(int16_t sample) {
-    if (dspMode != kWordMode && dspMode != kDiphoneMode) {
-        if (callback) {
-            callback(reinterpret_cast<unsigned char*>(&sample), sizeof(sample));
-        }
-    } else {
-        word_buf_.push_back(sample);
-    }
 }

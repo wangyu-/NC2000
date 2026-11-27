@@ -10,6 +10,7 @@
 #include "io_new.h"
 #include "iv_uart.h"
 #include "sound.h"
+#include "dsp_new/dsp_cmd.h"
 #include "rtc.h"
 #include "timer_ab.h"
 
@@ -355,5 +356,5 @@ void cpu_run3(){
 				}
 		}
 	}
-	dsp_move(trigger_x_times_per_s(100)*(long long)(DSP_AUDIO_HZ)/100);
+	dsp_tick(trigger_x_times_per_s(100)*(long long)(DSP_AUDIO_HZ)/100);
 }

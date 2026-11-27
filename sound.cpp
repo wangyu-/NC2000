@@ -1,5 +1,5 @@
 #include "comm.h"
-#include "dsp_new/dsp.h"
+#include "sound.h"
 #include "state.h"
 
 extern nc2k_states_t nc2k_states;
@@ -43,9 +43,6 @@ dsp
 ==============
 */
 
-Dsp dsp; //make it non-static for dsp_test
-
-static deque<signed short> sound_stream_dsp_wqx;
 static deque<signed short> sound_stream_dsp_host;
 /*
 static long long last_audio_queue_check_time=0;
@@ -92,13 +89,6 @@ void beeper_on_io_write(int a){
     manipulate_beeper(a);
 }
 
-void reset_dsp(){
-    dsp.reset();
-}
-void write_data_to_dsp(uint8_t high,uint8_t low){
-    dsp.write(high,low);
-}
-
 void post_cpu_run_sound_handling(){
     manipulate_beeper(last_beeper.value);
 }
@@ -115,8 +105,6 @@ void write_audio_dump_file(unsigned char *p, int size){
     fwrite(p,size,1,audio_dump_fp);
 }*/
 
-const int dsp_busy_len_wqx = 5000; /* unit: samples */
-const int dsp_drop_len_wqx = 10000;
 const int dsp_drop_len_host = 10000;
 
 
@@ -133,58 +121,18 @@ static inline Sint16 clamp_s16(int x) {
     return (Sint16)x;
 }
 
-void dsp_call_back(unsigned char* p, int len) {
-	if (enable_debug_dsp) {
-        static int cnt = 0;
-        cnt++;
-        if (cnt % 1000 == 0) {
-            std::printf("dsp fifo_len_wqx=%d, fifo_len_host=%d\n", (int)sound_stream_dsp_wqx.size(), (int)sound_stream_dsp_host.size());
-        }
-        if(sound_stream_dsp_host.size() ==0) {
-            printf("audio queue drain!!! fifo_len_wqx=%d \n", (int)sound_stream_dsp_wqx.size());
-        }
-    }
+void sound_push_dsp_samples(const int16_t* samples, int count) {
+    if (count <= 0) return;
 
-    const Sint16* in = (const Sint16*)p;
-    const int samples = len / 2;
-
-    for (int i = 0; i < samples; ++i) {
-        //if this is too small, then dic's repeat prounce will be cut off
-        //if this is too large, then sound will not be stopped immediately
-        //(if wqx program doesn't respect dsp busy, then this is last resort to stop queueing)
-        if (sound_stream_dsp_wqx.size() >= dsp_drop_len_wqx) {
-            if (enable_debug_dsp) {
-                std::printf("audio queue dropping (dsp fifo = %d)\n", (int)sound_stream_dsp_wqx.size());
-            }
-            break;
-        }
-        sound_stream_dsp_wqx.push_back(in[i]);
-    }
-}
-
-//this function simulates the consumption speed of wqx dsp
-//so that wqx will not feel the glitch of host's sound card processing speed
-void dsp_move(int len /*unit sample*/){
     if (g_audio_device) SDL_LockAudioDevice(g_audio_device);
-    for(int i=0;i<len;i++){
-        if(sound_stream_dsp_wqx.empty()) break;
-        if(sound_stream_dsp_host.size() < dsp_drop_len_host) {
-            sound_stream_dsp_host.push_back(sound_stream_dsp_wqx.front());
-        }else {
-            //cannot break here, need to pop sound_stream_dsp_wqx
-        }
-        sound_stream_dsp_wqx.pop_front();
+    if (enable_debug_dsp && sound_stream_dsp_host.empty()) {
+        std::printf("[audio] host dsp queue drained\n");
+    }
+    for (int i = 0; i < count; ++i) {
+        if ((int)sound_stream_dsp_host.size() >= dsp_drop_len_host) break;
+        sound_stream_dsp_host.push_back(samples[i]);
     }
     if (g_audio_device) SDL_UnlockAudioDevice(g_audio_device);
-}
-
-// this value is tricky:
-// if too small sdl will pop because queue too small
-// if too large, then too many queued and sound cannot be stopped immediately.
-// (some wqx program respect dsp busy, some doesn't)
-bool sound_busy() {
-	const int fifo_len = (int)sound_stream_dsp_wqx.size();
-    return fifo_len > dsp_busy_len_wqx;
 }
 
 // Single audio mixing callback: pulls beeper (44100 Hz) and DSP (8 kHz), resamples DSP, mixes, clamps.
@@ -246,8 +194,6 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
 
 // Initialize one device with a callback, no SDL_mixer required.
 void init_audio() {
-    dsp.callback = dsp_call_back;
-
     SDL_AudioSpec desired_spec = {};
     desired_spec.freq = (int)BEEPER_AUDIO_HZ;   // Pick beeper rate to avoid resampling it
     desired_spec.format = AUDIO_S16LSB;
