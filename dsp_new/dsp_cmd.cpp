@@ -25,6 +25,18 @@ enum class DspMode : uint8_t {
     Pcm = 4,
 };
 
+// 0xD001 timing/speed calibration sub-protocol (verified in nc1020.rom 0x806d47 & nc2000.nand 0x19d1d81):
+//   Host: 0xD001 -> count word (e.g. 0x00C8)
+//   DSP:  0x5A (bit 6=1) -> host reads $31 (bit 6=0) -> countdown -> 0xFF (bit 6=1) -> host reads $31
+//   Host: speed parameter word (e.g. 0x00FE, 0x0033..0x004C)
+enum class D001State : uint8_t {
+    Idle = 0,
+    WaitCountParam = 1,
+    WaitStartRead = 2,
+    Counting = 3,
+    WaitSpeedParam = 4,
+};
+
 // $30 / $20 status bits (SPDS104A-03B p.5)
 constexpr uint8_t kStatSleep = 0x80;    // B7: sleeping
 constexpr uint8_t kStatRxReady = 0x40;  // B6: return data ready in $31 / $21
@@ -62,6 +74,9 @@ public:
           cut_tail_(0),
           cut_frames_(0),
           syllable_frame_(0),
+          d001_state_(D001State::Idle),
+          d001_delay_cycles_(0),
+          speed_param_(0x0040),
           host_out_count_(0),
           log_level_(1) {}
 
@@ -112,6 +127,9 @@ public:
         }
         uint8_t ret = rx_fifo_.front();
         rx_fifo_.pop_front();
+        if (d001_state_ == D001State::WaitStartRead && ret == 0x5A) {
+            d001_state_ = D001State::Counting;
+        }
         return ret;
     }
 
@@ -166,13 +184,43 @@ public:
             return;
         }
 
-        // 3. CELP frame data packets (Package 0..5 -> high < 0x60)
+        // 3. 0xD001 multi-word parameter state machine (swallows count & speed words before CELP dispatch)
+        if (d001_state_ != D001State::Idle) {
+            if (high >= 0x60) {
+                // Host sent a new control command; abort incomplete 0xD001 sequence cleanly.
+                d001_state_ = D001State::Idle;
+                d001_delay_cycles_ = 0;
+            } else if (d001_state_ == D001State::WaitCountParam) {
+                const uint64_t ticks = std::max<uint64_t>(1, std::min<uint64_t>(cmd, 2000));
+                d001_delay_cycles_ = (static_cast<uint64_t>(CYCLES_SECOND) * ticks) / DSP_AUDIO_HZ;
+                if (debug_level >= 1) {
+                    std::printf("[DSP] 0xD001 count=%u (delay=%llu cycles)\n",
+                                static_cast<unsigned>(cmd),
+                                static_cast<unsigned long long>(d001_delay_cycles_));
+                }
+                rx_fifo_.push_back(0x5A);
+                d001_state_ = D001State::WaitStartRead;
+                return;
+            } else if (d001_state_ == D001State::WaitSpeedParam) {
+                speed_param_ = cmd;
+                if (debug_level >= 1) {
+                    std::printf("[DSP] 0xD001 speed_param=0x%04x\n", static_cast<unsigned>(cmd));
+                }
+                d001_state_ = D001State::Idle;
+                return;
+            } else {
+                d001_state_ = D001State::Idle;
+                d001_delay_cycles_ = 0;
+            }
+        }
+
+        // 4. CELP frame data packets (Package 0..5 -> high < 0x60)
         if (high < 0x60) {
             handle_celp_word(cmd);
             return;
         }
 
-        // 4. Control & TTS commands (high >= 0x60)
+        // 5. Control & TTS commands (high >= 0x60)
         switch (high >> 4) {
             case 0x7:
                 if (cmd == 0x7001 || cmd == 0x7002) {
@@ -224,11 +272,12 @@ public:
                 break;
 
             case 0xD:
-                // 0xD000 / 0xD001 sync/status query: returns 0x5A followed by 0xFF
-                if (high == 0xD0) {
-                    if (debug_level >= 1) std::printf("[DSP] sync query %04x\n", cmd);
-                    rx_fifo_.push_back(0x5A);
-                    rx_fifo_.push_back(0xFF);
+                if (cmd == 0xD001) {
+                    if (debug_level >= 1) std::printf("[DSP] 0xD001 calibration start\n");
+                    d001_state_ = D001State::WaitCountParam;
+                    d001_delay_cycles_ = 0;
+                } else if (high == 0xD0) {
+                    if (debug_level >= 2) std::printf("[DSP] cmd %04x\n", cmd);
                 }
                 break;
 
@@ -277,7 +326,17 @@ public:
 
 private:
     // Cycle-resolution hardware timing hook (handshake / wakeup / reset / sleep / 0xD001 timers).
-    void step_timers(uint64_t /*delta_cycles*/) {}
+    void step_timers(uint64_t delta_cycles) {
+        if (d001_state_ == D001State::Counting) {
+            if (d001_delay_cycles_ > delta_cycles) {
+                d001_delay_cycles_ -= delta_cycles;
+            } else {
+                d001_delay_cycles_ = 0;
+                rx_fifo_.push_back(0xFF);
+                d001_state_ = D001State::WaitSpeedParam;
+            }
+        }
+    }
 
     // Drain `samples` at the emulated 8 kHz DAC clock and stage into host SDL audio batches.
     void step_dac(uint64_t samples) {
@@ -331,6 +390,8 @@ private:
         cut_tail_ = 0;
         cut_frames_ = 0;
         syllable_frame_ = 0;
+        d001_state_ = D001State::Idle;
+        d001_delay_cycles_ = 0;
         core_.reset();
     }
 
@@ -474,6 +535,11 @@ private:
     int cut_tail_;
     int cut_frames_;
     int syllable_frame_;
+
+    // 0xD001 two-stage calibration handshake & speed parameter state
+    D001State d001_state_;
+    uint64_t d001_delay_cycles_;
+    uint16_t speed_param_;
 
     // Host bus RX FIFO (DSP -> 6502) and internal 8 kHz PCM output FIFO
     std::deque<uint8_t> rx_fifo_;
