@@ -51,21 +51,10 @@ constexpr double kLegacyCGain[16] = {
 
 // Generated tables (computed once from math formulas).
 struct GeneratedTables {
-    double dual_cgain[16];
     double frac_sinc[2][8];      // 8-tap Hamming-windowed sinc for 1/3 and 2/3 sample delay
     int8_t stochastic_cb[1084];  // Ternary sparse {-1, 0, +1} codebook (~75% zeros)
 
     GeneratedTables() {
-        // Dual-mode (NC2000/NC2600) logarithmic innovation gain:
-        // +4 dB/step (2^(2/3)) for indices 1..12, +2 dB/step (2^(1/3)) for indices 13..15
-        dual_cgain[0] = 0.0;
-        for (int i = 1; i <= 12; ++i) {
-            dual_cgain[i] = std::floor(std::pow(2.0, (2 * i + 8) / 3.0));
-        }
-        for (int i = 13; i <= 15; ++i) {
-            dual_cgain[i] = std::floor(std::pow(2.0, (i + 20) / 3.0));
-        }
-
         // 8-tap Hamming-windowed sinc fractional-delay filters for F=1 (1/3) and F=2 (2/3).
         // sample_pitch walks backwards from pos+4, so k=4 is lag T and k=3 is lag T+1.
         for (int f = 0; f < 2; ++f) {
@@ -422,8 +411,7 @@ void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
     lsp_to_lpc(lsp_cos, lpc);
 
     double pg = pitch_gain(pitch_gidx);
-    double cg = dual_mode_ ? tables().dual_cgain[inno_gidx & 0x0F]
-                           : (kLegacyCGain[inno_gidx & 0x0F] * 4.0);
+    double cg = kLegacyCGain[inno_gidx & 0x0F] * 4.0;
 
     double exc_inno[kMaxSubframeSize] = {};
     if (two_pulse_mode) {
@@ -462,10 +450,8 @@ void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
     int ex_pos = ltp_write_pos_;
     int pcount = pitch_period_ - 1;
 
-    // Q8 volume gain (0x9100 = 1.0x, 0x93FF = ~4.0x).
-    // In dual_mode_ (NC2000/NC2600), apply the S480 << 2 (4x) synthesis output gain
-    // before volume scaling (legacy mode already bakes 4x into kLegacyCGain * 4.0).
-    double vol_scale = (volume_q8_ / 256.0) * (dual_mode_ ? 4.0 : 1.0);
+    // Q8 volume gain: 0x93FF -> ~4.0x (kLegacyCGain * 4 * 4 = * 16, matching legacy dsp)
+    double vol_scale = volume_q8_ / 256.0;
 
     for (int i = 0; i < subframe_size_; ++i, --pcount) {
         double pitch_sample = sample_pitch(pit_pos, pitch_frac_, i, pcount);
