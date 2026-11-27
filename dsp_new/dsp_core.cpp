@@ -462,6 +462,7 @@ void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
     int ex_pos = ltp_write_pos_;
     int pcount = pitch_period_ - 1;
 
+    // Q8 gain: 0x93FF -> ~4.0x (matching legacy dsp / wqxsim << 2 with full headroom)
     double vol_scale = volume_q8_ / 256.0;
 
     for (int i = 0; i < subframe_size_; ++i, --pcount) {

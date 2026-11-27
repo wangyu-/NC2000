@@ -74,7 +74,7 @@ void manipulate_beeper(int a){
         if(sound_stream_beeper.size() > 4096) {//avoid beeper queue too large. 4096 samples =~ 90ms
             break;
         }
-        sound_stream_beeper.push_back(8000*last_beeper.value);
+        sound_stream_beeper.push_back(4000*last_beeper.value);
     }
     if (g_audio_device) SDL_UnlockAudioDevice(g_audio_device);
 

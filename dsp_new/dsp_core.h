@@ -56,7 +56,7 @@ private:
 
     // Configuration
     bool dual_mode_;
-    int volume_q8_;   // Q8 linear gain (0x100 = 1.0x, 0x3FF = ~4.0x)
+    int volume_q8_;   // Q8 linear gain from 0x9000..0x93FF (0x100 = 1.0x, 0x3FF = ~4.0x)
     int log_level_;
 
     // CELP synthesis filter & LTP history state
