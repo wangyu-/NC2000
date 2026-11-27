@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <deque>
 #include "sound.h"
+#include "dsp_new/dsp_cmd.h"
 #include "compare/c6502.h"
 #include "console.h"
 #include "iv_uart.h"
@@ -71,6 +72,7 @@ void load_state(){
 
 void LoadNC2k(){
 	nc2k_states.zero_init();
+	dsp_hw_reset();
 	
 	init_keyitems();
 

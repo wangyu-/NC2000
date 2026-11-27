@@ -66,12 +66,13 @@ struct GeneratedTables {
             dual_cgain[i] = std::floor(std::pow(2.0, (i + 20) / 3.0));
         }
 
-        // 8-tap Hamming-windowed sinc fractional-delay filters for F=1 (1/3) and F=2 (2/3)
+        // 8-tap Hamming-windowed sinc fractional-delay filters for F=1 (1/3) and F=2 (2/3).
+        // sample_pitch walks backwards from pos+4, so k=4 is lag T and k=3 is lag T+1.
         for (int f = 0; f < 2; ++f) {
             double delay = (f + 1) / 3.0;
             double sum = 0.0;
             for (int k = 0; k < 8; ++k) {
-                double t = (k - 3) - delay;
+                double t = (k - 4) + delay;
                 double s = (std::abs(t) < 1e-9) ? 1.0 : std::sin(kPi * t) / (kPi * t);
                 double w = 0.54 + 0.46 * std::cos(kPi * t / 4.0);
                 frac_sinc[f][k] = s * w;
@@ -156,7 +157,7 @@ DspCore::DspCore()
       pitch_period_(13),
       pitch_frac_(0),
       subframe_size_(60),
-      pulse_decay_(0.5) {
+      pulse_decay_(1.0) {
     std::memset(packets_, 0, sizeof(packets_));
     reset_decoder();
 }
@@ -192,7 +193,7 @@ void DspCore::reset_decoder() {
     pitch_period_ = 13;
     pitch_frac_ = 0;
     subframe_size_ = 60;
-    pulse_decay_ = 0.5;
+    pulse_decay_ = 1.0;
 }
 
 void DspCore::clear_packet() {
@@ -325,14 +326,27 @@ void DspCore::decode_pitch(int pitch_idx, int sf) {
         p += prev_pitch_idx_ - 16;
     }
     if (p < 0) p = 0;
-    if (p <= 191) {
-        pitch_period_ = p / 3 + 13;
-        pitch_frac_ = p % 3;
+    if (dual_mode_) {
+        // NC2000/NC2600 dual-mode: 18..82 (1/3-sample) for p<=194, 83..143 for p>=195
+        if (p <= 194) {
+            pitch_period_ = p / 3 + 18;
+            pitch_frac_ = p % 3;
+        } else {
+            pitch_period_ = p - 112;
+            pitch_frac_ = 0;
+        }
+        if (pitch_period_ < 18) pitch_period_ = 18;
     } else {
-        pitch_period_ = p - 115;
-        pitch_frac_ = 0;
+        // PC1000/NC1020 single-mode: 13..76 (1/3-sample) for p<=191, 77..140 for p>=192
+        if (p <= 191) {
+            pitch_period_ = p / 3 + 13;
+            pitch_frac_ = p % 3;
+        } else {
+            pitch_period_ = p - 115;
+            pitch_frac_ = 0;
+        }
+        if (pitch_period_ < 13) pitch_period_ = 13;
     }
-    if (pitch_period_ < 13) pitch_period_ = 13;
     if (pitch_period_ > kLtpHistorySize - 1) pitch_period_ = kLtpHistorySize - 1;
 }
 
@@ -440,8 +454,8 @@ void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
         for (int i = 0; i < subframe_size_; ++i) {
             exc_inno[i] = cb[cb_base + i] * amp;
         }
-        pulse_decay_ = pg;
     }
+    pulse_decay_ = pg;
 
     int pit_pos = ltp_read_base_ + pitch_period_ - 1;
     if (pit_pos >= kLtpHistorySize) pit_pos -= kLtpHistorySize;

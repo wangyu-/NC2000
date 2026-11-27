@@ -109,19 +109,19 @@ struct nc2k_states_t{
 	//NekoDriverIO internal states end
 
 	//io_new.cpp internal states
-	int dspRetData;
-	bool dspTrans;
-	bool dspSleep;
+	int UNUSED_dspRetData;
+	bool UNUSED_dspTrans;
+	bool UNUSED_dspSleep;
 	int UNUSED_tmaValue;  // unused, kept for save-state compatibility
 	int UNUSED_tmaReload; // unused, kept for save-state compatibility
 	unsigned char inner_interrupt_control;
 	unsigned int UNUSED_speed_scaledown; //not used any more
 	uint8_t UNUSED_cps;
 	uint8_t lcdon;
-	bool dsp_0xd0;
-	int dsp_0x7001_0x7002;
-	bool dsp_data_feeded_but_hasnt_fetched;
-	unsigned char dsp_data_low;
+	bool UNUSED_dsp_0xd0;
+	int UNUSED_dsp_0x7001_0x7002;
+	bool UNUSED_dsp_data_feeded_but_hasnt_fetched;
+	unsigned char UNUSED_dsp_data_low;
 	int patch_idx;
 	unsigned char patch_table[256];
 	//io_new.cpp internal states end

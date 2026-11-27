@@ -1,5 +1,5 @@
 // SPDS104A DSP hardware peripheral emulation:
-//   - 6502 host bus registers ($20..$23 / $30..$33)
+//   - 6502 host bus registers ($20..$23 / $30..$33) per SPDS104A-03B spec
 //   - Unified 16-bit command & streaming protocol state machine
 //   - WORD_MODE / DIPHONE syllable buffer & trimming (0xC1/C2/C3/C4/C8)
 //   - Internal 8 kHz PCM output FIFO, emulated DAC clock consumption, and busy backpressure
@@ -9,14 +9,11 @@
 
 #include "comm.h"
 #include "sound.h"
-#include "state.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <deque>
 #include <vector>
-
-extern nc2k_states_t nc2k_states;
 
 namespace {
 
@@ -28,23 +25,27 @@ enum class DspMode : uint8_t {
     Pcm = 4,
 };
 
-constexpr uint8_t kStatSleep = 0x80;
-constexpr uint8_t kStatRxReady = 0x40;
-constexpr uint8_t kStatTxBusy = 0x30;
+// $30 / $20 status bits (SPDS104A-03B p.5)
+constexpr uint8_t kStatSleep = 0x80;    // B7: sleeping
+constexpr uint8_t kStatRxReady = 0x40;  // B6: return data ready in $31 / $21
+constexpr uint8_t kStatTxBusy = 0x30;   // B5:B4: forward data ack (unfetched by DSP)
 
-constexpr uint8_t kCtrlWakeup = 0x80;
-constexpr uint8_t kCtrlReset = 0x40;
+// $30 / $20 control bits (SPDS104A-03B p.5)
+constexpr uint8_t kCtrlWakeup = 0x80;   // B7: wake up
+constexpr uint8_t kCtrlReset = 0x40;    // B6: software reset
 
 // Internal 8 kHz PCM output FIFO watermarks (unit: samples @ 8 kHz).
-// Busy threshold controls 6502 backpressure ($30 bits 5:4); drop limit guards
-// against software that ignores busy polling.
 constexpr size_t kPcmFifoBusyThreshold = 5000;  // 625 ms
 constexpr size_t kPcmFifoDropLimit = 10000;     // 1250 ms
 
 class Spds104a {
 public:
     Spds104a()
-        : mode_(DspMode::Celp),
+        : sleeping_(false),
+          loopback_(false),
+          tx_busy_(false),
+          data_low_(0),
+          mode_(DspMode::Celp),
           cut_head_(0),
           cut_tail_(0),
           cut_frames_(0),
@@ -60,21 +61,28 @@ public:
         return pcm_fifo_.size() > kPcmFifoBusyThreshold;
     }
 
+    // Power-on / hardware reset: clears everything including forward-data latch & PCM FIFO.
+    void hw_reset() {
+        sw_reset();
+        data_low_ = 0;
+        pcm_fifo_.clear();
+    }
+
     uint8_t read_status() {
         uint8_t stat = 0;
-        if (nc2k_states.dspSleep) {
+        if (sleeping_) {
             stat |= kStatSleep;
         }
 
-        if (!nc2k_states.dspSleep && is_busy()) {
-            if (nc2k_states.dsp_data_feeded_but_hasnt_fetched) {
+        if (!sleeping_ && is_busy()) {
+            if (tx_busy_) {
                 stat |= kStatTxBusy;
             }
         } else {
-            nc2k_states.dsp_data_feeded_but_hasnt_fetched = false;
+            tx_busy_ = false;
         }
 
-        if (!rx_fifo_.empty() || nc2k_states.dspRetData != -1) {
+        if (!rx_fifo_.empty()) {
             stat |= kStatRxReady;
         }
 
@@ -85,37 +93,32 @@ public:
     }
 
     uint8_t read_data() {
-        if (!rx_fifo_.empty()) {
-            uint8_t ret = rx_fifo_.front();
-            rx_fifo_.pop_front();
-            return ret;
+        if (rx_fifo_.empty()) {
+            return 0xFF;
         }
-        if (nc2k_states.dspRetData != -1) {
-            uint8_t ret = static_cast<uint8_t>(nc2k_states.dspRetData);
-            nc2k_states.dspRetData = -1;
-            return ret;
-        }
-        return 0xFF;
+        uint8_t ret = rx_fifo_.front();
+        rx_fifo_.pop_front();
+        return ret;
     }
 
     void write_ctrl(uint8_t value) {
         core_.set_dual_mode(nc2000mode);
 
         if (value & kCtrlReset) {
-            reset();
+            sw_reset();
         } else if (value & kCtrlWakeup) {
-            nc2k_states.dspSleep = false;
+            sleeping_ = false;
             // Hardware wakeup preserves volume and mode; only clears partial packet state.
             core_.clear_packet();
         }
     }
 
     void write_data_low(uint8_t value) {
-        nc2k_states.dsp_data_low = value;
+        data_low_ = value;
     }
 
     void write_data_high(uint8_t high) {
-        const uint8_t low = nc2k_states.dsp_data_low;
+        const uint8_t low = data_low_;
         const uint16_t cmd = static_cast<uint16_t>((static_cast<uint16_t>(high) << 8) | low);
         core_.set_dual_mode(nc2000mode);
 
@@ -123,11 +126,11 @@ public:
             std::printf("[DSP] got word %04x (mode=%u)\n", cmd, static_cast<unsigned>(mode_));
         }
 
-        // 1. Loopback / trans test mode (0x7004): only 0xFFFF exits; all other words echo low byte
-        if (nc2k_states.dspTrans) {
+        // 1. Loopback test mode (0x7004): only 0xFFFF exits; all other words echo low byte
+        if (loopback_) {
             if (cmd == 0xFFFF) {
                 if (debug_level >= 1) std::printf("[DSP] exit loopback on 0xFFFF\n");
-                nc2k_states.dspTrans = false;
+                loopback_ = false;
             } else {
                 rx_fifo_.push_back(low);
             }
@@ -160,7 +163,7 @@ public:
                     rx_fifo_.push_back(0x06);
                 } else if (cmd == 0x7004) {
                     if (debug_level >= 1) std::printf("[DSP] enter loopback (0x7004)\n");
-                    nc2k_states.dspTrans = true;
+                    loopback_ = true;
                 }
                 break;
 
@@ -169,7 +172,7 @@ public:
                 // (nc2600 factory test at 0x1f68d writes $33=#$80 before $32=#$00, sending 0x80FF)
                 if (high == 0x80) {
                     if (debug_level >= 2) std::printf("[DSP] sleep (%04x)\n", cmd);
-                    nc2k_states.dspSleep = true;
+                    sleeping_ = true;
                 }
                 break;
 
@@ -247,24 +250,22 @@ public:
         }
 
         if (!is_busy()) {
-            nc2k_states.dsp_data_feeded_but_hasnt_fetched = false;
+            tx_busy_ = false;
         }
     }
 
 private:
-    void reset() {
+    // Software reset ($30 bit 6): preserves forward-data latch (per datasheet p.5) and queued PCM tail.
+    void sw_reset() {
         if (log_level_ >= 1) {
             std::printf("[DSP] reset\n");
             if (mode_ != DspMode::Celp) {
                 std::printf("[DSP] mode %u -> CELP by reset\n", static_cast<unsigned>(mode_));
             }
         }
-        nc2k_states.dspSleep = false;
-        nc2k_states.dspTrans = false;
-        nc2k_states.dspRetData = -1;
-        nc2k_states.dsp_0x7001_0x7002 = 0;
-        nc2k_states.dsp_0xd0 = false;
-        nc2k_states.dsp_data_feeded_but_hasnt_fetched = false;
+        sleeping_ = false;
+        loopback_ = false;
+        tx_busy_ = false;
         rx_fifo_.clear();
 
         mode_ = DspMode::Celp;
@@ -283,8 +284,8 @@ private:
     }
 
     void latch_busy_if_needed() {
-        if (!nc2k_states.dspSleep && is_busy()) {
-            nc2k_states.dsp_data_feeded_but_hasnt_fetched = true;
+        if (!sleeping_ && is_busy()) {
+            tx_busy_ = true;
         }
     }
 
@@ -334,7 +335,7 @@ private:
         }
         if (low > static_cast<uint8_t>(DspMode::Pcm)) {
             if (log_level_ >= 1) std::printf("[DSP] invalid mode %02x, resetting\n", low);
-            reset();
+            sw_reset();
             return;
         }
         DspMode next = static_cast<DspMode>(low);
@@ -402,6 +403,12 @@ private:
         }
     }
 
+    // Hardware interface registers (SPDS104A-03B p.5)
+    bool sleeping_;
+    bool loopback_;
+    bool tx_busy_;
+    uint8_t data_low_;
+
     DspCore core_;
     DspMode mode_;
 
@@ -429,6 +436,7 @@ uint8_t dsp_read_data() { return g_dsp.read_data(); }
 void dsp_write_ctrl(uint8_t value) { g_dsp.write_ctrl(value); }
 void dsp_write_data_low(uint8_t value) { g_dsp.write_data_low(value); }
 void dsp_write_data_high(uint8_t value) { g_dsp.write_data_high(value); }
+void dsp_hw_reset() { g_dsp.hw_reset(); }
 void dsp_tick(int samples) { g_dsp.tick(samples); }
 bool dsp_is_busy() { return g_dsp.is_busy(); }
 void dsp_set_log_level(int level) { g_dsp.set_log_level(level); }
