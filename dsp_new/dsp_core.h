@@ -18,7 +18,6 @@ public:
 
     void set_dual_mode(bool enable);
     void set_volume_q8(int volume_q8);
-    int volume_q8() const { return volume_q8_; }
     void set_log_level(int level);
 
     // Full chip reset (restores default volume and resets decoder state).

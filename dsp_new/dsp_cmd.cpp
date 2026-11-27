@@ -1,7 +1,7 @@
 // SPDS104A DSP hardware peripheral emulation:
-//   - 6502 host bus registers ($20..$23 / $30..$33) per SPDS104A-03B spec
+//   - 6502 host bus registers ($20..$23 / $30..$33) per SPDS104A Programming Guide
 //   - Unified 16-bit command & streaming protocol state machine
-//   - WORD_MODE / DIPHONE syllable buffer & trimming (0xC1/C2/C3/C4/C8)
+//   - WORD_MODE / DIPHONE streaming syllable trimming (0xC1/C2/C3/C4/C8)
 //   - Internal 8 kHz PCM output FIFO, emulated DAC clock consumption, and busy backpressure
 
 #include "dsp_cmd.h"
@@ -37,12 +37,12 @@ enum class D001State : uint8_t {
     WaitSpeedParam = 4,
 };
 
-// $30 / $20 status bits (SPDS104A-03B p.5)
+// $30 / $20 status bits (SPDS104A Programming Guide p.11)
 constexpr uint8_t kStatSleep = 0x80;    // B7: sleeping
 constexpr uint8_t kStatRxReady = 0x40;  // B6: return data ready in $31 / $21
 constexpr uint8_t kStatTxBusy = 0x30;   // B5:B4: forward data ack (unfetched by DSP)
 
-// $30 / $20 control bits (SPDS104A-03B p.5)
+// $30 / $20 control bits (SPDS104A Programming Guide p.11)
 constexpr uint8_t kCtrlWakeup = 0x80;   // B7: wake up
 constexpr uint8_t kCtrlReset = 0x40;    // B6: software reset
 
@@ -68,6 +68,8 @@ public:
           sleep_pending_(false),
           loopback_(false),
           tx_busy_(false),
+          rx_ready_(false),
+          rx_data_(0),
           data_low_(0),
           mode_(DspMode::Celp),
           head_skip_(0),
@@ -85,36 +87,23 @@ public:
         core_.set_log_level(level);
     }
 
-    bool is_busy() const {
-        return pcm_fifo_.size() > kPcmFifoBusyThreshold;
-    }
-
-    // Power-on / hardware reset: clears everything including forward-data latch & PCM FIFO.
+    // Power-on / hardware reset: clears everything including forward-data latch (manual p.15).
     void hw_reset() {
         sw_reset();
         data_low_ = 0;
-        pcm_fifo_.clear();
-        host_out_count_ = 0;
     }
 
-    uint8_t read_status() {
+    uint8_t read_status() const {
         uint8_t stat = 0;
         if (sleeping_) {
             stat |= kStatSleep;
         }
-
-        if (!sleeping_ && is_busy()) {
-            if (tx_busy_) {
-                stat |= kStatTxBusy;
-            }
-        } else {
-            tx_busy_ = false;
-        }
-
-        if (!rx_fifo_.empty()) {
+        if (rx_ready_) {
             stat |= kStatRxReady;
         }
-
+        if (tx_busy_) {
+            stat |= kStatTxBusy;
+        }
         if (debug_level >= 3) {
             std::printf("[DSP] read_status -> %02x\n", stat);
         }
@@ -122,12 +111,10 @@ public:
     }
 
     uint8_t read_data() {
-        if (rx_fifo_.empty()) {
-            return 0xFF;
-        }
-        uint8_t ret = rx_fifo_.front();
-        rx_fifo_.pop_front();
-        if (d001_state_ == D001State::WaitStartRead && ret == 0x5A) {
+        const uint8_t ret = rx_data_;
+        const bool was_ready = rx_ready_;
+        rx_ready_ = false;
+        if (was_ready && d001_state_ == D001State::WaitStartRead && ret == 0x5A) {
             d001_state_ = D001State::Counting;
         }
         return ret;
@@ -166,7 +153,7 @@ public:
                 if (debug_level >= 1) std::printf("[DSP] exit loopback on 0xFFFF\n");
                 loopback_ = false;
             } else {
-                rx_fifo_.push_back(low);
+                set_rx_data(low);
             }
             return;
         }
@@ -198,13 +185,14 @@ public:
                                 static_cast<unsigned>(cmd),
                                 static_cast<unsigned long long>(d001_delay_cycles_));
                 }
-                rx_fifo_.push_back(0x5A);
+                set_rx_data(0x5A);
                 d001_state_ = D001State::WaitStartRead;
                 return;
             } else if (d001_state_ == D001State::WaitSpeedParam) {
                 speed_param_ = cmd;
                 if (debug_level >= 1) {
-                    std::printf("[DSP] 0xD001 speed_param=0x%04x\n", static_cast<unsigned>(cmd));
+                    std::printf("[DSP] 0xD001 speed_param=0x%04x\n",
+                                static_cast<unsigned>(speed_param_));
                 }
                 d001_state_ = D001State::Idle;
                 return;
@@ -224,7 +212,7 @@ public:
         switch (high >> 4) {
             case 0x7:
                 if (cmd == 0x7001 || cmd == 0x7002) {
-                    rx_fifo_.push_back(0x06);
+                    set_rx_data(0x06);
                 } else if (cmd == 0x7004) {
                     if (debug_level >= 1) std::printf("[DSP] enter loopback (0x7004)\n");
                     loopback_ = true;
@@ -325,14 +313,23 @@ public:
     }
 
 private:
-    // Cycle-resolution hardware timing hook (handshake / wakeup / reset / sleep / 0xD001 timers).
+    bool is_busy() const {
+        return pcm_fifo_.size() > kPcmFifoBusyThreshold;
+    }
+
+    void set_rx_data(uint8_t value) {
+        rx_data_ = value;
+        rx_ready_ = true;
+    }
+
+    // Cycle-resolution hardware timing hook (0xD001 countdown; extensible for other timers).
     void step_timers(uint64_t delta_cycles) {
         if (d001_state_ == D001State::Counting) {
             if (d001_delay_cycles_ > delta_cycles) {
                 d001_delay_cycles_ -= delta_cycles;
             } else {
                 d001_delay_cycles_ = 0;
-                rx_fifo_.push_back(0xFF);
+                set_rx_data(0xFF);
                 d001_state_ = D001State::WaitSpeedParam;
             }
         }
@@ -371,7 +368,9 @@ private:
             host_out_count_ = 0;
         }
     }
-    // Software reset ($30 bit 6): preserves forward-data latch (per datasheet p.5) and queued PCM tail.
+
+    // Software reset ($30 bit 6): clears return-data latch, playback FIFO, and decoder state,
+    // while preserving the forward-data latch `data_low_` (SPDS104A manual p.15).
     void sw_reset() {
         if (log_level_ >= 1) {
             std::printf("[DSP] reset\n");
@@ -383,7 +382,8 @@ private:
         sleep_pending_ = false;
         loopback_ = false;
         tx_busy_ = false;
-        rx_fifo_.clear();
+        rx_ready_ = false;
+        rx_data_ = 0;
 
         mode_ = DspMode::Celp;
         head_skip_ = 0;
@@ -392,6 +392,8 @@ private:
         syllable_frame_ = 0;
         d001_state_ = D001State::Idle;
         d001_delay_cycles_ = 0;
+        pcm_fifo_.clear();
+        host_out_count_ = 0;
         core_.reset();
     }
 
@@ -471,8 +473,7 @@ private:
             std::printf("[DSP] mode switch cmd 0xA0%02x\n", low);
         }
         if (low > static_cast<uint8_t>(DspMode::Pcm)) {
-            if (log_level_ >= 1) std::printf("[DSP] invalid mode %02x, resetting\n", low);
-            sw_reset();
+            if (log_level_ >= 1) std::printf("[DSP] ignored unknown mode 0xA0%02x\n", low);
             return;
         }
         DspMode next = static_cast<DspMode>(low);
@@ -519,11 +520,13 @@ private:
         }
     }
 
-    // Hardware interface registers (SPDS104A-03B p.5)
+    // Hardware interface registers (SPDS104A Programming Guide p.11-12)
     bool sleeping_;
     bool sleep_pending_;
     bool loopback_;
     bool tx_busy_;
+    bool rx_ready_;
+    uint8_t rx_data_;
     uint8_t data_low_;
 
     DspCore core_;
@@ -541,8 +544,7 @@ private:
     uint64_t d001_delay_cycles_;
     uint16_t speed_param_;
 
-    // Host bus RX FIFO (DSP -> 6502) and internal 8 kHz PCM output FIFO
-    std::deque<uint8_t> rx_fifo_;
+    // Internal 8 kHz PCM output FIFO
     std::deque<int16_t> pcm_fifo_;
 
     // Staging buffer to batch per-sample DAC pops before locking host SDL audio
@@ -563,5 +565,4 @@ void dsp_write_data_low(uint8_t value) { g_dsp.write_data_low(value); }
 void dsp_write_data_high(uint8_t value) { g_dsp.write_data_high(value); }
 void dsp_hw_reset() { g_dsp.hw_reset(); }
 void dsp_step(uint64_t last_cycles, uint64_t cycles) { g_dsp.step(last_cycles, cycles); }
-bool dsp_is_busy() { return g_dsp.is_busy(); }
 void dsp_set_log_level(int level) { g_dsp.set_log_level(level); }
