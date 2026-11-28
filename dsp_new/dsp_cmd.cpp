@@ -262,6 +262,20 @@ public:
                 }
                 break;
 
+            case 0xB:
+                // FAST SLEEP (0xB0xx): abort queued audio immediately and enter sleep
+                // without waiting for pcm_fifo_ to drain (SPDS104A manual p.23/26).
+                if (high == 0xB0) {
+                    if (debug_level >= 2) {
+                        std::printf("[DSP] fast sleep (%04x, dropped_pcm=%zu)\n", cmd, pcm_fifo_.size());
+                    }
+                    pcm_fifo_.clear();
+                    host_out_count_ = 0;
+                    reset_syllable();
+                    finish_sleep();
+                }
+                break;
+
             case 0xC:
                 // TTS WORD_MODE / DIPHONE syllable parameters (0xC1/C2/C3/C4/C8)
                 handle_word_cmd(high, low);
