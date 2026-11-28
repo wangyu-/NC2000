@@ -83,6 +83,7 @@ public:
           syllable_frame_(0),
           word_tail_len_(0),
           word_xfade_pos_(0),
+          last_word_sample_(0),
           d001_state_(nc2k_states.dsp_state.d001_state),
           d001_delay_cycles_(nc2k_states.dsp_state.d001_delay_cycles),
           speed_param_(nc2k_states.dsp_state.speed_param),
@@ -469,6 +470,7 @@ private:
     void clear_word_crossfade() {
         word_tail_len_ = 0;
         word_xfade_pos_ = 0;
+        last_word_sample_ = 0;
     }
 
     void push_pcm(const int16_t* samples, size_t count) {
@@ -537,13 +539,19 @@ private:
                     }
                 }
                 push_pcm(frame_scratch_.data() + start, static_cast<size_t>(end - start));
+                last_word_sample_ = frame_scratch_[end - 1];
             }
             if (is_tail_cut) {
-                word_tail_len_ = std::min(kWordCrossfadeSamples, n - end);
-                word_xfade_pos_ = 0;
-                for (int i = 0; i < word_tail_len_; ++i) {
+                const int avail = std::min(kWordCrossfadeSamples, n - end);
+                for (int i = 0; i < avail; ++i) {
                     word_tail_[i] = frame_scratch_[end + i];
                 }
+                const int16_t fill = (avail > 0) ? word_tail_[avail - 1] : last_word_sample_;
+                for (int i = avail; i < kWordCrossfadeSamples; ++i) {
+                    word_tail_[i] = fill;
+                }
+                word_tail_len_ = kWordCrossfadeSamples;
+                word_xfade_pos_ = 0;
             }
             ++syllable_frame_;
         } else {
@@ -597,6 +605,11 @@ private:
                 core_.clear_packet();
                 break;
             case 0xC1:
+                if (word_tail_len_ == 0 && last_word_sample_ != 0) {
+                    std::fill_n(word_tail_, kWordCrossfadeSamples, last_word_sample_);
+                    word_tail_len_ = kWordCrossfadeSamples;
+                    word_xfade_pos_ = 0;
+                }
                 reset_syllable();
                 break;
             case 0xC3:
@@ -631,6 +644,7 @@ private:
     int16_t word_tail_[kWordCrossfadeSamples];
     int word_tail_len_;
     int word_xfade_pos_;
+    int16_t last_word_sample_;
 
     // 0xD001 two-stage calibration handshake & speed parameter state
     uint8_t& d001_state_;
