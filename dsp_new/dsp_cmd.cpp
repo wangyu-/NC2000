@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <deque>
 #include <vector>
 
@@ -58,6 +59,32 @@ constexpr size_t kPcmFifoDropLimit = 1600;      // 200 ms (cap if guest ignores 
 // Host SDL audio staging batch (80 samples @ 8 kHz = 10 ms, flushed at most at 100 Hz).
 constexpr int kHostAudioBatchSamples = 80;
 constexpr uint64_t kHostAudioFlushHz = 100;
+
+// Max bidirectional search radius (3 ms @ 8 kHz) to snap WORD_MODE head/tail cuts to a zero crossing.
+constexpr int kZeroCrossSearchSamples = 24;
+
+inline int snap_zero_crossing(const int16_t* buf, int pos, int limit, bool is_end) {
+    if (pos <= 0 || pos >= limit) return pos;
+    int min_idx = is_end ? (pos - 1) : pos;
+    int min_abs = std::abs(static_cast<int>(buf[min_idx]));
+    for (int d = 0; d < kZeroCrossSearchSamples; ++d) {
+        const int candidates[2] = {pos + d, pos - d};
+        for (int k : candidates) {
+            if (k < 1 || k >= limit) continue;
+            const int prev = buf[k - 1];
+            const int cur = buf[k];
+            if ((prev >= 0 && cur <= 0) || (prev <= 0 && cur >= 0)) {
+                const int best = (std::abs(cur) < std::abs(prev)) ? k : (k - 1);
+                return is_end ? (best + 1) : best;
+            }
+            if (std::abs(cur) < min_abs) {
+                min_abs = std::abs(cur);
+                min_idx = k;
+            }
+        }
+    }
+    return is_end ? (min_idx + 1) : min_idx;
+}
 
 // Exact floor(c * freq / CYCLES_SECOND) without 64-bit mul overflow at large cycle counts.
 inline uint64_t ticks_at_freq(uint64_t c, uint64_t freq) {
@@ -497,12 +524,15 @@ private:
             int end = n;
             if (cut_tail_ != 0) {
                 if (syllable_frame_ == cut_frames_) {
-                    end = std::min(cut_tail_, n);
+                    end = snap_zero_crossing(frame_scratch_.data(), std::min(cut_tail_, n), n, true);
                 } else if (syllable_frame_ > cut_frames_) {
                     end = 0;
                 }
             }
-            const int start = std::min(head_skip_, end);
+            int start = std::min(head_skip_, end);
+            if (start > 0 && start < end) {
+                start = snap_zero_crossing(frame_scratch_.data(), start, end, false);
+            }
             head_skip_ -= std::min(head_skip_, n);
             if (end > start) {
                 push_pcm(frame_scratch_.data() + start, static_cast<size_t>(end - start));
