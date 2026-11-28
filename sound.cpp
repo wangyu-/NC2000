@@ -110,21 +110,20 @@ void write_audio_dump_file(unsigned char *p, int size){
 
 const int dsp_drop_len_host = 10000;
 
-// Adaptive DSP playback rate control (±10% max):
-// 1) Prebuffer 600 samples (75 ms) and start gently stretched at -3% (0.97x) so normal
-//    8 kHz speech climbs into [1600, 3200] (1.00x) without audible startup pitch dip,
-//    while slower RC-clocked PCM streams (down to 7200 Hz) smoothly settle down to 0.90x.
-// 2) Hold nominal 1.00x across [1600, 3200], then compress up to +10% (1.10x) by 6000
+// Adaptive DSP playback rate control (±2% max, -1% initial):
+// 1) Prebuffer 600 samples (75 ms) and start gently stretched at -1% (0.99x, down to
+//    -2% / 0.98x when low) so a nominal 8 kHz producer stays ahead of SDL without underrun.
+// 2) Hold nominal 1.00x across [1600, 3200], then compress up to +2% (1.02x) by 6000
 //    (still 4000 samples / 500 ms below dsp_drop_len_host = 10000) to absorb backlog.
 static constexpr int    kDspPrebufferSamples = 600;   // 75 ms @ 8 kHz
-static constexpr int    kDspMinWatermark     = 400;   // 50 ms: full -10% stretch below this
-static constexpr int    kDspLowWatermark     = 800;   // 100 ms: -3% stretch
+static constexpr int    kDspMinWatermark     = 400;   // 50 ms: full -2% stretch below this
+static constexpr int    kDspLowWatermark     = 800;   // 100 ms: -1% stretch
 static constexpr int    kDspTargetWatermark  = 1600;  // 200 ms: nominal 1.00x
 static constexpr int    kDspHighWatermark    = 3200;  // 400 ms: begin compressing backlog
-static constexpr int    kDspMaxWatermark     = 6000;  // 750 ms: full +10% compress (4000 below drop)
-static constexpr double kDspInitScale        = 0.97;
-static constexpr double kDspMinScale         = 0.90;
-static constexpr double kDspMaxScale         = 1.10;
+static constexpr int    kDspMaxWatermark     = 6000;  // 750 ms: full +2% compress (4000 below drop)
+static constexpr double kDspInitScale        = 0.99;
+static constexpr double kDspMinScale         = 0.98;
+static constexpr double kDspMaxScale         = 1.02;
 
 // Linear resampler state for DSP -> output
 static double g_dsp_phase = 0.0;  // in [0,1)

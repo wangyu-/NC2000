@@ -77,7 +77,7 @@ emulation parameter
 */
 uint32_t SLICE_INTERVAL= 1;  //unit ms
 uint32_t power_save_interval=1200;
-uint32_t cpu_batch=64;
+uint32_t cpu_batch=32;
 uint32_t mi_clear_delay_value=1;
 bool enable_keepon = true;
 bool enable_auto_time_sync= true;
