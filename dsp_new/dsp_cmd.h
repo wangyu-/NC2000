@@ -15,4 +15,5 @@ void dsp_hw_reset();
 // Advance DSP clocks & internal timers across (last_cycles, cycles]
 void dsp_step(uint64_t last_cycles, uint64_t cycles);
 
+void dsp_set_dual_mode(bool enable);
 void dsp_set_log_level(int level);

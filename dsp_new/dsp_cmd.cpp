@@ -67,7 +67,6 @@ public:
         : sleeping_(false),
           sleep_pending_(false),
           loopback_(false),
-          tx_busy_(false),
           rx_ready_(false),
           rx_data_(0),
           data_low_(0),
@@ -84,6 +83,10 @@ public:
           pcm_acc_cnt_(0),
           host_out_count_(0),
           log_level_(1) {}
+
+    void set_dual_mode(bool enable) {
+        core_.set_dual_mode(enable);
+    }
 
     void set_log_level(int level) {
         log_level_ = level;
@@ -104,7 +107,7 @@ public:
         if (rx_ready_) {
             stat |= kStatRxReady;
         }
-        if (tx_busy_) {
+        if (!sleeping_ && is_busy()) {
             stat |= kStatTxBusy;
         }
         if (debug_level >= 3) {
@@ -124,15 +127,12 @@ public:
     }
 
     void write_ctrl(uint8_t value) {
-        core_.set_dual_mode(nc2000mode);
-
         if (value & kCtrlReset) {
             sw_reset();
         } else if (value & kCtrlWakeup) {
             sleeping_ = false;
             sleep_pending_ = false;
-            tx_busy_ = false;
-            // Hardware wakeup preserves volume and mode; only clears partial packet state.
+            // Hardware wakeup preserves volume, mode, and any queued audio; only clears partial packet state.
             core_.clear_packet();
         }
     }
@@ -144,7 +144,6 @@ public:
     void write_data_high(uint8_t high) {
         const uint8_t low = data_low_;
         const uint16_t cmd = static_cast<uint16_t>((static_cast<uint16_t>(high) << 8) | low);
-        core_.set_dual_mode(nc2000mode);
 
         if (sleeping_ || sleep_pending_) {
             if (debug_level >= 1) {
@@ -241,7 +240,6 @@ public:
                     if (debug_level >= 2) {
                         std::printf("[DSP] sleep (%04x, pending_pcm=%zu)\n", cmd, pcm_fifo_.size());
                     }
-                    tx_busy_ = false;
                     if (pcm_fifo_.empty()) {
                         finish_sleep();
                     } else {
@@ -380,10 +378,6 @@ private:
                 --samples;
             }
         }
-
-        if (!is_busy()) {
-            tx_busy_ = false;
-        }
     }
 
     void emit_host_sample(int16_t sample) {
@@ -403,7 +397,6 @@ private:
         flush_host_audio();
         sleeping_ = true;
         sleep_pending_ = false;
-        tx_busy_ = false;
     }
 
     void flush_host_audio() {
@@ -425,7 +418,6 @@ private:
         sleeping_ = false;
         sleep_pending_ = false;
         loopback_ = false;
-        tx_busy_ = false;
         rx_ready_ = false;
         rx_data_ = 0;
 
@@ -448,12 +440,6 @@ private:
         cut_tail_ = 0;
         cut_frames_ = 0;
         syllable_frame_ = 0;
-    }
-
-    void latch_busy_if_needed() {
-        if (!sleeping_ && !sleep_pending_ && is_busy()) {
-            tx_busy_ = true;
-        }
     }
 
     void push_pcm(const int16_t* samples, size_t count) {
@@ -483,7 +469,6 @@ private:
             return;
         }
 
-        latch_busy_if_needed();
         frame_scratch_.clear();
         if (!core_.feed_celp_word(word, frame_scratch_)) {
             return;
@@ -510,7 +495,6 @@ private:
         } else {
             push_pcm(frame_scratch_.data(), frame_scratch_.size());
         }
-        latch_busy_if_needed();
     }
 
     void handle_mode_switch(uint8_t low) {
@@ -573,7 +557,6 @@ private:
     bool sleeping_;
     bool sleep_pending_;
     bool loopback_;
-    bool tx_busy_;
     bool rx_ready_;
     uint8_t rx_data_;
     uint8_t data_low_;
@@ -617,4 +600,5 @@ void dsp_write_data_low(uint8_t value) { g_dsp.write_data_low(value); }
 void dsp_write_data_high(uint8_t value) { g_dsp.write_data_high(value); }
 void dsp_hw_reset() { g_dsp.hw_reset(); }
 void dsp_step(uint64_t last_cycles, uint64_t cycles) { g_dsp.step(last_cycles, cycles); }
+void dsp_set_dual_mode(bool enable) { g_dsp.set_dual_mode(enable); }
 void dsp_set_log_level(int level) { g_dsp.set_log_level(level); }
