@@ -47,10 +47,10 @@ constexpr uint8_t kCtrlWakeup = 0x80;   // B7: wake up
 constexpr uint8_t kCtrlReset = 0x40;    // B6: software reset
 
 // Internal 8 kHz PCM output FIFO watermarks (unit: samples @ 8 kHz).
-// Kept at 250 ms so SLEEP (0x8000) draining pcm_fifo_ always completes well under
-// the 6502 BIOS 2-NMI (0.5-1.0 s) watchdog while keeping >10x margin over SDL callbacks.
-constexpr size_t kPcmFifoBusyThreshold = 2000;  // 250 ms
-constexpr size_t kPcmFifoDropLimit = 3200;      // 400 ms (safely under 500 ms SLEEP watchdog)
+// Busy threshold (~2 CELP frames / 60 ms) mimics double-buffered frame backpressure
+// while giving enough margin over a single emulation slice; drop limit caps runaway floods.
+constexpr size_t kPcmFifoBusyThreshold = 480;   // 60 ms (~2 CELP frames)
+constexpr size_t kPcmFifoDropLimit = 1600;      // 200 ms (cap if guest ignores busy)
 
 // Host SDL audio staging batch (80 samples @ 8 kHz = 10 ms, flushed at most at 100 Hz).
 constexpr int kHostAudioBatchSamples = 80;
