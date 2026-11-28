@@ -110,20 +110,11 @@ void write_audio_dump_file(unsigned char *p, int size){
 
 const int dsp_drop_len_host = 10000;
 
-// Adaptive DSP playback rate control (±2% max, -1% initial):
-// 1) Prebuffer 600 samples (75 ms) and start gently stretched at -1% (0.99x, down to
-//    -2% / 0.98x when low) so a nominal 8 kHz producer stays ahead of SDL without underrun.
-// 2) Hold nominal 1.00x across [1600, 3200], then compress up to +2% (1.02x) by 6000
-//    (still 4000 samples / 500 ms below dsp_drop_len_host = 10000) to absorb backlog.
-static constexpr int    kDspPrebufferSamples = 600;   // 75 ms @ 8 kHz
-static constexpr int    kDspMinWatermark     = 400;   // 50 ms: full -2% stretch below this
-static constexpr int    kDspLowWatermark     = 800;   // 100 ms: -1% stretch
-static constexpr int    kDspTargetWatermark  = 1600;  // 200 ms: nominal 1.00x
-static constexpr int    kDspHighWatermark    = 3200;  // 400 ms: begin compressing backlog
-static constexpr int    kDspMaxWatermark     = 6000;  // 750 ms: full +2% compress (4000 below drop)
-static constexpr double kDspInitScale        = 0.99;
-static constexpr double kDspMinScale         = 0.98;
-static constexpr double kDspMaxScale         = 1.02;
+// Host DSP jitter buffer: small prebuffer (30 ms) + gentle ±1.5% clock-drift tracking
+// around 60 ms target + exponential fade-out on drain to avoid start/end clicks.
+static constexpr int    kDspPrebufferSamples = 240;  // 30 ms @ 8 kHz
+static constexpr int    kDspTargetSamples    = 480;  // 60 ms @ 8 kHz
+static constexpr double kDspMaxDriftAdjust   = 0.015;
 
 // Linear resampler state for DSP -> output
 static double g_dsp_phase = 0.0;  // in [0,1)
@@ -132,7 +123,7 @@ static float  g_dsp_s1 = 0.0f;    // next DSP sample (lookahead)
 static bool   g_dsp_buffering = true;
 static int    g_dsp_idle_cbs = 0;
 static int    g_dsp_pushed_since_cb = 0;
-static double g_dsp_rate_scale = kDspInitScale;
+static double g_dsp_rate_scale = 1.0;
 
 static const double g_dsp_ratio = (double)DSP_AUDIO_HZ / (double)BEEPER_AUDIO_HZ;
 
@@ -183,32 +174,18 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
     if (g_dsp_buffering) {
         if (q >= kDspPrebufferSamples || (q > 0 && !producer_active)) {
             g_dsp_buffering = false;
-            g_dsp_rate_scale = kDspInitScale;
+            g_dsp_rate_scale = 1.0;
         }
     } else {
-        double target_scale;
-        if (!producer_active && q <= kDspHighWatermark) {
-            // Draining tail after speech/PCM ended: play out at nominal 1.0x speed.
-            target_scale = 1.0;
-        } else if (q <= kDspMinWatermark) {
-            target_scale = kDspMinScale;
-        } else if (q <= kDspLowWatermark) {
-            double t = (double)(q - kDspMinWatermark) / (kDspLowWatermark - kDspMinWatermark);
-            target_scale = kDspMinScale + (kDspInitScale - kDspMinScale) * t;
-        } else if (q <= kDspTargetWatermark) {
-            double t = (double)(q - kDspLowWatermark) / (kDspTargetWatermark - kDspLowWatermark);
-            target_scale = kDspInitScale + (1.0 - kDspInitScale) * t;
-        } else if (q <= kDspHighWatermark) {
-            target_scale = 1.0;
-        } else {
-            double t = std::min(1.0, (double)(q - kDspHighWatermark) / (kDspMaxWatermark - kDspHighWatermark));
-            target_scale = 1.0 + (kDspMaxScale - 1.0) * t;
+        double target_scale = 1.0;
+        if (producer_active) {
+            double err = (double)(q - kDspTargetSamples) / (double)kDspTargetSamples;
+            target_scale = 1.0 + std::max(-kDspMaxDriftAdjust, std::min(kDspMaxDriftAdjust, err * kDspMaxDriftAdjust));
         }
-        g_dsp_rate_scale += (target_scale - g_dsp_rate_scale) * 0.25;
+        g_dsp_rate_scale += (target_scale - g_dsp_rate_scale) * 0.2;
     }
 
     const double dsp_ratio_adjusted = g_dsp_ratio * g_dsp_rate_scale;
-    int cb_underrun = 0;
 
     for (int i = 0; i < frames; ++i) {
         // 1) Beeper @ output rate (44100 Hz)
@@ -235,7 +212,6 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
                     g_dsp_s1 = (float)sound_stream_dsp_host.front();
                     sound_stream_dsp_host.pop_front();
                 } else {
-                    if (producer_active) ++cb_underrun;
                     // Exponential decay to zero on drain to avoid hard-step clicks
                     g_dsp_s1 *= 0.92f;
                     if (std::fabs(g_dsp_s0) < 1.0f && std::fabs(g_dsp_s1) < 1.0f) {
@@ -243,7 +219,7 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
                         g_dsp_s1 = 0.0f;
                         g_dsp_phase = 0.0;
                         g_dsp_buffering = true;
-                        g_dsp_rate_scale = kDspInitScale;
+                        g_dsp_rate_scale = 1.0;
                         break;
                     }
                 }
@@ -256,25 +232,6 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
         // 3) Mix and clamp (you can add per-stream gains here if needed)
         int mixed = (int)(beeper_sample * beeper_volume + dsp_f * speaker_volume);
         out[i] = clamp_s16(mixed);
-    }
-
-    if (enable_debug_dsp) {
-        static int dbg_cbs = 0;
-        static int dbg_pushed = 0;
-        static int dbg_underruns = 0;
-        dbg_pushed += pushed;
-        dbg_underruns += cb_underrun;
-        if (++dbg_cbs >= 20) {
-            if (dbg_pushed > 0 || q > 0 || dbg_underruns > 0) {
-                double elapsed_s = (dbg_cbs * frames) / (double)BEEPER_AUDIO_HZ;
-                std::printf("[audio] q=%d in=%.0fHz scale=%.3f (out=%.0fHz) underrun=%d\n",
-                            q, dbg_pushed / elapsed_s, g_dsp_rate_scale,
-                            DSP_AUDIO_HZ * g_dsp_rate_scale, dbg_underruns);
-            }
-            dbg_cbs = 0;
-            dbg_pushed = 0;
-            dbg_underruns = 0;
-        }
     }
 }
 
@@ -295,7 +252,7 @@ void init_audio() {
     g_dsp_buffering = true;
     g_dsp_idle_cbs = 0;
     g_dsp_pushed_since_cb = 0;
-    g_dsp_rate_scale = kDspInitScale;
+    g_dsp_rate_scale = 1.0;
 
     if(g_audio_device){
         //if previous audio device is not correctly shutdhown.

@@ -49,9 +49,8 @@ constexpr uint8_t kCtrlReset = 0x40;    // B6: software reset
 // Internal 8 kHz PCM output FIFO watermarks (unit: samples @ 8 kHz).
 // Kept at 250 ms so SLEEP (0x8000) draining pcm_fifo_ always completes well under
 // the 6502 BIOS 2-NMI (0.5-1.0 s) watchdog while keeping >10x margin over SDL callbacks.
-constexpr size_t kPcmFifoBusyThreshold = 2000;   // 250 ms
-constexpr size_t kPcmFifoSpillThreshold = 2400;  // 300 ms (spill excess to host resampler)
-constexpr size_t kPcmFifoDropLimit = 3200;       // 400 ms (safely under 500 ms SLEEP watchdog)
+constexpr size_t kPcmFifoBusyThreshold = 2000;  // 250 ms
+constexpr size_t kPcmFifoDropLimit = 3200;      // 400 ms (safely under 500 ms SLEEP watchdog)
 
 // Host SDL audio staging batch (80 samples @ 8 kHz = 10 ms, flushed at most at 100 Hz).
 constexpr int kHostAudioBatchSamples = 80;
@@ -363,12 +362,6 @@ private:
 
     // Drain `samples` at the emulated 8 kHz DAC clock and stage into host SDL audio batches.
     void step_dac(uint64_t samples) {
-        // If a guest ignores dsp_busy and pushes pcm_fifo_ past kPcmFifoSpillThreshold,
-        // spill the excess into the host audio queue so sound.cpp's adaptive rate
-        // compressor can absorb it cleanly instead of hard-dropping here.
-        if (pcm_fifo_.size() > kPcmFifoSpillThreshold) {
-            samples += pcm_fifo_.size() - kPcmFifoSpillThreshold;
-        }
         while (samples > 0 && !pcm_fifo_.empty()) {
             emit_host_sample(pcm_fifo_.front());
             pcm_fifo_.pop_front();
