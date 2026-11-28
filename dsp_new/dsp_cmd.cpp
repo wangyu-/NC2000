@@ -9,15 +9,18 @@
 
 #include "comm.h"
 #include "sound.h"
+#include "state.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <deque>
 #include <vector>
 
+extern nc2k_states_t nc2k_states;
+
 namespace {
 
-enum class DspMode : uint8_t {
+enum DspMode : uint8_t {
     None = 0,
     Celp = 1,
     Word = 2,
@@ -29,7 +32,7 @@ enum class DspMode : uint8_t {
 //   Host: 0xD001 -> count word (e.g. 0x00C8)
 //   DSP:  0x5A (bit 6=1) -> host reads $31 (bit 6=0) -> countdown -> 0xFF (bit 6=1) -> host reads $31
 //   Host: speed parameter word (e.g. 0x00FE, 0x0033..0x004C)
-enum class D001State : uint8_t {
+enum D001State : uint8_t {
     Idle = 0,
     WaitCountParam = 1,
     WaitStartRead = 2,
@@ -64,20 +67,20 @@ inline uint64_t ticks_at_freq(uint64_t c, uint64_t freq) {
 class Spds104a {
 public:
     Spds104a()
-        : sleeping_(false),
-          sleep_pending_(false),
-          loopback_(false),
-          rx_ready_(false),
-          rx_data_(0),
-          data_low_(0),
-          mode_(DspMode::Celp),
+        : sleeping_(nc2k_states.dsp_state.sleeping),
+          sleep_pending_(nc2k_states.dsp_state.sleep_pending),
+          loopback_(nc2k_states.dsp_state.loopback),
+          rx_ready_(nc2k_states.dsp_state.rx_ready),
+          rx_data_(nc2k_states.dsp_state.rx_data),
+          data_low_(nc2k_states.dsp_state.data_low),
+          mode_(nc2k_states.dsp_state.mode),
           head_skip_(0),
           cut_tail_(0),
           cut_frames_(0),
           syllable_frame_(0),
-          d001_state_(D001State::Idle),
-          d001_delay_cycles_(0),
-          speed_param_(0x0040),
+          d001_state_(nc2k_states.dsp_state.d001_state),
+          d001_delay_cycles_(nc2k_states.dsp_state.d001_delay_cycles),
+          speed_param_(nc2k_states.dsp_state.speed_param),
           pcm_dac_sample_(0),
           pcm_acc_sum_(0),
           pcm_acc_cnt_(0),
@@ -518,7 +521,7 @@ private:
             if (log_level_ >= 1) std::printf("[DSP] ignored unknown mode 0xA0%02x\n", low);
             return;
         }
-        DspMode next = static_cast<DspMode>(low);
+        uint8_t next = low;
         if (log_level_ >= 1 && mode_ != next) {
             std::printf("[DSP] mode %u -> %u\n",
                         static_cast<unsigned>(mode_), static_cast<unsigned>(next));
@@ -566,16 +569,16 @@ private:
         }
     }
 
-    // Hardware interface registers (SPDS104A Programming Guide p.11-12)
-    bool sleeping_;
-    bool sleep_pending_;
-    bool loopback_;
-    bool rx_ready_;
-    uint8_t rx_data_;
-    uint8_t data_low_;
+    // Hardware interface registers (bound directly to nc2k_states.dsp_state for save-state)
+    bool& sleeping_;
+    bool& sleep_pending_;
+    bool& loopback_;
+    bool& rx_ready_;
+    uint8_t& rx_data_;
+    uint8_t& data_low_;
 
     DspCore core_;
-    DspMode mode_;
+    uint8_t& mode_;
 
     // WORD_MODE / DIPHONE streaming syllable trimming (0xC2/0xC4/0xC8)
     std::vector<int16_t> frame_scratch_;
@@ -585,9 +588,9 @@ private:
     int syllable_frame_;
 
     // 0xD001 two-stage calibration handshake & speed parameter state
-    D001State d001_state_;
-    uint64_t d001_delay_cycles_;
-    uint16_t speed_param_;
+    uint8_t& d001_state_;
+    uint64_t& d001_delay_cycles_;
+    uint16_t& speed_param_;
 
     // Internal 8 kHz PCM output FIFO (CELP / WORD / DIPHONE) and direct-DAC latch (PCM_MODE)
     std::deque<int16_t> pcm_fifo_;

@@ -178,7 +178,25 @@ struct nc2k_states_t{
 		uint16_t tmb_reload; // Timer B auto-reload latch (updated by $12/$13 writes; $13 loads tmb_val)
 	} timer_ab;
 
-	u64_t nand_busy_until_cycle;
+	struct nand_state_extra_t {
+		u64_t nand_busy_until_cycle;
+		uint8_t reserved[32];
+	} nand_state_extra;
+
+	struct dsp_state_t {
+		bool sleeping;
+		bool sleep_pending;
+		bool loopback;
+		bool rx_ready;
+		uint8_t rx_data;
+		uint8_t data_low;
+		uint8_t mode;
+		uint8_t d001_state;
+		uint16_t speed_param;
+		uint16_t volume_q8;
+		uint64_t d001_delay_cycles;
+		uint8_t reserved[32];
+	} dsp_state;
 	//append new variable to the end if possible, so that the save state can maintain backward compatibility
 
 
@@ -246,7 +264,8 @@ below are all legacy fields, only used in old cpu_loop or io
 		//=================================================================
 		iv_set=0; //if this is put into warm_reset, alarm wakeup will not work correctly
 		memset(&nand_state,0,sizeof(nand_state));
-		nand_busy_until_cycle=0;
+		memset(&nand_state_extra,0,sizeof(nand_state_extra));
+		memset(&dsp_state,0,sizeof(dsp_state));
 		memset(&timer_ab,0,sizeof(timer_ab));
 		w1e_port6_OL=0;
 		r1e_port6_ID=0;

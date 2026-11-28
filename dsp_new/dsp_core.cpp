@@ -2,11 +2,14 @@
 // Pure signal-processing module with zero emulator or I/O dependencies.
 
 #include "dsp_core.h"
+#include "state.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+
+extern nc2k_states_t nc2k_states;
 
 namespace {
 
@@ -136,7 +139,7 @@ private:
 
 DspCore::DspCore()
     : dual_mode_(false),
-      volume_q8_(0x3FF),
+      volume_q8_(nc2k_states.dsp_state.volume_q8),
       log_level_(1) {
     std::memset(packets_, 0, sizeof(packets_));
     reset_decoder();
@@ -147,7 +150,7 @@ void DspCore::set_dual_mode(bool enable) {
 }
 
 void DspCore::set_volume_q8(int volume_q8) {
-    volume_q8_ = std::max(0, std::min(0x3FF, volume_q8));
+    volume_q8_ = static_cast<uint16_t>(std::max(0, std::min(0x3FF, volume_q8)));
 }
 
 void DspCore::set_log_level(int level) {

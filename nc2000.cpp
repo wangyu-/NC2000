@@ -299,6 +299,7 @@ void nc2k_cold_reset(){
     clear_cmds();
 
     nc2k_states.reset();
+    dsp_hw_reset();
     nc2k_reset_comm();
     super_switch();
     cpu->reset();//must be called after super_switch is done

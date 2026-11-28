@@ -132,7 +132,7 @@ static auto& nand_data = nc2k_states.nand_state.nand_data;
 static uint32_t& nand_read_offset = nc2k_states.nand_state.nand_read_offset;
 static uint32_t& nand_pointer_latch = nc2k_states.nand_state.nand_pointer_latch;
 static uint32_t& nand_cmd_latch = nc2k_states.nand_state.nand_cmd_latch;
-static u64_t& nand_busy_until_cycle = nc2k_states.nand_busy_until_cycle;
+static u64_t& nand_busy_until_cycle = nc2k_states.nand_state_extra.nand_busy_until_cycle;
 
 // Samsung K9F5608U0M / Toshiba TC58512FT page read transfer time tR ~= 10-25 us.
 static constexpr uint64_t kNandPageReadUs = 15;
