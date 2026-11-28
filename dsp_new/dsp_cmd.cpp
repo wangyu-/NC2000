@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <cstdlib>
 #include <deque>
 #include <vector>
 
@@ -60,31 +59,8 @@ constexpr size_t kPcmFifoDropLimit = 1600;      // 200 ms (cap if guest ignores 
 constexpr int kHostAudioBatchSamples = 80;
 constexpr uint64_t kHostAudioFlushHz = 100;
 
-// Max bidirectional search radius (3 ms @ 8 kHz) to snap WORD_MODE head/tail cuts to a zero crossing.
-constexpr int kZeroCrossSearchSamples = 24;
-
-inline int snap_zero_crossing(const int16_t* buf, int pos, int limit, bool is_end) {
-    if (pos <= 0 || pos >= limit) return pos;
-    int min_idx = is_end ? (pos - 1) : pos;
-    int min_abs = std::abs(static_cast<int>(buf[min_idx]));
-    for (int d = 0; d < kZeroCrossSearchSamples; ++d) {
-        const int candidates[2] = {pos + d, pos - d};
-        for (int k : candidates) {
-            if (k < 1 || k >= limit) continue;
-            const int prev = buf[k - 1];
-            const int cur = buf[k];
-            if ((prev >= 0 && cur <= 0) || (prev <= 0 && cur >= 0)) {
-                const int best = (std::abs(cur) < std::abs(prev)) ? k : (k - 1);
-                return is_end ? (best + 1) : best;
-            }
-            if (std::abs(cur) < min_abs) {
-                min_abs = std::abs(cur);
-                min_idx = k;
-            }
-        }
-    }
-    return is_end ? (min_idx + 1) : min_idx;
-}
+// Short streaming crossfade (1.5 ms @ 8 kHz) across WORD_MODE syllable cut boundaries.
+constexpr int kWordCrossfadeSamples = 12;
 
 // Exact floor(c * freq / CYCLES_SECOND) without 64-bit mul overflow at large cycle counts.
 inline uint64_t ticks_at_freq(uint64_t c, uint64_t freq) {
@@ -105,6 +81,8 @@ public:
           cut_tail_(0),
           cut_frames_(0),
           syllable_frame_(0),
+          word_tail_len_(0),
+          word_xfade_pos_(0),
           d001_state_(nc2k_states.dsp_state.d001_state),
           d001_delay_cycles_(nc2k_states.dsp_state.d001_delay_cycles),
           speed_param_(nc2k_states.dsp_state.speed_param),
@@ -344,6 +322,7 @@ public:
             case 0xF:
                 // Speech End (SPDS104A manual p.17 Table 3: ID 1111 = 0xF000..0xFFFF)
                 reset_syllable();
+                clear_word_crossfade();
                 break;
 
             default:
@@ -437,6 +416,7 @@ private:
         flush_host_audio();
         reset_pcm_dac();
         reset_syllable();
+        clear_word_crossfade();
         sleeping_ = true;
         sleep_pending_ = false;
     }
@@ -468,6 +448,7 @@ private:
         cut_tail_ = 0;
         cut_frames_ = 0;
         syllable_frame_ = 0;
+        clear_word_crossfade();
         d001_state_ = D001State::Idle;
         d001_delay_cycles_ = 0;
         speed_param_ = 0x0040;
@@ -483,6 +464,11 @@ private:
         cut_tail_ = 0;
         cut_frames_ = 0;
         syllable_frame_ = 0;
+    }
+
+    void clear_word_crossfade() {
+        word_tail_len_ = 0;
+        word_xfade_pos_ = 0;
     }
 
     void push_pcm(const int16_t* samples, size_t count) {
@@ -522,20 +508,42 @@ private:
             // (real SPDS104A streams frame-by-frame rather than buffering an entire syllable).
             const int n = static_cast<int>(frame_scratch_.size());
             int end = n;
+            bool is_tail_cut = false;
             if (cut_tail_ != 0) {
                 if (syllable_frame_ == cut_frames_) {
-                    end = snap_zero_crossing(frame_scratch_.data(), std::min(cut_tail_, n), n, true);
+                    end = std::min(cut_tail_, n);
+                    is_tail_cut = true;
                 } else if (syllable_frame_ > cut_frames_) {
                     end = 0;
                 }
             }
-            int start = std::min(head_skip_, end);
-            if (start > 0 && start < end) {
-                start = snap_zero_crossing(frame_scratch_.data(), start, end, false);
-            }
+            const int start = std::min(head_skip_, end);
             head_skip_ -= std::min(head_skip_, n);
             if (end > start) {
+                if (word_xfade_pos_ < word_tail_len_) {
+                    const int blend = std::min(end - start, word_tail_len_ - word_xfade_pos_);
+                    for (int i = 0; i < blend; ++i) {
+                        const int pos = word_xfade_pos_ + i;
+                        const int old_w = word_tail_len_ - pos;
+                        const int new_w = pos + 1;
+                        const int mixed = (static_cast<int>(word_tail_[pos]) * old_w +
+                                           static_cast<int>(frame_scratch_[start + i]) * new_w) /
+                                          (word_tail_len_ + 1);
+                        frame_scratch_[start + i] = static_cast<int16_t>(mixed);
+                    }
+                    word_xfade_pos_ += blend;
+                    if (word_xfade_pos_ >= word_tail_len_) {
+                        clear_word_crossfade();
+                    }
+                }
                 push_pcm(frame_scratch_.data() + start, static_cast<size_t>(end - start));
+            }
+            if (is_tail_cut) {
+                word_tail_len_ = std::min(kWordCrossfadeSamples, n - end);
+                word_xfade_pos_ = 0;
+                for (int i = 0; i < word_tail_len_; ++i) {
+                    word_tail_[i] = frame_scratch_[end + i];
+                }
             }
             ++syllable_frame_;
         } else {
@@ -561,6 +569,7 @@ private:
         cut_tail_ = 0;
         cut_frames_ = 0;
         syllable_frame_ = 0;
+        clear_word_crossfade();
         reset_pcm_dac();
         core_.clear_packet();
     }
@@ -588,8 +597,11 @@ private:
                 core_.clear_packet();
                 break;
             case 0xC1:
+                reset_syllable();
+                break;
             case 0xC3:
                 reset_syllable();
+                clear_word_crossfade();
                 break;
             default:
                 if (log_level_ >= 1) {
@@ -610,12 +622,15 @@ private:
     DspCore core_;
     uint8_t& mode_;
 
-    // WORD_MODE / DIPHONE streaming syllable trimming (0xC2/0xC4/0xC8)
+    // WORD_MODE / DIPHONE streaming syllable trimming (0xC2/0xC4/0xC8) & boundary crossfade
     std::vector<int16_t> frame_scratch_;
     int head_skip_;
     int cut_tail_;
     int cut_frames_;
     int syllable_frame_;
+    int16_t word_tail_[kWordCrossfadeSamples];
+    int word_tail_len_;
+    int word_xfade_pos_;
 
     // 0xD001 two-stage calibration handshake & speed parameter state
     uint8_t& d001_state_;
