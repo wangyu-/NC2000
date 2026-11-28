@@ -108,12 +108,12 @@ void write_audio_dump_file(unsigned char *p, int size){
     fwrite(p,size,1,audio_dump_fp);
 }*/
 
-const int dsp_drop_len_host = 2000;  // temp 250 ms for debugging drop pattern
+const int dsp_drop_len_host = 2000;  // 250 ms @ 8 kHz
 
-// Host DSP jitter buffer: small prebuffer (30 ms) + gentle ±1.5% clock-drift tracking
-// around 60 ms target + exponential fade-out on drain to avoid start/end clicks.
-static constexpr int    kDspPrebufferSamples = 240;  // 30 ms @ 8 kHz
-static constexpr int    kDspTargetSamples    = 480;  // 60 ms @ 8 kHz
+// Host DSP jitter buffer: prebuffer (50 ms) + gentle ±1.5% clock-drift tracking
+// around 90 ms target (matching beeper) + exponential fade-out on drain.
+static constexpr int    kDspPrebufferSamples = 400;  // 50 ms @ 8 kHz
+static constexpr int    kDspTargetSamples    = 720;  // 90 ms @ 8 kHz
 static constexpr double kDspMaxDriftAdjust   = 0.015;
 
 // Linear resampler state for DSP -> output
@@ -123,7 +123,7 @@ static float  g_dsp_s1 = 0.0f;    // next DSP sample (lookahead)
 static bool   g_dsp_buffering = true;
 static int    g_dsp_idle_cbs = 0;
 static int    g_dsp_pushed_since_cb = 0;
-static int    g_dsp_dropped_since_cb = 0;
+static int    g_debug_dsp_dropped_since_cb = 0;
 static double g_dsp_rate_scale = 1.0;
 
 static const double g_dsp_ratio = (double)DSP_AUDIO_HZ / (double)BEEPER_AUDIO_HZ;
@@ -142,17 +142,19 @@ void sound_push_dsp_samples(const int16_t* samples, int count) {
         std::printf("[audio] host dsp queue drained\n");
     }
     int pushed = 0;
-    int dropped = 0;
+    int debug_dsp_dropped = 0;
     for (int i = 0; i < count; ++i) {
         if ((int)sound_stream_dsp_host.size() >= dsp_drop_len_host) {
-            dropped += (count - i);
+            debug_dsp_dropped += (count - i);
             break;
         }
         sound_stream_dsp_host.push_back(samples[i]);
         ++pushed;
     }
     g_dsp_pushed_since_cb += pushed;
-    g_dsp_dropped_since_cb += dropped;
+    if (enable_debug_dsp) {
+        g_debug_dsp_dropped_since_cb += debug_dsp_dropped;
+    }
     if (g_audio_device) SDL_UnlockAudioDevice(g_audio_device);
 }
 
@@ -169,9 +171,9 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
     // Update adaptive DSP resample scale once per callback based on host queue level.
     const int q = (int)sound_stream_dsp_host.size();
     const int pushed = g_dsp_pushed_since_cb;
-    const int dropped = g_dsp_dropped_since_cb;
+    const int debug_dsp_dropped = g_debug_dsp_dropped_since_cb;
     g_dsp_pushed_since_cb = 0;
-    g_dsp_dropped_since_cb = 0;
+    g_debug_dsp_dropped_since_cb = 0;
     if (pushed > 0) {
         g_dsp_idle_cbs = 0;
     } else if (g_dsp_idle_cbs < 100) {
@@ -243,22 +245,22 @@ static void audio_mix_cb(void* userdata, Uint8* stream, int len_bytes) {
     }
 
     if (enable_debug_dsp) {
-        static int dbg_cbs = 0;
-        static int dbg_pushed = 0;
-        static int dbg_dropped = 0;
-        dbg_pushed += pushed;
-        dbg_dropped += dropped;
-        if (++dbg_cbs >= 10) {
-            if (dbg_pushed > 0 || dbg_dropped > 0 || q > 0) {
-                double elapsed_s = (dbg_cbs * frames) / (double)BEEPER_AUDIO_HZ;
+        static int debug_dsp_cbs = 0;
+        static int debug_dsp_pushed_sum = 0;
+        static int debug_dsp_dropped_sum = 0;
+        debug_dsp_pushed_sum += pushed;
+        debug_dsp_dropped_sum += debug_dsp_dropped;
+        if (++debug_dsp_cbs >= 10) {
+            if (debug_dsp_pushed_sum > 0 || debug_dsp_dropped_sum > 0 || q > 0) {
+                double elapsed_s = (debug_dsp_cbs * frames) / (double)BEEPER_AUDIO_HZ;
                 std::printf("[audio] q=%d in=%.0fHz drop=%d scale=%.3f (out=%.0fHz) spd=%.2f oc=%.2f\n",
-                            q, (dbg_pushed + dbg_dropped) / elapsed_s, dbg_dropped,
-                            g_dsp_rate_scale, DSP_AUDIO_HZ * g_dsp_rate_scale,
-                            speed_multiplier, oc_factor);
+                            q, (debug_dsp_pushed_sum + debug_dsp_dropped_sum) / elapsed_s,
+                            debug_dsp_dropped_sum, g_dsp_rate_scale,
+                            DSP_AUDIO_HZ * g_dsp_rate_scale, speed_multiplier, oc_factor);
             }
-            dbg_cbs = 0;
-            dbg_pushed = 0;
-            dbg_dropped = 0;
+            debug_dsp_cbs = 0;
+            debug_dsp_pushed_sum = 0;
+            debug_dsp_dropped_sum = 0;
         }
     }
 }
@@ -280,6 +282,7 @@ void init_audio() {
     g_dsp_buffering = true;
     g_dsp_idle_cbs = 0;
     g_dsp_pushed_since_cb = 0;
+    g_debug_dsp_dropped_since_cb = 0;
     g_dsp_rate_scale = 1.0;
 
     if(g_audio_device){
