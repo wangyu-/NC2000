@@ -16,6 +16,7 @@ extern "C" {
 #include <stdint.h>
 #include "state.h"
 #include "mem.h"
+#include "nand.h"
 
 #define qDebug(...)
 
@@ -855,10 +856,10 @@ BYTE __iocallconv Read18Port4( BYTE )
 #endif
     if(nc2000mode){
         //this is R/B of nand on nc2000, without it the UI is very slow
-        return zpioregs[io18_port4_data]|0x20;
+        return nand_is_ready() ? (zpioregs[io18_port4_data] | 0x20) : (zpioregs[io18_port4_data] & ~0x20);
     }
     if(nc3000mode){
-        return zpioregs[io18_port4_data]|0x01;
+        return nand_is_ready() ? (zpioregs[io18_port4_data] | 0x01) : (zpioregs[io18_port4_data] & ~0x01);
     }
     return zpioregs[io18_port4_data];
 }

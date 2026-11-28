@@ -475,7 +475,7 @@ void nand_write(uint8_t value){
     if(ALE){
         if(nand_addr.size() <MAX_NAND_ADDR_SIZE){
             nand_addr.push_back(value);
-            if(nc2000mode && nand_cmd_latch == NAND_CMD_LATCH::READ1_2 && nand_addr.size() >= 3){
+            if(nand_cmd_latch == NAND_CMD_LATCH::READ1_2 && nand_addr.size() >= 3){
                 start_nand_busy_us(kNandPageReadUs);
             }
         }else{
