@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-// SPDS104A host bus registers ($20..$23 on PC1000/NC1020, $30..$33 on NC2000/NC3000)
+// SPDS104A host bus registers ($20..$23 on PC1000/NC1020, $30..$33 on NC2000/NC2600)
 uint8_t dsp_read_status();
 uint8_t dsp_read_data();
 void dsp_write_ctrl(uint8_t value);

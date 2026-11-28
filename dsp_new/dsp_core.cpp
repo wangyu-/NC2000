@@ -43,8 +43,8 @@ constexpr float kLspFreqHz[112] = {
     3190.0f, 3270.0f, 3350.0f, 3420.0f, 3490.0f, 3590.0f, 3710.0f, 3830.0f,
 };
 
-// Legacy SPDS104A (PC1000/NC1020) 4-bit innovation gain table.
-constexpr double kLegacyCGain[16] = {
+// SPDS104A 4-bit innovation gain table (used by both single-mode and dual-mode).
+constexpr double kCGain[16] = {
     0.0, 1.0, 3.0, 13.0, 35.0, 64.0, 98.0, 136.0,
     178.0, 224.0, 278.0, 340.0, 418.0, 520.0, 660.0, 870.0,
 };
@@ -135,18 +135,9 @@ private:
 }  // namespace
 
 DspCore::DspCore()
-    : packet_off_(0),
-      dual_mode_(false),
+    : dual_mode_(false),
       volume_q8_(0x3FF),
-      log_level_(1),
-      first_lsp_frame_(true),
-      ltp_write_pos_(kLtpHistorySize - 1),
-      ltp_read_base_(0),
-      prev_pitch_idx_(0),
-      pitch_period_(13),
-      pitch_frac_(0),
-      subframe_size_(60),
-      pulse_decay_(1.0) {
+      log_level_(1) {
     std::memset(packets_, 0, sizeof(packets_));
     reset_decoder();
 }
@@ -411,7 +402,7 @@ void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
     lsp_to_lpc(lsp_cos, lpc);
 
     double pg = pitch_gain(pitch_gidx);
-    double cg = kLegacyCGain[inno_gidx & 0x0F] * 4.0;
+    double cg = kCGain[inno_gidx & 0x0F] * 4.0;
 
     double exc_inno[kMaxSubframeSize] = {};
     if (two_pulse_mode) {
@@ -450,7 +441,7 @@ void DspCore::synthesize_subframe(int sf, int pitch_idx, int fixpos, int grid,
     int ex_pos = ltp_write_pos_;
     int pcount = pitch_period_ - 1;
 
-    // Q8 volume gain: 0x93FF -> ~4.0x (kLegacyCGain * 4 * 4 = * 16, matching legacy dsp)
+    // Q8 volume gain: 0x93FF -> ~4.0x (kCGain * 4 * 4 = * 16, matching legacy dsp)
     double vol_scale = volume_q8_ / 256.0;
 
     for (int i = 0; i < subframe_size_; ++i, --pcount) {

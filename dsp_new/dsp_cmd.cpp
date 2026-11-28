@@ -2,7 +2,7 @@
 //   - 6502 host bus registers ($20..$23 / $30..$33) per SPDS104A Programming Guide
 //   - Unified 16-bit command & streaming protocol state machine
 //   - WORD_MODE / DIPHONE streaming syllable trimming (0xC1/C2/C3/C4/C8)
-//   - Internal 8 kHz PCM output FIFO, emulated DAC clock consumption, and busy backpressure
+//   - Internal 8 kHz PCM output FIFO (CELP/WORD/DIPHONE), direct-DAC PCM_MODE latch, and busy backpressure
 
 #include "dsp_cmd.h"
 #include "dsp_core.h"
@@ -110,7 +110,7 @@ public:
         if (!sleeping_ && is_busy()) {
             stat |= kStatTxBusy;
         }
-        if (debug_level >= 3) {
+        if (log_level_ >= 3) {
             std::printf("[DSP] read_status -> %02x\n", stat);
         }
         return stat;
@@ -146,7 +146,7 @@ public:
         const uint16_t cmd = static_cast<uint16_t>((static_cast<uint16_t>(high) << 8) | low);
 
         if (sleeping_ || sleep_pending_) {
-            if (debug_level >= 1) {
+            if (log_level_ >= 1) {
                 std::printf("[DSP] ignored word %04x while %s\n",
                             cmd, sleeping_ ? "sleeping" : "sleep_pending");
             }
@@ -160,7 +160,7 @@ public:
         // 1. Loopback test mode (0x7004): only 0xFFFF exits; all other words echo low byte
         if (loopback_) {
             if (cmd == 0xFFFF) {
-                if (debug_level >= 1) std::printf("[DSP] exit loopback on 0xFFFF\n");
+                if (log_level_ >= 1) std::printf("[DSP] exit loopback on 0xFFFF\n");
                 loopback_ = false;
             } else {
                 set_rx_data(low);
@@ -192,7 +192,7 @@ public:
             } else if (d001_state_ == D001State::WaitCountParam) {
                 const uint64_t ticks = std::max<uint64_t>(1, std::min<uint64_t>(cmd, 2000));
                 d001_delay_cycles_ = (static_cast<uint64_t>(CYCLES_SECOND) * ticks) / DSP_AUDIO_HZ;
-                if (debug_level >= 1) {
+                if (log_level_ >= 1) {
                     std::printf("[DSP] 0xD001 count=%u (delay=%llu cycles)\n",
                                 static_cast<unsigned>(cmd),
                                 static_cast<unsigned long long>(d001_delay_cycles_));
@@ -202,7 +202,7 @@ public:
                 return;
             } else if (d001_state_ == D001State::WaitSpeedParam) {
                 speed_param_ = cmd;
-                if (debug_level >= 1) {
+                if (log_level_ >= 1) {
                     std::printf("[DSP] 0xD001 speed_param=0x%04x\n",
                                 static_cast<unsigned>(speed_param_));
                 }
@@ -226,8 +226,10 @@ public:
                 if (cmd == 0x7001 || cmd == 0x7002) {
                     set_rx_data(0x06);
                 } else if (cmd == 0x7004) {
-                    if (debug_level >= 1) std::printf("[DSP] enter loopback (0x7004)\n");
+                    if (log_level_ >= 1) std::printf("[DSP] enter loopback (0x7004)\n");
                     loopback_ = true;
+                } else if (log_level_ >= 1) {
+                    std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 }
                 break;
 
@@ -237,7 +239,7 @@ public:
                 // Per SPDS104A manual p.23/26, normal SLEEP waits until queued audio finishes
                 // playing before asserting $30 bit 7 (sleeping).
                 if (high == 0x80) {
-                    if (debug_level >= 2) {
+                    if (log_level_ >= 2) {
                         std::printf("[DSP] sleep (%04x, pending_pcm=%zu)\n", cmd, pcm_fifo_.size());
                     }
                     if (pcm_fifo_.empty()) {
@@ -245,6 +247,8 @@ public:
                     } else {
                         sleep_pending_ = true;
                     }
+                } else if (log_level_ >= 1) {
+                    std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 }
                 break;
 
@@ -261,6 +265,8 @@ public:
             case 0xA:
                 if (high == 0xA0) {
                     handle_mode_switch(low);
+                } else if (log_level_ >= 1) {
+                    std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 }
                 break;
 
@@ -268,14 +274,14 @@ public:
                 // FAST SLEEP (0xB0xx): abort queued audio immediately and enter sleep
                 // without waiting for pcm_fifo_ to drain (SPDS104A manual p.23/26).
                 if (high == 0xB0) {
-                    if (debug_level >= 2) {
+                    if (log_level_ >= 2) {
                         std::printf("[DSP] fast sleep (%04x, dropped_pcm=%zu)\n", cmd, pcm_fifo_.size());
                     }
                     pcm_fifo_.clear();
                     host_out_count_ = 0;
-                    reset_pcm_dac();
-                    reset_syllable();
                     finish_sleep();
+                } else if (log_level_ >= 1) {
+                    std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 }
                 break;
 
@@ -286,18 +292,22 @@ public:
 
             case 0xD:
                 if (cmd == 0xD001) {
-                    if (debug_level >= 1) std::printf("[DSP] 0xD001 calibration start\n");
+                    if (log_level_ >= 1) std::printf("[DSP] 0xD001 calibration start\n");
                     d001_state_ = D001State::WaitCountParam;
                     d001_delay_cycles_ = 0;
                 } else if (high == 0xD0) {
-                    if (debug_level >= 2) std::printf("[DSP] cmd %04x\n", cmd);
+                    if (log_level_ >= 2) std::printf("[DSP] cmd %04x\n", cmd);
+                } else if (log_level_ >= 1) {
+                    std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 }
                 break;
 
             case 0xE:
                 // 0xE000: CMD_DELAY (Not Defined / NOP in SPDS104A; used as a handshake delay word before 0xFFFF / 0x8000)
                 if (high == 0xE0) {
-                    if (debug_level >= 1) std::printf("[DSP] nop/delay (%04x)\n", cmd);
+                    if (log_level_ >= 1) std::printf("[DSP] nop/delay (%04x)\n", cmd);
+                } else if (log_level_ >= 1) {
+                    std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 }
                 break;
 
@@ -307,14 +317,14 @@ public:
                 break;
 
             default:
-                if (debug_level >= 1) std::printf("[DSP] unhandled cmd %04x\n", cmd);
+                if (log_level_ >= 1) std::printf("[DSP] unhandled cmd %04x\n", cmd);
                 break;
         }
     }
 
     // Advance DSP cycle-level timers and 8 kHz DAC clock across (last_cycles, cycles].
     void step(uint64_t last_cycles, uint64_t cycles) {
-        if (cycles <= last_cycles || CYCLES_SECOND == 0) return;
+        if (sleeping_ || cycles <= last_cycles || CYCLES_SECOND == 0) return;
 
         const uint64_t delta_cycles = cycles - last_cycles;
         step_timers(delta_cycles);
@@ -395,6 +405,8 @@ private:
 
     void finish_sleep() {
         flush_host_audio();
+        reset_pcm_dac();
+        reset_syllable();
         sleeping_ = true;
         sleep_pending_ = false;
     }
@@ -428,6 +440,7 @@ private:
         syllable_frame_ = 0;
         d001_state_ = D001State::Idle;
         d001_delay_cycles_ = 0;
+        speed_param_ = 0x0040;
         reset_pcm_dac();
         pcm_fifo_.clear();
         host_out_count_ = 0;
