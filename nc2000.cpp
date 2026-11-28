@@ -73,7 +73,6 @@ void load_state(){
 void LoadNC2k(){
 	nc2k_states.zero_init();
 	dsp_set_dual_mode(nc2000mode);
-	dsp_hw_reset();
 	
 	init_keyitems();
 
