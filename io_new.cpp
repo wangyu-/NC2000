@@ -64,7 +64,11 @@ int io_v2_read(int address) {
         if(address==0x12) return timer_ab_read_12_tmbl();
         if(address==0x13) return timer_ab_read_13_tmbh();
         if(address==0x18){
-            return Read18Port4(address);//not important? seems like hotlink only
+            uint8_t val = Read18Port4(address);
+            if (nc2000mode && !nand_is_ready()) {
+                val &= ~0x20;
+            }
+            return val;
         }
     }
     if(nc1020mode||nc2000mode){

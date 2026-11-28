@@ -80,6 +80,9 @@ public:
           d001_state_(D001State::Idle),
           d001_delay_cycles_(0),
           speed_param_(0x0040),
+          pcm_dac_sample_(0),
+          pcm_acc_sum_(0),
+          pcm_acc_cnt_(0),
           host_out_count_(0),
           log_level_(1) {}
 
@@ -167,15 +170,17 @@ public:
             return;
         }
 
-        // 2. Raw PCM streaming mode (0xA004): 0xFFxx exits back to CELP mode
+        // 2. Raw PCM direct-DAC mode (0xA004): 0xFFxx exits back to CELP mode.
+        // Latches each host write onto the DAC (zero-order hold, boxcar-averaged per 8 kHz tick).
         if (mode_ == DspMode::Pcm) {
             if (high == 0xFF) {
                 if (log_level_ >= 1) std::printf("[DSP] mode PCM -> CELP\n");
                 mode_ = DspMode::Celp;
+                reset_pcm_dac();
             } else {
-                int16_t sample = core_.decode_pcm_word(cmd);
-                push_pcm(&sample, 1);
-                latch_busy_if_needed();
+                pcm_dac_sample_ = core_.decode_pcm_word(cmd);
+                pcm_acc_sum_ += pcm_dac_sample_;
+                ++pcm_acc_cnt_;
             }
             return;
         }
@@ -271,6 +276,7 @@ public:
                     }
                     pcm_fifo_.clear();
                     host_out_count_ = 0;
+                    reset_pcm_dac();
                     reset_syllable();
                     finish_sleep();
                 }
@@ -364,17 +370,40 @@ private:
             samples += pcm_fifo_.size() - kPcmFifoSpillThreshold;
         }
         while (samples > 0 && !pcm_fifo_.empty()) {
-            host_out_buf_[host_out_count_++] = pcm_fifo_.front();
+            emit_host_sample(pcm_fifo_.front());
             pcm_fifo_.pop_front();
             --samples;
-            if (host_out_count_ == kHostAudioBatchSamples) {
-                flush_host_audio();
+        }
+
+        if (mode_ == DspMode::Pcm && !sleeping_ && !sleep_pending_) {
+            while (samples > 0) {
+                int16_t s = pcm_dac_sample_;
+                if (pcm_acc_cnt_ > 0) {
+                    s = static_cast<int16_t>(pcm_acc_sum_ / pcm_acc_cnt_);
+                    pcm_acc_sum_ = 0;
+                    pcm_acc_cnt_ = 0;
+                }
+                emit_host_sample(s);
+                --samples;
             }
         }
 
         if (!is_busy()) {
             tx_busy_ = false;
         }
+    }
+
+    void emit_host_sample(int16_t sample) {
+        host_out_buf_[host_out_count_++] = sample;
+        if (host_out_count_ == kHostAudioBatchSamples) {
+            flush_host_audio();
+        }
+    }
+
+    void reset_pcm_dac() {
+        pcm_dac_sample_ = 0;
+        pcm_acc_sum_ = 0;
+        pcm_acc_cnt_ = 0;
     }
 
     void finish_sleep() {
@@ -414,6 +443,7 @@ private:
         syllable_frame_ = 0;
         d001_state_ = D001State::Idle;
         d001_delay_cycles_ = 0;
+        reset_pcm_dac();
         pcm_fifo_.clear();
         host_out_count_ = 0;
         core_.reset();
@@ -508,6 +538,7 @@ private:
         cut_tail_ = 0;
         cut_frames_ = 0;
         syllable_frame_ = 0;
+        reset_pcm_dac();
         core_.clear_packet();
     }
 
@@ -569,8 +600,11 @@ private:
     uint64_t d001_delay_cycles_;
     uint16_t speed_param_;
 
-    // Internal 8 kHz PCM output FIFO
+    // Internal 8 kHz PCM output FIFO (CELP / WORD / DIPHONE) and direct-DAC latch (PCM_MODE)
     std::deque<int16_t> pcm_fifo_;
+    int16_t pcm_dac_sample_;
+    int64_t pcm_acc_sum_;
+    int pcm_acc_cnt_;
 
     // Staging buffer to batch per-sample DAC pops before locking host SDL audio
     int16_t host_out_buf_[kHostAudioBatchSamples];

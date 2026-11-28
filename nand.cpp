@@ -132,11 +132,28 @@ static auto& nand_data = nc2k_states.nand_state.nand_data;
 static uint32_t& nand_read_offset = nc2k_states.nand_state.nand_read_offset;
 static uint32_t& nand_pointer_latch = nc2k_states.nand_state.nand_pointer_latch;
 static uint32_t& nand_cmd_latch = nc2k_states.nand_state.nand_cmd_latch;
+static u64_t& nand_busy_until_cycle = nc2k_states.nand_busy_until_cycle;
+
+// Samsung K9F5608U0M / Toshiba TC58512FT page read transfer time tR ~= 10-25 us.
+static constexpr uint64_t kNandPageReadUs = 15;
+
+bool nand_is_ready(){
+    if(nc2k_states.cycles >= nand_busy_until_cycle){
+        nand_busy_until_cycle = 0;
+        return true;
+    }
+    return false;
+}
+
+static void start_nand_busy_us(uint64_t us){
+    nand_busy_until_cycle = nc2k_states.cycles + (static_cast<uint64_t>(CYCLES_SECOND) * us) / 1000000ULL;
+}
 
 void clear_nand_status(){
     nand_addr.clear();
     nand_data.clear();
     nand_read_offset = 0;
+    nand_busy_until_cycle = 0;
     
     nand_pointer_latch = NAND_POINTER_LATCH::AREA1;
     nand_cmd_latch = NAND_CMD_LATCH::WAIT_FOR_NEXT; 
@@ -458,6 +475,9 @@ void nand_write(uint8_t value){
     if(ALE){
         if(nand_addr.size() <MAX_NAND_ADDR_SIZE){
             nand_addr.push_back(value);
+            if(nc2000mode && nand_cmd_latch == NAND_CMD_LATCH::READ1_2 && nand_addr.size() >= 3){
+                start_nand_busy_us(kNandPageReadUs);
+            }
         }else{
             NLOG_R("[nand] oops, too many nand_addr %d", (int)nand_addr.size());
         }

@@ -5,6 +5,7 @@ extern char * nand_magic;
 
 uint8_t read_nand();
 void nand_write(uint8_t);
+bool nand_is_ready();
 
 void read_nand0_file();
 void read_nand_file();
